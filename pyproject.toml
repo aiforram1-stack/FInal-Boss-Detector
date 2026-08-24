@@ -10,9 +10,14 @@ requires-python = ">=3.11"
 dependencies = [
   "alembic>=1.16,<2",
   "fastapi>=0.116,<1",
+  "httpcore>=1.0.9,<2",
+  "httpx>=0.28,<1",
   "jinja2>=3.1,<4",
+  "numpy>=2.1,<3",
+  "pillow>=11.3,<13",
   "pydantic>=2.11,<3",
   "pydantic-settings>=2.10,<3",
+  "pyyaml>=6.0,<7",
   "python-multipart>=0.0.20,<1",
   "sqlalchemy>=2.0,<3",
   "uvicorn[standard]>=0.35,<1",
@@ -20,11 +25,36 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "httpx>=0.28,<1",
   "mypy>=1.15,<2",
   "pytest>=8.3,<9",
   "pytest-cov>=6,<8",
   "ruff>=0.11,<1",
+  "types-pyyaml>=6.0,<7",
+]
+image-community-gpu = [
+  "huggingface-hub==0.34.4",
+  "runpod==1.7.13",
+  "safetensors==0.6.2",
+  "timm==1.0.15",
+  "torch==2.7.1",
+  "torchvision==0.22.1",
+]
+
+[dependency-groups]
+image-community-runtime = [
+  "httpcore>=1.0.9,<2",
+  "httpx>=0.28,<1",
+  "huggingface-hub==0.34.4",
+  "numpy>=2.1,<3",
+  "pillow>=11.3,<13",
+  "pydantic>=2.11,<3",
+  "pydantic-settings>=2.10,<3",
+  "pyyaml>=6.0,<7",
+  "runpod==1.7.13",
+  "safetensors==0.6.2",
+  "timm==1.0.15",
+  "torch==2.7.1",
+  "torchvision==0.22.1",
 ]
 
 [tool.setuptools.packages.find]
@@ -33,6 +63,7 @@ where = [
   "packages/evidence/src",
   "packages/structural/src",
   "apps/api/src",
+  "workers/image-community/src",
 ]
 
 [tool.setuptools.package-data]
@@ -41,6 +72,8 @@ forensic_structural = ["templates/*.j2"]
 [tool.pytest.ini_options]
 addopts = "-ra --strict-config --strict-markers"
 markers = [
+  "gpu: explicitly opted-in tests requiring an NVIDIA CUDA device",
+  "integration: tests requiring external runtime resources",
   "tool_integration: optional tests that require a locally installed metadata tool",
 ]
 testpaths = [
@@ -48,6 +81,7 @@ testpaths = [
   "packages/evidence/tests",
   "packages/structural/tests",
   "apps/api/tests",
+  "workers/image-community/tests",
 ]
 pythonpath = [
   ".",
@@ -55,6 +89,8 @@ pythonpath = [
   "packages/evidence/src",
   "packages/structural/src",
   "apps/api/src",
+  "workers/image-community/src",
+  "workers/image-community/tests",
 ]
 
 [tool.ruff]
@@ -72,4 +108,4 @@ strict = true
 warn_unused_configs = true
 exclude = ["private_cases", "var"]
 plugins = ["pydantic.mypy"]
-mypy_path = ".:packages/contracts/src:packages/evidence/src:packages/structural/src:apps/api/src"
+mypy_path = ".:packages/contracts/src:packages/evidence/src:packages/structural/src:apps/api/src:workers/image-community/src:workers/image-community/tests"

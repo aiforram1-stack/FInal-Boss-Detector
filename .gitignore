@@ -44,6 +44,10 @@ coverage.xml
 /models/cache/
 /checkpoints/
 /model-cache/
+/workers/image-community/.model-cache/
+/workers/image-community/.tmp/
+checkpoint-verification-receipt.json
+*.part
 *.pt
 *.pth
 *.ckpt

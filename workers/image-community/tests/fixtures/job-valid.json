@@ -1,0 +1,18 @@
+{
+  "input": {
+    "schema_version": "1.0",
+    "job_id": "c844f56b-7b32-47f0-95ec-e56c763d3a01",
+    "run_id": "a4c33d03-e178-4e25-a1aa-651d40f5c3d0",
+    "case_id": "627a156f-2c6c-484e-9aee-947f713eec75",
+    "evidence_id": "b581e7d9-4bf0-4868-9b46-8bd84b940f4b",
+    "requested_detector_name": "community-forensics-384",
+    "download_url": "https://fixtures.example.invalid/generated.png",
+    "expected_sha256": "36dc386967cb47968270418949bea94aa4aa9ba134b72bb981c862766c1d28f6",
+    "expected_byte_length": 105,
+    "expected_mime_type": "image/png",
+    "created_at": "2026-08-24T10:00:00Z",
+    "expires_at": "2099-08-24T10:05:00Z",
+    "analysis_profile": "image-community-v1",
+    "local_fixture_id": "generated-rgb-png-v1"
+  }
+}

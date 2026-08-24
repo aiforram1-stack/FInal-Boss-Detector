@@ -1,0 +1,74 @@
+schema_version: "1.0"
+
+detector:
+  detector_id: community-forensics-384
+  version: 1.0.0+ee5b71d
+  modality: image
+  task: synthetic_image_detection
+  calibrated: false
+
+source:
+  repository_url: https://github.com/JeongsooP/Community-Forensics
+  repository_commit: ee5b71d43db0f3779e1edd64ee927b13f2dd6ad4
+  license: MIT
+  third_party_notice: THIRD_PARTY_NOTICES.md
+  integration_strategy: minimal_verified_model_wrapper
+
+model:
+  repository: OwensLab/commfor-model-384
+  revision: 6076002bf0d9dd37537f965ee2f06f826c333b61
+  filename: model.safetensors
+  format: safetensors
+  checkpoint_sha256: b89f36275f3bf5e2b040eee36597a8f19db051bff9a473a9cf7b2466284fb387
+  checkpoint_byte_length: 87262324
+  checkpoint_hash_status: verified_from_huggingface_lfs_oid
+  input_resolution: 384
+  architecture: vit_small_patch16_384.augreg_in21k_ft_in1k with one-logit head
+
+preprocessing:
+  repository: OwensLab/commfor-data-preprocessor
+  revision: 3540a3f0d688f8bf492a8aed48613b891f88047e
+  input_resolution: 384
+  resize_short_edge: 440
+  resize_interpolation: pillow_bilinear_antialias
+  resize_long_edge_rounding: floor
+  crop: center_384x384
+  color_conversion: RGB
+  tensor_layout: NCHW
+  value_scaling: uint8_to_float32_0_1
+  normalization_mean: [0.485, 0.456, 0.406]
+  normalization_std: [0.229, 0.224, 0.225]
+  batch_dimension: 1
+  upstream_transform_version: torchvision-0.22.1-eval-transform-at-ee5b71d
+
+runtime:
+  python_version: "3.11"
+  pytorch_version: 2.7.1
+  torchvision_version: 0.22.1
+  timm_version: 1.0.15
+  cuda_version: 12.6.3
+  target_platform: linux/amd64
+  base_image: pytorch/pytorch:2.7.1-cuda12.6-cudnn9-runtime
+  base_image_digest: sha256:2b59b1b91885677814f78be1f8df48a25d5dc952eb6580eaecfefca510f9afd3
+  upstream_python_minimum: null
+
+output:
+  raw_output_type: binary_classification_logit
+  tensor_shape: [batch, 1]
+  class_mapping:
+    "0": real
+    "1": fake
+  positive_class: fake
+  score_semantics: >-
+    One pre-sigmoid binary-classification logit. The upstream evaluation uses
+    real=0 and fake=1 and applies sigmoid for benchmark metrics, but publishes
+    no calibration establishing a probability or forensic certainty meaning.
+  probability: false
+  calibrated: false
+
+limitations:
+  - The raw logit is uncalibrated and is supporting evidence, not a verdict.
+  - Benchmark performance does not establish production performance.
+  - Python minimum support is not declared by upstream; the worker selects Python 3.11.
+  - CUDA minimum support is not declared by upstream; the worker selects the pinned CUDA 12.6.3 base.
+  - GPU and checkpoint parity remain untested until an explicitly authorized cloud run.

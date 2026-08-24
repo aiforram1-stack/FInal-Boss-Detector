@@ -1,17 +1,19 @@
 # Multimedia Forensic Platform
 
-Repository foundation, shared contracts, immutable local evidence intake, and
-CPU-only structural reporting for an evidence-first multimedia forensic
-platform. The implementation is intentionally limited to Phases 0–3. It
-preserves originals in content-addressed storage, verifies their hashes before
-each analysis, records every structural test state, and generates canonical JSON
-plus escaped self-contained HTML.
+Repository foundation, shared contracts, immutable local evidence intake,
+CPU-only structural reporting, and the Phase 4 Community Forensics image-worker
+adapter for an evidence-first multimedia forensic platform. Originals are
+content-addressed, re-hashed before local analysis, and reported through
+canonical JSON plus escaped self-contained HTML. The new detector boundary is
+tested locally with a deterministic mock; the real CUDA backend is prepared but
+has not been executed.
 
-No detector inference, cloud deployment, frontend, authentication, training,
-model weights, PDF, OSINT, or real media are included. Reports contain
-structural observations and coverage only—never a real/fake, authorship, or
-AI-generation verdict. Local preservation is application-enforced append-only
-behavior, not production or regulatory WORM.
+No real detector inference, model download, cloud deployment, frontend,
+authentication, training, PDF, OSINT, or real media are included. Reports
+contain structural observations and coverage only—never a real/fake,
+authorship, or AI-generation verdict. Detector raw scores are likewise
+uncalibrated supporting evidence. Local preservation is application-enforced
+append-only behavior, not production or regulatory WORM.
 
 ## Develop
 
@@ -44,6 +46,21 @@ make safety
 make structural-smoke
 make report-smoke
 ```
+
+The Phase 4 Mac-safe worker gate is:
+
+```bash
+make image-community-manifest-check
+make image-community-checkpoint-dry-run
+make image-community-lint
+make image-community-typecheck
+make image-community-test
+make image-community-docker-lint
+make image-community-mock
+```
+
+These commands perform no checkpoint download, CUDA execution, live object
+fetch, RunPod call, container publication, or GPU provisioning.
 
 `make schemas` must not change committed files after a clean generation.
 
@@ -81,9 +98,13 @@ curl \
 - `packages/evidence/`: reusable storage protocol and local backend.
 - `packages/structural/`: safe tool runner, adapters, normalization, consistency,
   create-only result artifacts, and deterministic report rendering.
+- `workers/image-community/`: pinned manifest, secure input/decoder pipeline,
+  deterministic mock, unexecuted real CUDA backend, RunPod-compatible handler,
+  Docker definition, and GPU-test scaffolding.
 - `apps/api/`: FastAPI routes, services, SQLite persistence, and migrations.
 - `schemas/`: generated JSON Schemas committed for non-Python consumers.
-- `workers/`: reserved for later explicitly authorized detector phases.
+- `docs/model-cards/community-forensics.md`: scope, immutable identity, raw-score
+  semantics, limitations, and license notes for the first detector.
 
 Raw detector scores are detector-specific evidence. They are not probabilities,
 confidence claims, or final forensic verdicts.
