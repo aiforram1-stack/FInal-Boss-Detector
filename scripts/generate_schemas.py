@@ -7,6 +7,7 @@ from pathlib import Path
 
 from forensic_contracts import (
     Case,
+    ContainerReleaseManifest,
     DetectorIdentity,
     DetectorJob,
     DetectorResult,
@@ -38,12 +39,16 @@ MODELS: tuple[type[BaseModel], ...] = (
 
 
 def generate_schema_documents() -> dict[str, str]:
-    return {
+    documents = {
         f"{model.__name__}.schema.json": (
             json.dumps(model.model_json_schema(), indent=2, sort_keys=True) + "\n"
         )
         for model in MODELS
     }
+    documents["container-release.schema.json"] = (
+        json.dumps(ContainerReleaseManifest.model_json_schema(), indent=2, sort_keys=True) + "\n"
+    )
+    return documents
 
 
 def main() -> None:

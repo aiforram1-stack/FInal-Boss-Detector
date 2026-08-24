@@ -7,6 +7,32 @@ and a deterministic mock. It does not download the checkpoint, execute the real
 model, use CUDA, contact RunPod, publish a container, or connect the worker to
 the API.
 
+## Phase 5 container boundary
+
+Phase 5 packages the same service as digest-pinned `mock-test` and
+`gpu-runtime` Linux AMD64 targets. Pull requests build, inspect, scan, and run
+the generated-fixture mock path without registry credentials. A separate
+protected `main`/manual workflow may publish the GPU-shaped target to private
+GHCR under the full source-SHA tag, then captures and verifies the immutable
+digest, SBOM, provenance, GitHub attestation, package access, and versioned
+release manifest. The publication path does not download the checkpoint or run
+CUDA; it cannot establish real-model fitness.
+
+```mermaid
+flowchart LR
+    PR[Pull request] --> ReadOnly[Read-only AMD64 validation]
+    ReadOnly --> MockTarget[mock-test target]
+    ReadOnly --> GPUTarget[gpu-runtime target; no checkpoint]
+    Main[Protected main/manual commit] --> Publish[Least-privilege GHCR publish]
+    Publish --> Tag[sha-full-commit tag]
+    Tag --> Digest[Authoritative image digest]
+    Digest --> Verify[scan + pull + mock smoke + labels]
+    Digest --> Supply[SBOM + provenance + GitHub attestation]
+    Verify --> Manifest[container-release.json + SHA-256]
+    Supply --> Manifest
+    Manifest -. explicit later authorization .-> GPU[Phase 6 temporary GPU Pod]
+```
+
 ```mermaid
 flowchart LR
     Event[RunPod-shaped event] --> Handler[Thin handler]

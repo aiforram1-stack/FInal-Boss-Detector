@@ -1,0 +1,392 @@
+{
+  "$defs": {
+    "ContainerReleaseImage": {
+      "additionalProperties": true,
+      "properties": {
+        "architecture": {
+          "const": "amd64",
+          "title": "Architecture",
+          "type": "string"
+        },
+        "base_image": {
+          "title": "Base Image",
+          "type": "string"
+        },
+        "base_image_digest": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Base Image Digest",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "digest_reference": {
+          "title": "Digest Reference",
+          "type": "string"
+        },
+        "image_size_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Image Size Bytes",
+          "type": "integer"
+        },
+        "oci_labels": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Oci Labels",
+          "type": "object"
+        },
+        "platform": {
+          "const": "linux/amd64",
+          "title": "Platform",
+          "type": "string"
+        },
+        "repository": {
+          "pattern": "^ghcr\\.io/[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._/-]*$",
+          "title": "Repository",
+          "type": "string"
+        },
+        "tag": {
+          "pattern": "^sha-[a-f0-9]{40}$",
+          "title": "Tag",
+          "type": "string"
+        },
+        "tag_reference": {
+          "title": "Tag Reference",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repository",
+        "tag",
+        "tag_reference",
+        "digest",
+        "digest_reference",
+        "platform",
+        "architecture",
+        "created_at",
+        "image_size_bytes",
+        "base_image",
+        "base_image_digest",
+        "oci_labels"
+      ],
+      "title": "ContainerReleaseImage",
+      "type": "object"
+    },
+    "ContainerReleaseModel": {
+      "additionalProperties": true,
+      "properties": {
+        "checkpoint_included": {
+          "const": false,
+          "title": "Checkpoint Included",
+          "type": "boolean"
+        },
+        "checkpoint_sha256": {
+          "default": null,
+          "title": "Checkpoint Sha256",
+          "type": "null"
+        },
+        "checkpoint_status": {
+          "const": "pending_gpu_verification",
+          "title": "Checkpoint Status",
+          "type": "string"
+        },
+        "detector_repository_commit": {
+          "pattern": "^[a-f0-9]{40}$",
+          "title": "Detector Repository Commit",
+          "type": "string"
+        },
+        "expected_checkpoint_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Expected Checkpoint Sha256",
+          "type": "string"
+        },
+        "model_revision": {
+          "pattern": "^[a-f0-9]{40}$",
+          "title": "Model Revision",
+          "type": "string"
+        }
+      },
+      "required": [
+        "model_revision",
+        "detector_repository_commit",
+        "expected_checkpoint_sha256",
+        "checkpoint_included",
+        "checkpoint_status"
+      ],
+      "title": "ContainerReleaseModel",
+      "type": "object"
+    },
+    "ContainerReleaseSource": {
+      "additionalProperties": true,
+      "properties": {
+        "git_commit": {
+          "pattern": "^[a-f0-9]{40}$",
+          "title": "Git Commit",
+          "type": "string"
+        },
+        "repository": {
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+          "title": "Repository",
+          "type": "string"
+        },
+        "repository_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Repository Url",
+          "type": "string"
+        },
+        "workflow_run_attempt": {
+          "minimum": 1,
+          "title": "Workflow Run Attempt",
+          "type": "integer"
+        },
+        "workflow_run_id": {
+          "pattern": "^[0-9]+$",
+          "title": "Workflow Run Id",
+          "type": "string"
+        },
+        "workflow_run_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Workflow Run Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repository",
+        "repository_url",
+        "git_commit",
+        "workflow_run_id",
+        "workflow_run_attempt",
+        "workflow_run_url"
+      ],
+      "title": "ContainerReleaseSource",
+      "type": "object"
+    },
+    "ContainerReleaseSupplyChain": {
+      "additionalProperties": true,
+      "properties": {
+        "github_attestation_created": {
+          "title": "Github Attestation Created",
+          "type": "boolean"
+        },
+        "github_attestation_repository": {
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+          "title": "Github Attestation Repository",
+          "type": "string"
+        },
+        "github_attestation_subject": {
+          "title": "Github Attestation Subject",
+          "type": "string"
+        },
+        "github_attestation_verified": {
+          "title": "Github Attestation Verified",
+          "type": "boolean"
+        },
+        "provenance_attached": {
+          "title": "Provenance Attached",
+          "type": "boolean"
+        },
+        "provenance_reference": {
+          "title": "Provenance Reference",
+          "type": "string"
+        },
+        "sbom_attached": {
+          "title": "Sbom Attached",
+          "type": "boolean"
+        },
+        "sbom_reference": {
+          "title": "Sbom Reference",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sbom_attached",
+        "sbom_reference",
+        "provenance_attached",
+        "provenance_reference",
+        "github_attestation_created",
+        "github_attestation_verified",
+        "github_attestation_subject",
+        "github_attestation_repository"
+      ],
+      "title": "ContainerReleaseSupplyChain",
+      "type": "object"
+    },
+    "ContainerReleaseVerification": {
+      "additionalProperties": true,
+      "properties": {
+        "architecture_check": {
+          "$ref": "#/$defs/ReleaseCheckStatus"
+        },
+        "github_attestation": {
+          "$ref": "#/$defs/ReleaseCheckStatus"
+        },
+        "image_content_inspection": {
+          "$ref": "#/$defs/ReleaseCheckStatus"
+        },
+        "mock_container_test": {
+          "$ref": "#/$defs/ReleaseCheckStatus"
+        },
+        "package_access_check": {
+          "$ref": "#/$defs/ReleaseCheckStatus"
+        },
+        "provenance": {
+          "$ref": "#/$defs/ReleaseCheckStatus"
+        },
+        "pull_by_digest_test": {
+          "$ref": "#/$defs/ReleaseCheckStatus"
+        },
+        "real_gpu_inference": {
+          "const": "not_run",
+          "title": "Real Gpu Inference",
+          "type": "string"
+        },
+        "sbom": {
+          "$ref": "#/$defs/ReleaseCheckStatus"
+        },
+        "unit_tests": {
+          "$ref": "#/$defs/ReleaseCheckStatus"
+        },
+        "vulnerability_scan": {
+          "$ref": "#/$defs/ReleaseCheckStatus"
+        }
+      },
+      "required": [
+        "unit_tests",
+        "mock_container_test",
+        "pull_by_digest_test",
+        "architecture_check",
+        "image_content_inspection",
+        "package_access_check",
+        "vulnerability_scan",
+        "sbom",
+        "provenance",
+        "github_attestation",
+        "real_gpu_inference"
+      ],
+      "title": "ContainerReleaseVerification",
+      "type": "object"
+    },
+    "ContainerReleaseWorker": {
+      "additionalProperties": true,
+      "properties": {
+        "detector_id": {
+          "const": "community-forensics-384",
+          "title": "Detector Id",
+          "type": "string"
+        },
+        "worker_id": {
+          "const": "image-community",
+          "title": "Worker Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "worker_id",
+        "detector_id"
+      ],
+      "title": "ContainerReleaseWorker",
+      "type": "object"
+    },
+    "ReleaseCheckStatus": {
+      "enum": [
+        "passed",
+        "failed",
+        "not_run",
+        "unavailable"
+      ],
+      "title": "ReleaseCheckStatus",
+      "type": "string"
+    },
+    "VulnerabilitySummary": {
+      "additionalProperties": true,
+      "properties": {
+        "critical": {
+          "minimum": 0,
+          "title": "Critical",
+          "type": "integer"
+        },
+        "excepted_critical": {
+          "minimum": 0,
+          "title": "Excepted Critical",
+          "type": "integer"
+        },
+        "high": {
+          "minimum": 0,
+          "title": "High",
+          "type": "integer"
+        },
+        "report_artifact": {
+          "minLength": 1,
+          "title": "Report Artifact",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ReleaseCheckStatus"
+        }
+      },
+      "required": [
+        "status",
+        "critical",
+        "high",
+        "excepted_critical",
+        "report_artifact"
+      ],
+      "title": "VulnerabilitySummary",
+      "type": "object"
+    }
+  },
+  "additionalProperties": true,
+  "description": "Audit record emitted by the protected container publication workflow.",
+  "properties": {
+    "container": {
+      "$ref": "#/$defs/ContainerReleaseImage"
+    },
+    "model": {
+      "$ref": "#/$defs/ContainerReleaseModel"
+    },
+    "schema_version": {
+      "pattern": "^1\\.[0-9]+$",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/ContainerReleaseSource"
+    },
+    "supply_chain": {
+      "$ref": "#/$defs/ContainerReleaseSupplyChain"
+    },
+    "verification": {
+      "$ref": "#/$defs/ContainerReleaseVerification"
+    },
+    "vulnerability": {
+      "$ref": "#/$defs/VulnerabilitySummary"
+    },
+    "worker": {
+      "$ref": "#/$defs/ContainerReleaseWorker"
+    }
+  },
+  "required": [
+    "schema_version",
+    "worker",
+    "source",
+    "container",
+    "model",
+    "vulnerability",
+    "supply_chain",
+    "verification"
+  ],
+  "title": "ContainerReleaseManifest",
+  "type": "object"
+}

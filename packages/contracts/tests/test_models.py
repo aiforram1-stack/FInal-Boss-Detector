@@ -361,7 +361,7 @@ def test_every_forensic_test_status_is_supported(test_status: ForensicTestStatus
 
 def test_json_schemas_are_generated_and_committed() -> None:
     generated = generate_schema_documents()
-    assert len(generated) == 11
+    assert len(generated) == 12
     for filename, expected in generated.items():
         assert (SCHEMA_DIR / filename).read_text(encoding="utf-8") == expected
         schema = json.loads(expected)

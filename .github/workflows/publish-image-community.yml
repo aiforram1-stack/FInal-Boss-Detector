@@ -1,0 +1,363 @@
+name: Publish Image Community Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".dockerignore"
+      - ".github/workflows/publish-image-community.yml"
+      - "packages/contracts/**"
+      - "pyproject.toml"
+      - "scripts/evaluate_vulnerabilities.py"
+      - "scripts/generate_container_release.py"
+      - "scripts/inspect_image_contents.py"
+      - "scripts/validate_image_worker_docker.py"
+      - "scripts/validate_workflow_policy.py"
+      - "scripts/verify_package_access.py"
+      - "scripts/verify_published_image.sh"
+      - "security/vulnerability-exceptions.yaml"
+      - "uv.lock"
+      - "workers/image-community/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  attestations: write
+
+concurrency:
+  group: publish-image-community-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  publish-and-verify:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Check out exact protected commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # reviewed release v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # reviewed release v7.0.0
+        with:
+          python-version: "3.11"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # reviewed release v9.0.0
+        with:
+          version: "0.11.2"
+          enable-cache: true
+      - name: Install locked project tooling
+        run: uv sync --frozen --extra dev
+      - name: Re-run critical policy, contract, worker, and safety gates
+        run: |
+          make image-community-container-policy
+          make image-community-manifest-check
+          make image-community-checkpoint-dry-run
+          make safety
+          uv run --frozen pytest packages/contracts/tests workers/image-community/tests -m "not gpu and not integration"
+      - name: Reclaim unused ephemeral runner SDK space for CUDA image verification
+        run: |
+          test "$GITHUB_ACTIONS" = "true"
+          df -h /
+          sudo rm -rf -- \
+            /opt/ghc \
+            /opt/hostedtoolcache/CodeQL \
+            /usr/local/.ghcup \
+            /usr/local/lib/android \
+            /usr/share/dotnet
+          sudo apt-get clean
+          df -h /
+      - name: Derive lowercase immutable image identity
+        id: identity
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+          SOURCE_COMMIT: ${{ github.sha }}
+        run: |
+          normalized_owner=$(printf '%s' "$REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
+          image_repository="ghcr.io/$normalized_owner/forensic-image-community"
+          created_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo "image_repository=$image_repository" >> "$GITHUB_OUTPUT"
+          echo "tag_reference=$image_repository:sha-$SOURCE_COMMIT" >> "$GITHUB_OUTPUT"
+          echo "source_url=https://github.com/$SOURCE_REPOSITORY" >> "$GITHUB_OUTPUT"
+          echo "created_at=$created_at" >> "$GITHUB_OUTPUT"
+          echo "version=sha-$SOURCE_COMMIT" >> "$GITHUB_OUTPUT"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # reviewed release v4.0.0
+      - name: Log in to private GHCR with the repository token
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # reviewed release v4.0.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and publish the exact Linux AMD64 gpu-runtime commit
+        id: publish
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # reviewed release v7.0.0
+        with:
+          context: .
+          file: workers/image-community/Dockerfile
+          target: gpu-runtime
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.identity.outputs.tag_reference }}
+          provenance: mode=max
+          sbom: true
+          build-args: |
+            PROJECT_SOURCE_COMMIT=${{ github.sha }}
+            PROJECT_CREATED_AT=${{ steps.identity.outputs.created_at }}
+            PROJECT_VERSION=${{ steps.identity.outputs.version }}
+            PROJECT_SOURCE_URL=${{ steps.identity.outputs.source_url }}
+            PROJECT_VENDOR=${{ github.repository_owner }}
+          cache-from: type=gha,scope=release-image-community
+          cache-to: type=gha,mode=max,scope=release-image-community
+      - name: Capture immutable published digest
+        id: digest
+        env:
+          IMAGE_REPOSITORY: ${{ steps.identity.outputs.image_repository }}
+          PUBLISHED_DIGEST: ${{ steps.publish.outputs.digest }}
+        run: |
+          if [[ ! "$PUBLISHED_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+            echo "Buildx did not return a valid image digest" >&2
+            exit 1
+          fi
+          echo "digest=$PUBLISHED_DIGEST" >> "$GITHUB_OUTPUT"
+          echo "digest_reference=$IMAGE_REPOSITORY@$PUBLISHED_DIGEST" >> "$GITHUB_OUTPUT"
+      - name: Create GitHub artifact attestation for the image digest
+        id: github_attestation
+        continue-on-error: true
+        uses: actions/attest@c32b4b8b198b65d0bd9d63490e847ff7b53989d4 # reviewed release v4.0.0
+        with:
+          subject-name: ${{ steps.identity.outputs.image_repository }}
+          subject-digest: ${{ steps.digest.outputs.digest }}
+          push-to-registry: true
+          create-storage-record: false
+      - name: Verify attached SPDX SBOM and BuildKit provenance
+        id: docker_attestations
+        continue-on-error: true
+        env:
+          DIGEST_REFERENCE: ${{ steps.digest.outputs.digest_reference }}
+        run: |
+          if ! docker buildx imagetools inspect "$DIGEST_REFERENCE" \
+            --format '{{ json (index .SBOM "linux/amd64").SPDX }}' > sbom.spdx.json; then
+            docker buildx imagetools inspect "$DIGEST_REFERENCE" \
+              --format '{{ json .SBOM.SPDX }}' > sbom.spdx.json
+          fi
+          if ! docker buildx imagetools inspect "$DIGEST_REFERENCE" \
+            --format '{{ json (index .Provenance "linux/amd64").SLSA }}' > provenance.slsa.json; then
+            docker buildx imagetools inspect "$DIGEST_REFERENCE" \
+              --format '{{ json .Provenance.SLSA }}' > provenance.slsa.json
+          fi
+          uv run --frozen python - <<'PY'
+          import json
+          from pathlib import Path
+
+          sbom = json.loads(Path("sbom.spdx.json").read_text(encoding="utf-8"))
+          provenance = json.loads(Path("provenance.slsa.json").read_text(encoding="utf-8"))
+          if not isinstance(sbom, dict) or not sbom.get("SPDXID"):
+              raise SystemExit("attached SPDX SBOM is absent or malformed")
+          if not isinstance(provenance, dict) or not provenance.get("buildType"):
+              raise SystemExit("attached BuildKit provenance is absent or malformed")
+          PY
+      - name: Set up pinned Trivy scanner
+        uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # reviewed release v0.3.1
+        with:
+          version: v0.74.0
+          cache: true
+      - name: Scan the published image by immutable digest
+        env:
+          DIGEST_REFERENCE: ${{ steps.digest.outputs.digest_reference }}
+        run: trivy image --scanners vuln,secret --format json --output trivy-published-image.json "$DIGEST_REFERENCE"
+      - name: Enforce critical vulnerability policy
+        id: vulnerability_gate
+        continue-on-error: true
+        run: |
+          uv run --frozen scripts/evaluate_vulnerabilities.py \
+            --report trivy-published-image.json \
+            --exceptions security/vulnerability-exceptions.yaml \
+            --summary vulnerability-published-summary.json
+      - name: Pull by digest, verify identity, and run CPU mock smoke
+        id: pulled_image_verification
+        continue-on-error: true
+        env:
+          DIGEST_REFERENCE: ${{ steps.digest.outputs.digest_reference }}
+          SOURCE_COMMIT: ${{ github.sha }}
+          SOURCE_URL: ${{ steps.identity.outputs.source_url }}
+        run: scripts/verify_published_image.sh "$DIGEST_REFERENCE" "$SOURCE_COMMIT" "$SOURCE_URL"
+      - name: Inspect the published image filesystem by digest
+        id: image_content_inspection
+        continue-on-error: true
+        env:
+          DIGEST_REFERENCE: ${{ steps.digest.outputs.digest_reference }}
+        run: uv run --frozen scripts/inspect_image_contents.py --image "$DIGEST_REFERENCE"
+      - name: Verify GitHub attestation belongs to this repository and digest
+        id: github_attestation_verification
+        if: steps.github_attestation.outcome == 'success'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DIGEST_REFERENCE: ${{ steps.digest.outputs.digest_reference }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+        run: |
+          gh attestation verify "oci://$DIGEST_REFERENCE" \
+            --repo "$SOURCE_REPOSITORY" \
+            --format json > github-attestation-verification.json
+      - name: Capture published image size
+        id: image_size
+        env:
+          DIGEST_REFERENCE: ${{ steps.digest.outputs.digest_reference }}
+        run: |
+          docker pull "$DIGEST_REFERENCE"
+          image_size=$(docker image inspect --format '{{.Size}}' "$DIGEST_REFERENCE")
+          echo "bytes=$image_size" >> "$GITHUB_OUTPUT"
+      - name: Verify private package visibility and repository linkage
+        id: package_access
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGE_OWNER: ${{ github.repository_owner }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+        run: |
+          if gh api "/users/$PACKAGE_OWNER/packages/container/forensic-image-community" > ghcr-package.json; then
+            echo "resolved package through user scope"
+          elif gh api "/orgs/$PACKAGE_OWNER/packages/container/forensic-image-community" > ghcr-package.json; then
+            echo "resolved package through organization scope"
+          else
+            echo "Package settings could not be read with the repository token." >&2
+            echo "An owner must verify private visibility and repository linkage manually." >&2
+            exit 1
+          fi
+          uv run --frozen scripts/verify_package_access.py \
+            --package-json ghcr-package.json \
+            --repository "$SOURCE_REPOSITORY"
+      - name: Generate validated release manifest and checksum
+        id: release_manifest
+        env:
+          SOURCE_REPOSITORY: ${{ github.repository }}
+          SOURCE_COMMIT: ${{ github.sha }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+          WORKFLOW_RUN_ATTEMPT: ${{ github.run_attempt }}
+          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          IMAGE_REPOSITORY: ${{ steps.identity.outputs.image_repository }}
+          IMAGE_DIGEST: ${{ steps.digest.outputs.digest }}
+          CREATED_AT: ${{ steps.identity.outputs.created_at }}
+          IMAGE_SIZE_BYTES: ${{ steps.image_size.outputs.bytes }}
+          VULNERABILITY_OUTCOME: ${{ steps.vulnerability_gate.outcome }}
+          PULLED_IMAGE_OUTCOME: ${{ steps.pulled_image_verification.outcome }}
+          CONTENT_OUTCOME: ${{ steps.image_content_inspection.outcome }}
+          PACKAGE_ACCESS_OUTCOME: ${{ steps.package_access.outcome }}
+          ATTESTATION_CREATE_OUTCOME: ${{ steps.github_attestation.outcome }}
+          ATTESTATION_VERIFY_OUTCOME: ${{ steps.github_attestation_verification.outcome }}
+          DOCKER_ATTESTATION_OUTCOME: ${{ steps.docker_attestations.outcome }}
+        run: |
+          status_for() {
+            if test "$1" = "success"; then printf 'passed'; else printf 'failed'; fi
+          }
+          bool_for() {
+            if test "$1" = "success"; then printf 'true'; else printf 'false'; fi
+          }
+          uv run --frozen scripts/generate_container_release.py \
+            --repository "$SOURCE_REPOSITORY" \
+            --git-commit "$SOURCE_COMMIT" \
+            --workflow-run-id "$WORKFLOW_RUN_ID" \
+            --workflow-run-attempt "$WORKFLOW_RUN_ATTEMPT" \
+            --workflow-run-url "$WORKFLOW_RUN_URL" \
+            --image-repository "$IMAGE_REPOSITORY" \
+            --image-digest "$IMAGE_DIGEST" \
+            --created-at "$CREATED_AT" \
+            --image-size-bytes "$IMAGE_SIZE_BYTES" \
+            --vulnerability-summary vulnerability-published-summary.json \
+            --unit-tests passed \
+            --mock-container-test "$(status_for "$PULLED_IMAGE_OUTCOME")" \
+            --pull-by-digest-test "$(status_for "$PULLED_IMAGE_OUTCOME")" \
+            --architecture-check "$(status_for "$PULLED_IMAGE_OUTCOME")" \
+            --image-content-inspection "$(status_for "$CONTENT_OUTCOME")" \
+            --package-access-check "$(status_for "$PACKAGE_ACCESS_OUTCOME")" \
+            --sbom-attached "$(bool_for "$DOCKER_ATTESTATION_OUTCOME")" \
+            --provenance-attached "$(bool_for "$DOCKER_ATTESTATION_OUTCOME")" \
+            --sbom "$(status_for "$DOCKER_ATTESTATION_OUTCOME")" \
+            --provenance "$(status_for "$DOCKER_ATTESTATION_OUTCOME")" \
+            --github-attestation-created "$(bool_for "$ATTESTATION_CREATE_OUTCOME")" \
+            --github-attestation-verified "$(bool_for "$ATTESTATION_VERIFY_OUTCOME")" \
+            --github-attestation "$(status_for "$ATTESTATION_VERIFY_OUTCOME")" \
+            --output container-release.json
+      - name: Retain release manifest and machine-readable verification evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # reviewed release v6.0.0
+        with:
+          name: image-community-container-release-${{ github.sha }}
+          path: |
+            container-release.json
+            container-release.sha256
+            ghcr-package.json
+            github-attestation-verification.json
+            provenance.slsa.json
+            sbom.spdx.json
+            trivy-published-image.json
+            vulnerability-published-summary.json
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Write container build verification summary
+        if: always()
+        env:
+          SOURCE_COMMIT: ${{ github.sha }}
+          TAG_REFERENCE: ${{ steps.identity.outputs.tag_reference }}
+          DIGEST_REFERENCE: ${{ steps.digest.outputs.digest_reference }}
+          IMAGE_SIZE_BYTES: ${{ steps.image_size.outputs.bytes }}
+          MOCK_OUTCOME: ${{ steps.pulled_image_verification.outcome }}
+          VULNERABILITY_OUTCOME: ${{ steps.vulnerability_gate.outcome }}
+          ATTESTATION_CREATE_OUTCOME: ${{ steps.github_attestation.outcome }}
+          ATTESTATION_VERIFY_OUTCOME: ${{ steps.github_attestation_verification.outcome }}
+          PACKAGE_ACCESS_OUTCOME: ${{ steps.package_access.outcome }}
+          DOCKER_ATTESTATION_OUTCOME: ${{ steps.docker_attestations.outcome }}
+        run: |
+          {
+            echo "## Container build verified; GPU inference not yet verified"
+            echo
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Worker | image-community |"
+            echo "| Source commit | \`$SOURCE_COMMIT\` |"
+            echo "| Image tag | \`$TAG_REFERENCE\` |"
+            echo "| Digest reference | \`$DIGEST_REFERENCE\` |"
+            echo "| Platform | \`linux/amd64\` |"
+            echo "| Image size (bytes) | $IMAGE_SIZE_BYTES |"
+            echo "| Model revision | \`6076002bf0d9dd37537f965ee2f06f826c333b61\` |"
+            echo "| Checkpoint included | no |"
+            echo "| Mock smoke | $MOCK_OUTCOME |"
+            echo "| Vulnerability gate | $VULNERABILITY_OUTCOME |"
+            echo "| SBOM | $DOCKER_ATTESTATION_OUTCOME |"
+            echo "| Provenance (BuildKit mode=max) | $DOCKER_ATTESTATION_OUTCOME |"
+            echo "| GitHub attestation creation | $ATTESTATION_CREATE_OUTCOME |"
+            echo "| GitHub attestation verification | $ATTESTATION_VERIFY_OUTCOME |"
+            echo "| Private package and repository link | $PACKAGE_ACCESS_OUTCOME |"
+            echo "| Real GPU inference | not run |"
+            echo "| Next action | Phase 6 temporary GPU Pod verification |"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Fail closed when any protected verification did not pass
+        env:
+          VULNERABILITY_OUTCOME: ${{ steps.vulnerability_gate.outcome }}
+          PULLED_IMAGE_OUTCOME: ${{ steps.pulled_image_verification.outcome }}
+          CONTENT_OUTCOME: ${{ steps.image_content_inspection.outcome }}
+          PACKAGE_ACCESS_OUTCOME: ${{ steps.package_access.outcome }}
+          DOCKER_ATTESTATION_OUTCOME: ${{ steps.docker_attestations.outcome }}
+          ATTESTATION_CREATE_OUTCOME: ${{ steps.github_attestation.outcome }}
+          ATTESTATION_VERIFY_OUTCOME: ${{ steps.github_attestation_verification.outcome }}
+        run: |
+          for outcome in \
+            "$VULNERABILITY_OUTCOME" \
+            "$PULLED_IMAGE_OUTCOME" \
+            "$CONTENT_OUTCOME" \
+            "$PACKAGE_ACCESS_OUTCOME" \
+            "$DOCKER_ATTESTATION_OUTCOME" \
+            "$ATTESTATION_CREATE_OUTCOME" \
+            "$ATTESTATION_VERIFY_OUTCOME"; do
+            if test "$outcome" != "success"; then
+              echo "One or more protected publication checks failed or are unavailable." >&2
+              echo "The image is not approved or deployable; no deployment was attempted." >&2
+              exit 1
+            fi
+          done
