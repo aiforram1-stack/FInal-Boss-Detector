@@ -2,9 +2,9 @@
 
 ## Scope
 
-This document describes the intended system so Phase 1 contracts are designed
-for the right trust boundaries. Only the repository foundation and shared
-contracts exist today. Components labeled “later” are not implemented.
+This document describes the intended system and the implemented Phase 2 local
+slice. The local API, SQLite metadata, and local content-addressed originals
+marked “Phase 2” exist. Components labeled “later” are not implemented.
 
 ## Architecture
 
@@ -12,14 +12,14 @@ contracts exist today. Components labeled “later” are not implemented.
 flowchart TB
     User[Forensic operator]
 
-    subgraph Local[Local / API control plane — later Phase 2+]
-        API[Case and evidence API]
+    subgraph Local[Local / API control plane]
+        API[Case and evidence API — Phase 2]
         Orchestrator[Asynchronous job orchestrator]
-        CaseDB[(Case metadata database)]
+        CaseDB[(SQLite metadata — Phase 2)]
     end
 
     subgraph Private[Private evidence plane — never Git]
-        Originals[(Immutable evidence originals)]
+        Originals[(Local content-addressed originals — Phase 2)]
         Derivatives[(Versioned derivatives and detector artifacts)]
         Reports[(Private reports and review bundles)]
     end
@@ -83,6 +83,35 @@ flowchart TB
 - The continual-learning plane has a separate permission boundary. Production
   case data is ineligible unless explicit training permission and governance are
   recorded.
+
+## Implemented Phase 2 request flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as FastAPI service
+    participant Stage as Unique staging file
+    participant Store as Hash-addressed store
+    participant DB as SQLite metadata
+
+    Client->>API: POST one multipart file
+    API->>Stage: bounded chunks + SHA-256/SHA-512
+    API->>API: validate byte signature and allowlist
+    API->>Store: atomic hard-link put-if-absent
+    API->>DB: insert/reuse blob + case association
+    API->>Store: verify object still exists at exact size
+    API-->>Client: shared EvidenceAsset + dedup headers
+```
+
+The filesystem and SQLite cannot share one transaction. Storage is committed
+first so the database never intentionally points to an absent object. A database
+failure can leave an unreferenced immutable blob; `make reconcile` reports its
+logical URI and never deletes it. If the post-commit storage check fails, the API
+compensates by removing the metadata association before returning an error.
+
+Phase 2 “sealed” means every accepted original is immutable and hash-addressed.
+It does not close the case to additional evidence; an explicit case-close state
+transition belongs to a later authorized phase.
 
 ## GitHub versus private storage
 
