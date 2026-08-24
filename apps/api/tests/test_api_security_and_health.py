@@ -48,7 +48,11 @@ def test_health_healthy_and_dependency_failure_is_path_safe(
     assert degraded.json() == {
         "schema_version": "1.0",
         "status": "degraded",
-        "dependencies": {"database": "healthy", "storage": "unavailable"},
+        "dependencies": {
+            "database": "healthy",
+            "storage": "unavailable",
+            "results": "healthy",
+        },
     }
     assert str(app.state.storage.root) not in degraded.text
 

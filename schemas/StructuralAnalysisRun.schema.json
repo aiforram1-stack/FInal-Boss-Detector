@@ -1,0 +1,1594 @@
+{
+  "$defs": {
+    "ArtifactReference": {
+      "additionalProperties": true,
+      "properties": {
+        "artifact_id": {
+          "format": "uuid",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "exact_parameters": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Exact Parameters",
+          "type": "object"
+        },
+        "kind": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "lossy": {
+          "title": "Lossy",
+          "type": "boolean"
+        },
+        "mime_type": {
+          "maxLength": 127,
+          "minLength": 1,
+          "title": "Mime Type",
+          "type": "string"
+        },
+        "parent_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Parent Sha256",
+          "type": "string"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "storage_uri": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Storage Uri",
+          "type": "string"
+        },
+        "tool_version": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Tool Version",
+          "type": "string"
+        },
+        "transformation_tool": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Transformation Tool",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "artifact_id",
+        "kind",
+        "storage_uri",
+        "sha256",
+        "byte_length",
+        "mime_type",
+        "parent_sha256",
+        "transformation_tool",
+        "tool_version",
+        "lossy"
+      ],
+      "title": "ArtifactReference",
+      "type": "object"
+    },
+    "AudioStructuralSummary": {
+      "additionalProperties": true,
+      "properties": {
+        "audio_stream_count": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Audio Stream Count",
+          "type": "integer"
+        },
+        "bit_depth": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bit Depth"
+        },
+        "bit_rate": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bit Rate"
+        },
+        "channel_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Channel Count"
+        },
+        "channel_layout": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Channel Layout"
+        },
+        "codec": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Codec"
+        },
+        "container": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Container"
+        },
+        "duration_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Seconds"
+        },
+        "encoder": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Encoder"
+        },
+        "metadata_tags": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Metadata Tags",
+          "type": "object"
+        },
+        "sample_rate": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sample Rate"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "start_time_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Time Seconds"
+        }
+      },
+      "required": [
+        "schema_version"
+      ],
+      "title": "AudioStructuralSummary",
+      "type": "object"
+    },
+    "ConsistencyFinding": {
+      "additionalProperties": true,
+      "properties": {
+        "compared_fields": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Compared Fields",
+          "type": "array"
+        },
+        "description": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "finding_id": {
+          "pattern": "^structural\\.finding\\.[a-z0-9-]+\\.v[0-9]+$",
+          "title": "Finding Id",
+          "type": "string"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "observed_values": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Observed Values",
+          "type": "object"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/FindingSeverity"
+        },
+        "source_test_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Source Test Ids",
+          "type": "array"
+        },
+        "tool_sources": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Tool Sources",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "finding_id",
+        "severity",
+        "description",
+        "compared_fields",
+        "observed_values",
+        "tool_sources",
+        "source_test_ids"
+      ],
+      "title": "ConsistencyFinding",
+      "type": "object"
+    },
+    "FindingSeverity": {
+      "enum": [
+        "INFO",
+        "WARNING",
+        "ERROR"
+      ],
+      "title": "FindingSeverity",
+      "type": "string"
+    },
+    "ForensicTestResult": {
+      "additionalProperties": true,
+      "properties": {
+        "artifacts": {
+          "items": {
+            "$ref": "#/$defs/ArtifactReference"
+          },
+          "title": "Artifacts",
+          "type": "array"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completed At"
+        },
+        "evidence_id": {
+          "format": "uuid",
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "findings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Findings",
+          "type": "array"
+        },
+        "raw_outputs": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Raw Outputs",
+          "type": "object"
+        },
+        "runtime_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Runtime Ms"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Started At"
+        },
+        "status": {
+          "$ref": "#/$defs/ForensicTestStatus"
+        },
+        "status_reason": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status Reason"
+        },
+        "test_name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Test Name",
+          "type": "string"
+        },
+        "test_result_id": {
+          "format": "uuid",
+          "title": "Test Result Id",
+          "type": "string"
+        },
+        "test_version": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Test Version",
+          "type": "string"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "test_result_id",
+        "case_id",
+        "evidence_id",
+        "test_name",
+        "test_version",
+        "status"
+      ],
+      "title": "ForensicTestResult",
+      "type": "object"
+    },
+    "ForensicTestStatus": {
+      "enum": [
+        "EXECUTED",
+        "NOT_APPLICABLE",
+        "UNSUPPORTED_INPUT",
+        "FAILED",
+        "PROVIDER_UNAVAILABLE",
+        "SKIPPED_BY_PRIVACY_POLICY",
+        "REQUIRES_MANUAL_REVIEW"
+      ],
+      "title": "ForensicTestStatus",
+      "type": "string"
+    },
+    "ImageStructuralSummary": {
+      "additionalProperties": true,
+      "properties": {
+        "alpha_channel": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alpha Channel"
+        },
+        "bit_depth": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bit Depth"
+        },
+        "camera_make": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Camera Make"
+        },
+        "camera_model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Camera Model"
+        },
+        "capture_timestamp": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Capture Timestamp"
+        },
+        "color_space": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Color Space"
+        },
+        "compression": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Compression",
+          "type": "object"
+        },
+        "editing_software": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Editing Software"
+        },
+        "embedded_thumbnail": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Embedded Thumbnail"
+        },
+        "exif_present": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exif Present"
+        },
+        "format": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Format"
+        },
+        "gps_present": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gps Present"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Height"
+        },
+        "icc_profile": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Icc Profile"
+        },
+        "orientation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Orientation"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Width"
+        }
+      },
+      "required": [
+        "schema_version"
+      ],
+      "title": "ImageStructuralSummary",
+      "type": "object"
+    },
+    "IntegrityStatus": {
+      "enum": [
+        "VERIFIED",
+        "OBJECT_MISSING",
+        "HASH_MISMATCH",
+        "SIZE_MISMATCH"
+      ],
+      "title": "IntegrityStatus",
+      "type": "string"
+    },
+    "IntegrityVerification": {
+      "additionalProperties": true,
+      "properties": {
+        "completed_at": {
+          "format": "date-time",
+          "title": "Completed At",
+          "type": "string"
+        },
+        "evidence_id": {
+          "format": "uuid",
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "expected_byte_length": {
+          "minimum": 0,
+          "title": "Expected Byte Length",
+          "type": "integer"
+        },
+        "expected_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Expected Sha256",
+          "type": "string"
+        },
+        "expected_sha512": {
+          "pattern": "^[a-f0-9]{128}$",
+          "title": "Expected Sha512",
+          "type": "string"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "format": "date-time",
+          "title": "Started At",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/IntegrityStatus"
+        },
+        "status_reason": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status Reason"
+        },
+        "verified_byte_length": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Verified Byte Length"
+        },
+        "verified_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Verified Sha256"
+        },
+        "verified_sha512": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{128}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Verified Sha512"
+        }
+      },
+      "required": [
+        "schema_version",
+        "evidence_id",
+        "expected_sha256",
+        "expected_sha512",
+        "expected_byte_length",
+        "status",
+        "started_at",
+        "completed_at"
+      ],
+      "title": "IntegrityVerification",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "ReportArtifact": {
+      "additionalProperties": true,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "format": {
+          "pattern": "^(json|html|markdown)$",
+          "title": "Format",
+          "type": "string"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "storage_uri": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Storage Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "format",
+        "storage_uri",
+        "sha256",
+        "byte_length"
+      ],
+      "title": "ReportArtifact",
+      "type": "object"
+    },
+    "ReportEvidenceReference": {
+      "additionalProperties": true,
+      "properties": {
+        "evidence_id": {
+          "format": "uuid",
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "sha512": {
+          "pattern": "^[a-f0-9]{128}$",
+          "title": "Sha512",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "evidence_id",
+        "sha256",
+        "sha512"
+      ],
+      "title": "ReportEvidenceReference",
+      "type": "object"
+    },
+    "ReportManifest": {
+      "additionalProperties": true,
+      "properties": {
+        "artifacts": {
+          "items": {
+            "$ref": "#/$defs/ReportArtifact"
+          },
+          "minItems": 1,
+          "title": "Artifacts",
+          "type": "array"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "detector_result_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Detector Result Ids",
+          "type": "array"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/ReportEvidenceReference"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "forensic_test_result_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Forensic Test Result Ids",
+          "type": "array"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "generator_name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Generator Name",
+          "type": "string"
+        },
+        "generator_repository_commit": {
+          "pattern": "^[a-f0-9]{40}$",
+          "title": "Generator Repository Commit",
+          "type": "string"
+        },
+        "generator_version": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Generator Version",
+          "type": "string"
+        },
+        "report_id": {
+          "format": "uuid",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "test_coverage": {
+          "items": {
+            "$ref": "#/$defs/TestCoverageEntry"
+          },
+          "title": "Test Coverage",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "report_id",
+        "case_id",
+        "generated_at",
+        "generator_name",
+        "generator_version",
+        "generator_repository_commit",
+        "evidence",
+        "artifacts"
+      ],
+      "title": "ReportManifest",
+      "type": "object"
+    },
+    "StructuralAnalysisStatus": {
+      "enum": [
+        "RUNNING",
+        "COMPLETED",
+        "PARTIAL",
+        "REFUSED",
+        "FAILED"
+      ],
+      "title": "StructuralAnalysisStatus",
+      "type": "string"
+    },
+    "StructuralCommonSummary": {
+      "additionalProperties": true,
+      "properties": {
+        "analysis_completed_at": {
+          "format": "date-time",
+          "title": "Analysis Completed At",
+          "type": "string"
+        },
+        "analysis_started_at": {
+          "format": "date-time",
+          "title": "Analysis Started At",
+          "type": "string"
+        },
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "client_mime_type": {
+          "anyOf": [
+            {
+              "maxLength": 127,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Client Mime Type"
+        },
+        "detected_mime_type": {
+          "maxLength": 127,
+          "minLength": 1,
+          "title": "Detected Mime Type",
+          "type": "string"
+        },
+        "extension_signature_consistent": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extension Signature Consistent"
+        },
+        "original_filename": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Original Filename",
+          "type": "string"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "sha512": {
+          "pattern": "^[a-f0-9]{128}$",
+          "title": "Sha512",
+          "type": "string"
+        },
+        "storage_uri": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Storage Uri",
+          "type": "string"
+        },
+        "tool_availability": {
+          "items": {
+            "$ref": "#/$defs/ToolInventoryEntry"
+          },
+          "title": "Tool Availability",
+          "type": "array"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "original_filename",
+        "detected_mime_type",
+        "byte_length",
+        "sha256",
+        "sha512",
+        "storage_uri",
+        "tool_availability",
+        "analysis_started_at",
+        "analysis_completed_at"
+      ],
+      "title": "StructuralCommonSummary",
+      "type": "object"
+    },
+    "StructuralSummary": {
+      "additionalProperties": true,
+      "properties": {
+        "audio": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AudioStructuralSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "common": {
+          "$ref": "#/$defs/StructuralCommonSummary"
+        },
+        "image": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImageStructuralSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "metadata": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Metadata",
+          "type": "object"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "streams": {
+          "items": {
+            "additionalProperties": {
+              "$ref": "#/$defs/JsonValue"
+            },
+            "type": "object"
+          },
+          "title": "Streams",
+          "type": "array"
+        },
+        "video": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VideoStructuralSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "common"
+      ],
+      "title": "StructuralSummary",
+      "type": "object"
+    },
+    "TestCoverageEntry": {
+      "additionalProperties": true,
+      "properties": {
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ForensicTestStatus"
+        },
+        "test_name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Test Name",
+          "type": "string"
+        },
+        "test_result_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Test Result Id"
+        }
+      },
+      "required": [
+        "schema_version",
+        "test_name",
+        "status"
+      ],
+      "title": "TestCoverageEntry",
+      "type": "object"
+    },
+    "ToolAvailabilityStatus": {
+      "enum": [
+        "AVAILABLE",
+        "UNAVAILABLE"
+      ],
+      "title": "ToolAvailabilityStatus",
+      "type": "string"
+    },
+    "ToolInventoryEntry": {
+      "additionalProperties": true,
+      "properties": {
+        "required_by_test_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Required By Test Ids",
+          "type": "array"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ToolAvailabilityStatus"
+        },
+        "status_reason": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status Reason"
+        },
+        "tool_name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Tool Name",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "schema_version",
+        "tool_name",
+        "status"
+      ],
+      "title": "ToolInventoryEntry",
+      "type": "object"
+    },
+    "VideoStructuralSummary": {
+      "additionalProperties": true,
+      "properties": {
+        "audio_codecs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Audio Codecs",
+          "type": "array"
+        },
+        "audio_sample_rates": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Audio Sample Rates",
+          "type": "array"
+        },
+        "audio_stream_count": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Audio Stream Count",
+          "type": "integer"
+        },
+        "average_frame_rate": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Average Frame Rate"
+        },
+        "channel_layouts": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Channel Layouts",
+          "type": "array"
+        },
+        "codec_profile": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Codec Profile"
+        },
+        "color_primaries": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Color Primaries"
+        },
+        "container": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Container"
+        },
+        "duration_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Seconds"
+        },
+        "encoder_tags": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Encoder Tags",
+          "type": "object"
+        },
+        "file_bit_rate": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "File Bit Rate"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Height"
+        },
+        "nominal_frame_rate": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Nominal Frame Rate"
+        },
+        "pixel_format": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pixel Format"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "start_time_differences": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Start Time Differences",
+          "type": "array"
+        },
+        "subtitle_stream_count": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Subtitle Stream Count",
+          "type": "integer"
+        },
+        "time_base": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Time Base"
+        },
+        "transfer_characteristics": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Transfer Characteristics"
+        },
+        "video_codec": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Video Codec"
+        },
+        "video_stream_count": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Video Stream Count",
+          "type": "integer"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Width"
+        }
+      },
+      "required": [
+        "schema_version"
+      ],
+      "title": "VideoStructuralSummary",
+      "type": "object"
+    }
+  },
+  "additionalProperties": true,
+  "properties": {
+    "analysis_profile": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Analysis Profile",
+      "type": "string"
+    },
+    "analysis_run_id": {
+      "format": "uuid",
+      "title": "Analysis Run Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "completed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Completed At"
+    },
+    "consistency_findings": {
+      "items": {
+        "$ref": "#/$defs/ConsistencyFinding"
+      },
+      "title": "Consistency Findings",
+      "type": "array"
+    },
+    "evidence_id": {
+      "format": "uuid",
+      "title": "Evidence Id",
+      "type": "string"
+    },
+    "input_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Input Sha256",
+      "type": "string"
+    },
+    "integrity": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/IntegrityVerification"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "report_manifest": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ReportManifest"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "pattern": "^1\\.[0-9]+$",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/StructuralAnalysisStatus"
+    },
+    "summary": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/StructuralSummary"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "test_results": {
+      "items": {
+        "$ref": "#/$defs/ForensicTestResult"
+      },
+      "title": "Test Results",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "analysis_run_id",
+    "case_id",
+    "evidence_id",
+    "analysis_profile",
+    "status",
+    "input_sha256",
+    "started_at"
+  ],
+  "title": "StructuralAnalysisRun",
+  "type": "object"
+}

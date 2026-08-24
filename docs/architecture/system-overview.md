@@ -2,9 +2,10 @@
 
 ## Scope
 
-This document describes the intended system and the implemented Phase 2 local
-slice. The local API, SQLite metadata, and local content-addressed originals
-marked “Phase 2” exist. Components labeled “later” are not implemented.
+This document describes the intended system and the implemented Phase 3 local
+slice. Local evidence intake, structural tool isolation, SQLite results, and
+deterministic JSON/HTML reports marked “Phase 2/3” exist. Components labeled
+“later” are not implemented.
 
 ## Architecture
 
@@ -13,15 +14,18 @@ flowchart TB
     User[Forensic operator]
 
     subgraph Local[Local / API control plane]
-        API[Case and evidence API — Phase 2]
-        Orchestrator[Asynchronous job orchestrator]
-        CaseDB[(SQLite metadata — Phase 2)]
+        API[Case, evidence and structural API — Phase 2/3]
+        Structural[Integrity verifier + structural service — Phase 3]
+        Tools[Bounded optional metadata tools — Phase 3]
+        Orchestrator[Asynchronous detector orchestrator — later]
+        CaseDB[(SQLite metadata and results — Phase 2/3)]
     end
 
     subgraph Private[Private evidence plane — never Git]
         Originals[(Local content-addressed originals — Phase 2)]
         Derivatives[(Versioned derivatives and detector artifacts)]
-        Reports[(Private reports and review bundles)]
+        Results[(Create-only result artifacts — Phase 3)]
+        Reports[(Canonical JSON and self-contained HTML — Phase 3)]
     end
 
     subgraph GitHub[Private GitHub control plane]
@@ -30,17 +34,17 @@ flowchart TB
         GHCR[(GitHub Container Registry)]
     end
 
-    subgraph GPU[Cloud GPU execution — later Phase 3+]
+    subgraph GPU[Cloud GPU execution — later Phase 5+]
         Queue[Queue-based endpoint]
         Workers[Digest-pinned detector workers]
     end
 
-    subgraph Reporting[Deterministic reporting — later Phase 5]
-        Builder[JSON / HTML report builder]
+    subgraph Reporting[Reporting and review]
+        Builder[Deterministic report builder — Phase 3]
         Review[Manual analytical review]
     end
 
-    subgraph Learning[Continual-learning plane — later Phase 11]
+    subgraph Learning[Continual-learning plane — later Phase 12]
         Manifests[Permission and lineage manifests]
         Candidate[Candidate training]
         Eval[Evaluation, shadow and canary gates]
@@ -50,13 +54,21 @@ flowchart TB
     User --> API
     API --> Originals
     API --> CaseDB
+    API --> Structural
+    Structural --> Originals
+    Structural --> Tools
+    Tools --> Structural
+    Structural --> CaseDB
+    Structural --> Results
+    CaseDB --> Builder
+    Results --> Builder
+    Builder --> Reports
     API --> Orchestrator
     Orchestrator --> Queue --> Workers
     Workers --> Derivatives
     Workers --> Orchestrator
-    CaseDB --> Builder
     Derivatives --> Builder
-    Builder --> Reports --> Review
+    Reports --> Review
 
     Repo --> Actions --> GHCR
     GHCR --> Workers
@@ -112,6 +124,41 @@ compensates by removing the metadata association before returning an error.
 Phase 2 “sealed” means every accepted original is immutable and hash-addressed.
 It does not close the case to additional evidence; an explicit case-close state
 transition belongs to a later authorized phase.
+
+## Implemented Phase 3 analysis flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as Structural route
+    participant Service as StructuralAnalysisService
+    participant Store as Evidence store
+    participant Tools as Safe tool runner
+    participant Results as Result store
+    participant DB as SQLite
+
+    Client->>API: POST structural-analysis
+    API->>Service: case ID + evidence ID only
+    Service->>DB: create unique RUNNING record
+    Service->>Store: resolve logical URI and read-only re-hash
+    alt integrity mismatch or missing object
+        Service->>DB: persist REFUSED integrity result
+        Service-->>Client: 409 structured error
+    else integrity verified
+        Service->>Tools: argument arrays + internal path + timeout/output cap
+        Tools-->>Service: normalized output or explicit coverage status
+        Service->>Results: create-only tool JSON and canonical report.json
+        Service->>Results: render HTML from stored report.json
+        Service->>DB: atomically finalize tests, artifacts, report and run
+        Service-->>Client: shared StructuralAnalysisRun
+    end
+```
+
+Optional executables are never discovered by executing uploaded content and are
+never installed by the application. Uploaded filenames are report data only;
+subprocesses receive the internally resolved content-addressed object path as a
+single argument. The HTML renderer validates stored JSON, uses automatic
+escaping, and includes no JavaScript, CDN, fonts, or original media.
 
 ## GitHub versus private storage
 

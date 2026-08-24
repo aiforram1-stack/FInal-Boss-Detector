@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 from forensic_evidence import (
+    InvalidStoragePathError,
     LocalContentAddressedStorage,
     StorageWriteError,
     UnsupportedMediaTypeError,
@@ -101,3 +102,13 @@ def test_invalid_hash_cannot_resolve_path(tmp_path: Path, unsafe_hash: str) -> N
     backend = storage(tmp_path / "evidence")
     with pytest.raises(ValueError):
         backend.path_for_sha256(unsafe_hash)
+
+
+def test_resolve_uri_requires_exact_expected_hash(tmp_path: Path) -> None:
+    backend = storage(tmp_path / "evidence")
+    result = backend.put_stream(io.BytesIO(PNG))
+    assert backend.resolve_uri(
+        result.storage_uri, expected_sha256=result.sha256
+    ) == backend.path_for_sha256(result.sha256)
+    with pytest.raises(InvalidStoragePathError, match="does not match"):
+        backend.resolve_uri(f"local-sha256://{'c' * 64}", expected_sha256=result.sha256)

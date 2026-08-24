@@ -1,0 +1,1 @@
+"""Structural analysis test suite."""

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Literal
 from uuid import UUID
 
-from forensic_contracts import Case, EvidenceAsset, PrivacyMode
+from forensic_contracts import Case, EvidenceAsset, PrivacyMode, StructuralAnalysisRun
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -39,9 +39,17 @@ class ErrorEnvelope(ApiModel):
 class DependencyHealth(ApiModel):
     database: Literal["healthy", "unavailable"]
     storage: Literal["healthy", "unavailable"]
+    results: Literal["healthy", "unavailable"]
 
 
 class HealthResponse(ApiModel):
     schema_version: Literal["1.0"] = "1.0"
     status: Literal["healthy", "degraded"]
     dependencies: DependencyHealth
+
+
+class StructuralAnalysisCollection(ApiModel):
+    schema_version: Literal["1.0"] = "1.0"
+    case_id: UUID
+    evidence_id: UUID
+    runs: list[StructuralAnalysisRun]

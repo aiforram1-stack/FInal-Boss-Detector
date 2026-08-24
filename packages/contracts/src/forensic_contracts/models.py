@@ -92,6 +92,32 @@ class ForensicTestStatus(StrEnum):
     REQUIRES_MANUAL_REVIEW = "REQUIRES_MANUAL_REVIEW"
 
 
+class StructuralAnalysisStatus(StrEnum):
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    PARTIAL = "PARTIAL"
+    REFUSED = "REFUSED"
+    FAILED = "FAILED"
+
+
+class IntegrityStatus(StrEnum):
+    VERIFIED = "VERIFIED"
+    OBJECT_MISSING = "OBJECT_MISSING"
+    HASH_MISMATCH = "HASH_MISMATCH"
+    SIZE_MISMATCH = "SIZE_MISMATCH"
+
+
+class ToolAvailabilityStatus(StrEnum):
+    AVAILABLE = "AVAILABLE"
+    UNAVAILABLE = "UNAVAILABLE"
+
+
+class FindingSeverity(StrEnum):
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+
+
 class Case(VersionedContract):
     case_id: UUID
     created_at: UtcDateTime
@@ -332,3 +358,226 @@ class ReportManifest(VersionedContract):
     forensic_test_result_ids: list[UUID] = Field(default_factory=list)
     test_coverage: list[TestCoverageEntry] = Field(default_factory=list)
     artifacts: list[ReportArtifact] = Field(min_length=1)
+
+
+class StructuralTestDefinition(VersionedContract):
+    test_id: str = Field(pattern=r"^structural\.[a-z0-9-]+\.v[0-9]+$")
+    test_version: str = Field(min_length=1, max_length=32)
+    description: str = Field(min_length=1, max_length=1000)
+    applicable_mime_categories: list[str] = Field(min_length=1)
+    required_tool: str | None = Field(default=None, max_length=255)
+    timeout_seconds: float = Field(gt=0, le=3600)
+    expected_output_type: str = Field(min_length=1, max_length=255)
+    known_limitations: list[str] = Field(default_factory=list)
+
+
+class ToolInventoryEntry(VersionedContract):
+    tool_name: str = Field(min_length=1, max_length=255)
+    status: ToolAvailabilityStatus
+    version: str | None = Field(default=None, max_length=500)
+    required_by_test_ids: list[str] = Field(default_factory=list)
+    status_reason: str | None = Field(default=None, max_length=1000)
+
+    @model_validator(mode="after")
+    def validate_availability(self) -> Self:
+        if self.status == ToolAvailabilityStatus.AVAILABLE and not self.version:
+            raise ValueError("available tools require a version")
+        if self.status == ToolAvailabilityStatus.UNAVAILABLE and not self.status_reason:
+            raise ValueError("unavailable tools require a status_reason")
+        return self
+
+
+class IntegrityVerification(VersionedContract):
+    evidence_id: UUID
+    expected_sha256: Sha256
+    verified_sha256: Sha256 | None = None
+    expected_sha512: Sha512
+    verified_sha512: Sha512 | None = None
+    expected_byte_length: int = Field(ge=0)
+    verified_byte_length: int | None = Field(default=None, ge=0)
+    status: IntegrityStatus
+    started_at: UtcDateTime
+    completed_at: UtcDateTime
+    status_reason: str | None = Field(default=None, max_length=1000)
+
+    @model_validator(mode="after")
+    def validate_integrity(self) -> Self:
+        if self.completed_at < self.started_at:
+            raise ValueError("completed_at cannot precede started_at")
+        if self.status == IntegrityStatus.VERIFIED:
+            expected = (self.expected_sha256, self.expected_sha512, self.expected_byte_length)
+            verified = (self.verified_sha256, self.verified_sha512, self.verified_byte_length)
+            if expected != verified:
+                raise ValueError("verified integrity values must match expected values")
+        elif not self.status_reason:
+            raise ValueError("integrity failures require a status_reason")
+        return self
+
+
+class StructuralCommonSummary(VersionedContract):
+    original_filename: str = Field(min_length=1, max_length=255)
+    detected_mime_type: str = Field(min_length=1, max_length=127)
+    client_mime_type: str | None = Field(default=None, max_length=127)
+    byte_length: int = Field(ge=0)
+    sha256: Sha256
+    sha512: Sha512
+    storage_uri: str = Field(min_length=1, max_length=2048)
+    extension_signature_consistent: bool | None = None
+    tool_availability: list[ToolInventoryEntry]
+    analysis_started_at: UtcDateTime
+    analysis_completed_at: UtcDateTime
+    warnings: list[str] = Field(default_factory=list)
+
+
+class ImageStructuralSummary(VersionedContract):
+    format: str | None = None
+    width: int | None = Field(default=None, ge=0)
+    height: int | None = Field(default=None, ge=0)
+    orientation: str | None = None
+    color_space: str | None = None
+    bit_depth: int | None = Field(default=None, ge=0)
+    alpha_channel: bool | None = None
+    icc_profile: bool | None = None
+    exif_present: bool | None = None
+    camera_make: str | None = None
+    camera_model: str | None = None
+    capture_timestamp: str | None = None
+    gps_present: bool | None = None
+    editing_software: str | None = None
+    embedded_thumbnail: bool | None = None
+    compression: dict[str, JsonValue] = Field(default_factory=dict)
+
+
+class AudioStructuralSummary(VersionedContract):
+    container: str | None = None
+    codec: str | None = None
+    duration_seconds: float | None = Field(default=None, ge=0)
+    bit_rate: int | None = Field(default=None, ge=0)
+    sample_rate: int | None = Field(default=None, ge=0)
+    bit_depth: int | None = Field(default=None, ge=0)
+    channel_count: int | None = Field(default=None, ge=0)
+    channel_layout: str | None = None
+    encoder: str | None = None
+    metadata_tags: dict[str, JsonValue] = Field(default_factory=dict)
+    start_time_seconds: float | None = None
+    audio_stream_count: int = Field(default=0, ge=0)
+
+
+class VideoStructuralSummary(VersionedContract):
+    container: str | None = None
+    duration_seconds: float | None = Field(default=None, ge=0)
+    file_bit_rate: int | None = Field(default=None, ge=0)
+    video_stream_count: int = Field(default=0, ge=0)
+    audio_stream_count: int = Field(default=0, ge=0)
+    subtitle_stream_count: int = Field(default=0, ge=0)
+    video_codec: str | None = None
+    codec_profile: str | None = None
+    width: int | None = Field(default=None, ge=0)
+    height: int | None = Field(default=None, ge=0)
+    pixel_format: str | None = None
+    nominal_frame_rate: str | None = None
+    average_frame_rate: str | None = None
+    time_base: str | None = None
+    color_primaries: str | None = None
+    transfer_characteristics: str | None = None
+    audio_codecs: list[str] = Field(default_factory=list)
+    audio_sample_rates: list[int] = Field(default_factory=list)
+    channel_layouts: list[str] = Field(default_factory=list)
+    encoder_tags: dict[str, JsonValue] = Field(default_factory=dict)
+    start_time_differences: list[float] = Field(default_factory=list)
+
+
+class StructuralSummary(VersionedContract):
+    common: StructuralCommonSummary
+    image: ImageStructuralSummary | None = None
+    audio: AudioStructuralSummary | None = None
+    video: VideoStructuralSummary | None = None
+    metadata: dict[str, JsonValue] = Field(default_factory=dict)
+    streams: list[dict[str, JsonValue]] = Field(default_factory=list)
+
+
+class ConsistencyFinding(VersionedContract):
+    finding_id: str = Field(pattern=r"^structural\.finding\.[a-z0-9-]+\.v[0-9]+$")
+    severity: FindingSeverity
+    description: str = Field(min_length=1, max_length=2000)
+    compared_fields: list[str] = Field(min_length=1)
+    observed_values: dict[str, JsonValue]
+    tool_sources: list[str] = Field(min_length=1)
+    source_test_ids: list[str] = Field(min_length=1)
+    limitations: list[str] = Field(default_factory=list)
+
+    @field_validator("description")
+    @classmethod
+    def reject_verdict_language(cls, value: str) -> str:
+        upper = value.upper()
+        prohibited = {"FAKE", "MANIPULATED", "AI_GENERATED"}
+        if any(term in upper for term in prohibited):
+            raise ValueError("structural findings cannot contain verdict language")
+        return value
+
+
+class StructuralSoftwareIdentity(VersionedContract):
+    application_version: str = Field(min_length=1, max_length=255)
+    git_commit: str | None = Field(default=None, pattern=COMMIT_PATTERN)
+
+
+class StructuralReportCase(VersionedContract):
+    case_id: UUID
+    status: CaseStatus
+    privacy_mode: PrivacyMode
+    claim: str | None = Field(default=None, max_length=4000)
+
+
+class StructuralReportEvidence(VersionedContract):
+    evidence_id: UUID
+    filename: str = Field(min_length=1, max_length=255)
+    mime_type: str = Field(min_length=1, max_length=127)
+    client_mime_type: str | None = Field(default=None, max_length=127)
+    byte_length: int = Field(ge=0)
+    sha256: Sha256
+    sha512: Sha512
+    storage_uri: str = Field(min_length=1, max_length=2048)
+
+
+class StructuralReport(VersionedContract):
+    report_id: UUID
+    analysis_run_id: UUID
+    case: StructuralReportCase
+    evidence: StructuralReportEvidence
+    integrity: IntegrityVerification
+    tool_inventory: list[ToolInventoryEntry]
+    tests: list[ForensicTestResult]
+    structural_summary: StructuralSummary
+    consistency_findings: list[ConsistencyFinding]
+    warnings: list[str] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
+    generated_at: UtcDateTime
+    software: StructuralSoftwareIdentity
+
+
+class StructuralAnalysisRun(VersionedContract):
+    analysis_run_id: UUID
+    case_id: UUID
+    evidence_id: UUID
+    analysis_profile: str = Field(min_length=1, max_length=255)
+    status: StructuralAnalysisStatus
+    input_sha256: Sha256
+    started_at: UtcDateTime
+    completed_at: UtcDateTime | None = None
+    integrity: IntegrityVerification | None = None
+    test_results: list[ForensicTestResult] = Field(default_factory=list)
+    summary: StructuralSummary | None = None
+    consistency_findings: list[ConsistencyFinding] = Field(default_factory=list)
+    report_manifest: ReportManifest | None = None
+
+    @model_validator(mode="after")
+    def validate_analysis_lifecycle(self) -> Self:
+        if self.status == StructuralAnalysisStatus.RUNNING and self.completed_at is not None:
+            raise ValueError("running analyses cannot have completed_at")
+        if self.status != StructuralAnalysisStatus.RUNNING and self.completed_at is None:
+            raise ValueError("terminal analyses require completed_at")
+        if self.completed_at is not None and self.completed_at < self.started_at:
+            raise ValueError("completed_at cannot precede started_at")
+        if self.status == StructuralAnalysisStatus.COMPLETED and self.report_manifest is None:
+            raise ValueError("completed analyses require a report manifest")
+        return self

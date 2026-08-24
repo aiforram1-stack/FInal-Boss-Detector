@@ -101,6 +101,27 @@ class LocalContentAddressedStorage:
             raise ValueError("invalid SHA-256")
         return self._safe_candidate(self.content_root / sha256[:2] / sha256[2:4] / sha256)
 
+    def resolve_uri(self, storage_uri: str, *, expected_sha256: str) -> Path:
+        """Resolve only the exact logical URI recorded for an expected content hash."""
+
+        if storage_uri != f"local-sha256://{expected_sha256}":
+            raise InvalidStoragePathError("storage URI does not match expected evidence hash")
+        path = self.path_for_sha256(expected_sha256)
+        try:
+            mode = path.lstat().st_mode
+        except FileNotFoundError:
+            return path
+        except OSError as exc:
+            raise InvalidStoragePathError("evidence object cannot be inspected") from exc
+        if stat.S_ISLNK(mode) or not stat.S_ISREG(mode):
+            raise InvalidStoragePathError("evidence object is not a regular file")
+        resolved = path.resolve(strict=True)
+        try:
+            resolved.relative_to(self.root)
+        except ValueError as exc:
+            raise InvalidStoragePathError("evidence object resolved outside storage root") from exc
+        return resolved
+
     def _new_staging_path(self) -> Path:
         return self._safe_candidate(self.staging_root / f"{uuid4()}.part")
 

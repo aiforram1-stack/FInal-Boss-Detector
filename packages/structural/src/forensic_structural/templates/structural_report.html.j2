@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Structural media report {{ report.report_id }}</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; line-height: 1.45; }
+    body { margin: 0 auto; max-width: 74rem; padding: 2rem; color: #17202a; }
+    h1, h2 { color: #243447; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0 2rem; }
+    th, td { border: 1px solid #aab4be; padding: .55rem; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+    th { background: #eef2f5; }
+    .note { border-left: .3rem solid #506d85; padding: .7rem 1rem; background: #f6f8fa; }
+    code { overflow-wrap: anywhere; }
+    @media print { body { max-width: none; padding: 0; } a { color: inherit; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Structural media report</h1>
+    <p><strong>Report ID:</strong> <code>{{ report.report_id }}</code><br>
+       <strong>Analysis run:</strong> <code>{{ report.analysis_run_id }}</code><br>
+       <strong>Generated:</strong> {{ report.generated_at }}</p>
+    <p class="note">This report describes structural observations and coverage. It does not make an authenticity, authorship, or AI-generation determination.</p>
+  </header>
+
+  <h2>Case summary</h2>
+  <table><tbody>
+    <tr><th scope="row">Case ID</th><td><code>{{ report.case.case_id }}</code></td></tr>
+    <tr><th scope="row">Status</th><td>{{ report.case.status }}</td></tr>
+    <tr><th scope="row">Privacy mode</th><td>{{ report.case.privacy_mode }}</td></tr>
+    <tr><th scope="row">Claim</th><td>{{ report.case.claim or "Not supplied" }}</td></tr>
+  </tbody></table>
+
+  <h2>Evidence identity and integrity</h2>
+  <table><tbody>
+    <tr><th scope="row">Evidence ID</th><td><code>{{ report.evidence.evidence_id }}</code></td></tr>
+    <tr><th scope="row">Original filename</th><td>{{ report.evidence.filename }}</td></tr>
+    <tr><th scope="row">Detected MIME</th><td>{{ report.evidence.mime_type }}</td></tr>
+    <tr><th scope="row">Client MIME</th><td>{{ report.evidence.client_mime_type or "Not supplied" }}</td></tr>
+    <tr><th scope="row">Byte length</th><td>{{ report.evidence.byte_length }}</td></tr>
+    <tr><th scope="row">SHA-256</th><td><code>{{ report.evidence.sha256 }}</code></td></tr>
+    <tr><th scope="row">SHA-512</th><td><code>{{ report.evidence.sha512 }}</code></td></tr>
+    <tr><th scope="row">Logical URI</th><td><code>{{ report.evidence.storage_uri }}</code></td></tr>
+    <tr><th scope="row">Integrity status</th><td>{{ report.integrity.status }}</td></tr>
+  </tbody></table>
+
+  <h2>Structural summary</h2>
+  <table>
+    <thead><tr><th scope="col">Section</th><th scope="col">Normalized values</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Common</th><td>{{ report.structural_summary.common }}</td></tr>
+      {% if report.structural_summary.image %}<tr><th scope="row">Image</th><td>{{ report.structural_summary.image }}</td></tr>{% endif %}
+      {% if report.structural_summary.audio %}<tr><th scope="row">Audio</th><td>{{ report.structural_summary.audio }}</td></tr>{% endif %}
+      {% if report.structural_summary.video %}<tr><th scope="row">Video</th><td>{{ report.structural_summary.video }}</td></tr>{% endif %}
+    </tbody>
+  </table>
+
+  <h2>Metadata</h2>
+  <table>
+    <thead><tr><th scope="col">Field</th><th scope="col">Value</th></tr></thead>
+    <tbody>{% for key, value in report.structural_summary.metadata|dictsort %}<tr><th scope="row">{{ key }}</th><td>{{ value }}</td></tr>{% else %}<tr><td colspan="2">No metadata fields available.</td></tr>{% endfor %}</tbody>
+  </table>
+
+  <h2>Streams</h2>
+  <table>
+    <thead><tr><th scope="col">Index</th><th scope="col">Values</th></tr></thead>
+    <tbody>{% for stream in report.structural_summary.streams %}<tr><th scope="row">{{ loop.index0 }}</th><td>{{ stream }}</td></tr>{% else %}<tr><td colspan="2">No stream records available.</td></tr>{% endfor %}</tbody>
+  </table>
+
+  <h2>Tool inventory</h2>
+  <table>
+    <thead><tr><th scope="col">Tool</th><th scope="col">Status</th><th scope="col">Version or reason</th></tr></thead>
+    <tbody>{% for tool in report.tool_inventory %}<tr><th scope="row">{{ tool.tool_name }}</th><td>{{ tool.status }}</td><td>{{ tool.version or tool.status_reason }}</td></tr>{% endfor %}</tbody>
+  </table>
+
+  <h2>Test coverage</h2>
+  <table>
+    <thead><tr><th scope="col">Test</th><th scope="col">Status</th><th scope="col">Reason</th><th scope="col">Warnings</th></tr></thead>
+    <tbody>{% for test in report.tests %}<tr><th scope="row">{{ test.test_name }}</th><td>{{ test.status }}</td><td>{{ test.status_reason or "—" }}</td><td>{{ test.warnings|join("; ") }}</td></tr>{% endfor %}</tbody>
+  </table>
+
+  <h2>Consistency findings</h2>
+  <table>
+    <thead><tr><th scope="col">Finding</th><th scope="col">Severity</th><th scope="col">Description</th><th scope="col">Sources</th><th scope="col">Limitations</th></tr></thead>
+    <tbody>{% for finding in report.consistency_findings %}<tr><th scope="row">{{ finding.finding_id }}</th><td>{{ finding.severity }}</td><td>{{ finding.description }}</td><td>{{ finding.source_test_ids|join(", ") }}</td><td>{{ finding.limitations|join("; ") }}</td></tr>{% else %}<tr><td colspan="5">No consistency findings.</td></tr>{% endfor %}</tbody>
+  </table>
+
+  <h2>Warnings</h2>
+  <ul>{% for warning in report.warnings %}<li>{{ warning }}</li>{% else %}<li>None recorded.</li>{% endfor %}</ul>
+  <h2>Limitations</h2>
+  <ul>{% for limitation in report.limitations %}<li>{{ limitation }}</li>{% endfor %}</ul>
+
+  <footer>
+    <p><strong>Report schema:</strong> {{ report.schema_version }} ·
+       <strong>Application:</strong> {{ report.software.application_version }} ·
+       <strong>Git commit:</strong> {{ report.software.git_commit or "not available" }}</p>
+  </footer>
+</body>
+</html>

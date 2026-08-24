@@ -27,6 +27,10 @@ def app_client(tmp_path: Path) -> Iterator[AppClient]:
     settings = Settings(
         database_url=f"sqlite:///{tmp_path / 'phase2.db'}",
         evidence_storage_root=tmp_path / "evidence",
+        structural_result_root=tmp_path / "results",
+        exiftool_binary="phase3-test-missing-exiftool",
+        ffprobe_binary="phase3-test-missing-ffprobe",
+        mediainfo_binary="phase3-test-missing-mediainfo",
         max_upload_bytes=256,
         upload_chunk_bytes=16,
         allowed_media_types="image/png,audio/wav,video/mp4",

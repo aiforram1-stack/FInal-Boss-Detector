@@ -43,6 +43,49 @@ class Settings(BaseSettings):
         default=Path("./var/evidence"),
         validation_alias=AliasChoices("EVIDENCE_STORAGE_ROOT", "evidence_storage_root"),
     )
+    structural_analysis_enabled: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("STRUCTURAL_ANALYSIS_ENABLED", "structural_analysis_enabled"),
+    )
+    structural_tool_timeout_seconds: float = Field(
+        default=30.0,
+        gt=0,
+        le=300,
+        validation_alias=AliasChoices(
+            "STRUCTURAL_TOOL_TIMEOUT_SECONDS", "structural_tool_timeout_seconds"
+        ),
+    )
+    structural_max_output_bytes: int = Field(
+        default=1024 * 1024,
+        ge=1024,
+        le=16 * 1024 * 1024,
+        validation_alias=AliasChoices("STRUCTURAL_MAX_OUTPUT_BYTES", "structural_max_output_bytes"),
+    )
+    structural_result_root: Path = Field(
+        default=Path("./var/results"),
+        validation_alias=AliasChoices("STRUCTURAL_RESULT_ROOT", "structural_result_root"),
+    )
+    exiftool_binary: str = Field(
+        default="exiftool",
+        validation_alias=AliasChoices("EXIFTOOL_BINARY", "exiftool_binary"),
+    )
+    ffprobe_binary: str = Field(
+        default="ffprobe",
+        validation_alias=AliasChoices("FFPROBE_BINARY", "ffprobe_binary"),
+    )
+    mediainfo_binary: str = Field(
+        default="mediainfo",
+        validation_alias=AliasChoices("MEDIAINFO_BINARY", "mediainfo_binary"),
+    )
+    report_template_dir: Path = Field(
+        default=Path("./packages/structural/src/forensic_structural/templates"),
+        validation_alias=AliasChoices("REPORT_TEMPLATE_DIR", "report_template_dir"),
+    )
+    structural_git_commit: str | None = Field(
+        default=None,
+        pattern=r"^[a-f0-9]{40}$",
+        validation_alias=AliasChoices("GIT_COMMIT", "structural_git_commit"),
+    )
     max_upload_bytes: int = Field(
         default=100 * 1024 * 1024,
         ge=1,
@@ -94,6 +137,13 @@ class Settings(BaseSettings):
             raise ValueError("invalid log level")
         return normalized
 
+    @field_validator("exiftool_binary", "ffprobe_binary", "mediainfo_binary")
+    @classmethod
+    def validate_binary_name(cls, value: str) -> str:
+        if not value or any(ord(character) < 32 or ord(character) == 127 for character in value):
+            raise ValueError("tool binary configuration contains invalid characters")
+        return value
+
     @model_validator(mode="after")
     def validate_chunking_and_root(self) -> Settings:
         if self.upload_chunk_bytes > self.max_upload_bytes:
@@ -102,4 +152,9 @@ class Settings(BaseSettings):
         if root in {Path("/"), Path.home().resolve()}:
             raise ValueError("EVIDENCE_STORAGE_ROOT is too broad")
         self.evidence_storage_root = root
+        result_root = self.structural_result_root.expanduser().resolve(strict=False)
+        if result_root in {Path("/"), Path.home().resolve()}:
+            raise ValueError("STRUCTURAL_RESULT_ROOT is too broad")
+        self.structural_result_root = result_root
+        self.report_template_dir = self.report_template_dir.expanduser().resolve(strict=False)
         return self

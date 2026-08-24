@@ -1,9 +1,9 @@
 PYTHON ?= python3
 VENV_PYTHON := .venv/bin/python
 VENV_PIP := .venv/bin/pip
-PROJECT_PYTHONPATH := packages/contracts/src:packages/evidence/src:apps/api/src
+PROJECT_PYTHONPATH := .:packages/contracts/src:packages/evidence/src:packages/structural/src:apps/api/src
 
-.PHONY: setup schemas format lint typecheck test test-api openapi db-upgrade api safety reconcile
+.PHONY: setup schemas format lint typecheck test test-api test-structural test-tool-integration openapi db-upgrade api safety reconcile structural-check-tools structural-smoke report-smoke
 
 setup:
 	test -x $(VENV_PYTHON) || $(PYTHON) -m uv venv --python 3.11 .venv
@@ -29,6 +29,12 @@ test:
 test-api:
 	$(VENV_PYTHON) -m pytest packages/evidence/tests apps/api/tests
 
+test-structural:
+	$(VENV_PYTHON) -m pytest packages/contracts/tests/test_structural_models.py packages/structural/tests apps/api/tests/test_structural_api.py apps/api/tests/test_structural_failures.py
+
+test-tool-integration:
+	$(VENV_PYTHON) -m pytest -m tool_integration packages/structural/tests
+
 openapi:
 	PYTHONPATH=$(PROJECT_PYTHONPATH) $(VENV_PYTHON) scripts/validate_openapi.py
 
@@ -43,3 +49,12 @@ reconcile:
 
 safety:
 	$(VENV_PYTHON) scripts/check_repository_safety.py
+
+structural-check-tools:
+	PYTHONPATH=$(PROJECT_PYTHONPATH) $(VENV_PYTHON) scripts/check_structural_tools.py
+
+structural-smoke:
+	PYTHONPATH=$(PROJECT_PYTHONPATH) $(VENV_PYTHON) scripts/structural_smoke.py
+
+report-smoke:
+	PYTHONPATH=$(PROJECT_PYTHONPATH) $(VENV_PYTHON) scripts/report_smoke.py
