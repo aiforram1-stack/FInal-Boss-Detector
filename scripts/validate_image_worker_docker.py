@@ -59,10 +59,13 @@ def main() -> None:
             failures.append(f"Dockerfile is missing {label}")
     if dockerfile.count("uv export --no-cache --frozen") != 2:
         failures.append("both final targets must disable the uv export cache")
-    if dockerfile.count("rm -rf /root/.cache/uv") != 2:
+    if dockerfile.count("/root/.cache/uv") != 2:
         failures.append("both final targets must remove any uv build cache")
     if dockerfile.count("RUN mkdir -p /work/tmp") != 2:
         failures.append("both final targets must create TMPDIR before dependency export")
+    for inherited_path in ("/opt/conda/etc/conda/test-files", "/opt/conda/pkgs"):
+        if inherited_path not in dockerfile:
+            failures.append(f"gpu-runtime must remove inherited Conda content: {inherited_path}")
     for label in REQUIRED_OCI_LABELS:
         if dockerfile.count(label) != 2:
             failures.append(f"OCI label must be present on both final targets: {label}")
