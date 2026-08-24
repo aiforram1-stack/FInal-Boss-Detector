@@ -74,17 +74,21 @@ resolved bytes to remain inside that model's blob store, bounds and parses the
 safetensors header, and calculates byte length and SHA-256. Handler execution
 never downloads a model. No network volume is attached.
 
-RunPod model-reference syntax must be taken from the connected current MCP/API
-schema at execution time. As reviewed on 2026-08-24, the current REST v2/MCP
-endpoint-create operation does not expose a cached-model field, while the
-RunPod console documents a single Model field containing a Hugging Face
-repository identifier. The committed proposal therefore records
-`OwensLab/commfor-model-384` separately from the required revision. The worker's
-exact `snapshots/<revision>` and `refs/main` checks—not the Model field—are the
-fail-closed revision authority. Configure the Model field through a supported
-authenticated RunPod control path after approval and verify it on the returned
-endpoint before submitting a job. If that cannot be proved, stop; do not create
-a volume or silently use another snapshot.
+RunPod's supported cached-model control is `runpodctl` 2.4.0 or newer using
+`serverless create --model-reference`. The argument is the full Hugging Face URL
+with a `:ref`; Phase 6 must use the immutable value:
+
+```text
+https://huggingface.co/OwensLab/commfor-model-384:6076002bf0d9dd37537f965ee2f06f826c333b61
+```
+
+The current REST v2/MCP endpoint-create operation does not expose this field.
+After approval, use the authenticated `runpodctl` path, verify the returned
+endpoint, and then apply the explicit GPU exclusions through the structured
+control plane before submitting a job. The worker's exact
+`snapshots/<revision>` check remains the independent fail-closed authority. If
+the model reference cannot be attached and proved, stop; do not create a volume
+or silently use another snapshot.
 
 ## Exact endpoint invariants
 
