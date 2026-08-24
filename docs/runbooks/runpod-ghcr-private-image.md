@@ -1,8 +1,8 @@
 # RunPod Serverless validation runbook
 
 This runbook governs the first Community Forensics GPU validation. It is a
-queue-only, scale-to-zero Phase 6 procedure. The preparation pull request does
-not create a RunPod endpoint, worker, job, Pod, volume, registry credential, or
+queue-only, scale-to-zero Phase 6 procedure. Readiness pull requests do not
+create a RunPod endpoint, worker, job, Pod, volume, registry credential, or
 other billable resource.
 
 ## Hard gates
@@ -16,12 +16,19 @@ Before any endpoint creation or `/run` request:
 3. A read-only RunPod audit must confirm balance, recent billing, endpoints,
    jobs, Pods, volumes, storage, credential names/IDs, GPU availability, rates,
    and worker quota. Stop if any unexpected billable resource is active.
-4. A read-only GHCR credential must already exist in RunPod. Create it manually
-   in RunPod if absent; never paste its token into Codex, Git, shell history,
-   issues, logs, or reports.
-5. The exact endpoint proposal and cost estimate must be recorded.
-6. The user must send exactly `APPROVE PHASE 6 SERVERLESS COST` for that
-   proposal. Any material configuration or price change invalidates approval.
+4. A RunPod-managed, read-only GHCR credential must exist before endpoint
+   creation. If absent, report the planned non-secret name and stop for the
+   exact approval phrase before any credential mutation. The user creates the
+   GitHub token and enters it directly in RunPod; never paste its value into
+   Codex, Git, shell history, issues, logs, or reports.
+5. The exact endpoint proposal and cost estimate must be recorded. When the
+   registry credential is initially absent, the first approval authorizes only
+   secure credential setup. Bind the returned stored credential ID into a
+   refreshed proposal and obtain the exact phrase again before endpoint
+   creation.
+6. The user must send exactly `APPROVE PHASE 6 SERVERLESS COST` for the final
+   proposal. Any material configuration, credential ID, catalog membership, or
+   price change invalidates approval.
 
 The maximum approved Phase 6 spend is USD 2.00. At most three paid jobs are
 allowed: the planned bootstrap and validation jobs plus one explicitly recorded
@@ -30,11 +37,18 @@ separate approval and are not part of this runbook.
 
 ## Immutable release verification
 
-The only valid image form is:
+The accepted Phase 6 bootstrap image is:
 
 ```text
-ghcr.io/<owner>/forensic-image-community@sha256:<digest>
+ghcr.io/aiforram1-stack/forensic-image-community@sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437
 ```
+
+It is Linux AMD64, 6,629,471,788 bytes, and binds source commit
+`4062b946a29288330242d108dbbed9ded4d9d736`. Protected run
+[`32769244299`](https://github.com/aiforram1-stack/FInal-Boss-Detector/actions/runs/32769244299)
+passed SBOM, provenance, GitHub attestation, vulnerability, source-link,
+pull-by-digest, content, mock-smoke, and final fail-closed gates. The checkpoint
+is absent and real GPU inference is marked not run.
 
 Download the protected publication artifact, validate its checksum, and verify
 that `container-release.json` matches the intended source commit, Linux AMD64
@@ -45,16 +59,36 @@ marked not run.
 From a trusted authenticated workstation:
 
 ```bash
-export IMAGE_DIGEST_REFERENCE='ghcr.io/<owner>/forensic-image-community@sha256:<digest>'
-export GITHUB_REPOSITORY='<owner>/<repository>'
+export IMAGE_DIGEST_REFERENCE='ghcr.io/aiforram1-stack/forensic-image-community@sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437'
+export GITHUB_REPOSITORY='aiforram1-stack/FInal-Boss-Detector'
 make image-community-attestation-verify
 scripts/verify_published_image.sh \
   "${IMAGE_DIGEST_REFERENCE}" \
-  '<full-source-commit>' \
-  'https://github.com/<owner>/<repository>'
+  '4062b946a29288330242d108dbbed9ded4d9d736' \
+  'https://github.com/aiforram1-stack/FInal-Boss-Detector'
 ```
 
 Never substitute `latest`, `main`, `stable`, or a source-SHA tag for the digest.
+
+## Current RunPod readiness audit
+
+The 2026-08-25 read-only audit found:
+
+- balance: USD 10.00;
+- recent Serverless, Pod, and network-volume spend: USD 0;
+- endpoints, workers, queued/running jobs, Pods, network volumes, templates,
+  and registry credentials: zero;
+- billable storage and competing resources: none observed;
+- local `runpodctl` version: 2.11.0, but not authenticated;
+- account worker quota: not exposed by the connected v2/MCP or visible account
+  settings and therefore unverified.
+
+The planned credential name is `ghcr-aiforram1-phase6-readonly`. Use a
+short-lived GitHub PAT classic with only `read:packages`; do not grant `repo`,
+write, or delete scopes. The GitHub package remains private. Credential and CLI
+authentication must be completed through the signed-in browser/local secure
+flow only after approval, with no secret value entering Codex or repository
+files.
 
 ## Cached model contract
 
@@ -112,7 +146,8 @@ file for identifiers returned by RunPod.
 - no network volume;
 - one private-registry credential reference;
 - one cached-model reference;
-- smallest safe disk derived from the published image size.
+- 10 GB ephemeral container disk, the smallest safe whole-GB value for the
+  measured 6.629 GB image while leaving approximately 3.37 GB headroom.
 
 Refresh the Serverless GPU catalog immediately before the cost proposal. The
 proposal must record the complete observed membership of `AMPERE_24`, and that
@@ -131,6 +166,29 @@ those values. Both modes set `IMAGE_COMMUNITY_PHASE6_ONLY_MODE=true`, keep model
 downloads disabled, and use the configured cache root. An ordinary
 `DetectorJob` is rejected by this endpoint so private or user-submitted media
 cannot enter the validation-only path. Never record a full environment dump.
+
+## Audited cost proposal
+
+The selected `AMPERE_24` pool is USD 0.69/hour, or approximately USD
+0.0001916667/second. The observed members are RTX A5000 (high availability), L4
+(low), RTX 3090 (low), and a 24 GB Blackwell MIG type (high). Only the first
+three are approved; the Blackwell MIG type is excluded before any job.
+
+Cost assumptions are 600 seconds expected cold start per job, 180 seconds
+bootstrap execution, 360 seconds validation execution, and five seconds idle
+per job. That yields approximately USD 0.1505 for bootstrap, USD 0.1850 for
+validation, and USD 0.3355 compute normally. A conservative worst case uses
+1,200 seconds cold start plus the 600-second execution limit and five-second
+idle charge for each of the two planned jobs plus one diagnostic retry:
+approximately USD 1.04 compute. At the documented approximately USD
+0.10/GB/month rate, allocate USD
+0.01 for the 10 GB ephemeral disk's five-minute billing intervals; the normal
+rounded estimate is USD 0.35. Reserve USD 1.20 overall; the hard stop remains
+USD 2.00. RunPod host caching uses the public model without billing worker time
+for the model download and requires no network volume. See RunPod's current
+[Serverless pricing](https://docs.runpod.io/serverless/pricing) and
+[cached-model](https://docs.runpod.io/serverless/endpoints/model-caching)
+documentation.
 
 ## Job 1: checkpoint bootstrap
 

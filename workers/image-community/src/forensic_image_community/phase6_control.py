@@ -141,8 +141,10 @@ class EndpointProposal(Phase6ControlRecord):
     flashboot: Literal["FLASHBOOT"] = "FLASHBOOT"
     disk_gb: int = Field(gt=0, le=100)
     model_repository: Literal["OwensLab/commfor-model-384"]
-    model_revision: str = Field(pattern=COMMIT_PATTERN)
-    runpod_model_reference: Literal["OwensLab/commfor-model-384"]
+    model_revision: Literal["6076002bf0d9dd37537f965ee2f06f826c333b61"]
+    runpod_model_reference: Literal[
+        "https://huggingface.co/OwensLab/commfor-model-384:6076002bf0d9dd37537f965ee2f06f826c333b61"
+    ]
     model_cache_root: Literal["/runpod-volume/huggingface-cache/hub"] = (
         "/runpod-volume/huggingface-cache/hub"
     )
@@ -223,7 +225,8 @@ class Phase6CostBudget(Phase6ControlRecord):
     gpu_pool_id: Literal["AMPERE_24"] = "AMPERE_24"
     gpu_rate_per_hour_usd: Decimal = Field(gt=0)
     gpu_rate_per_second_usd: Decimal = Field(gt=0)
-    expected_cold_start_seconds_per_job: int = Field(ge=0, le=600)
+    expected_cold_start_seconds_per_job: int = Field(ge=0, le=1_200)
+    worst_case_cold_start_seconds_per_job: int = Field(default=1_200, ge=0, le=1_800)
     expected_bootstrap_execution_seconds: int = Field(gt=0, le=600)
     expected_validation_execution_seconds: int = Field(gt=0, le=600)
     idle_seconds_per_job: Literal[5] = 5
@@ -244,6 +247,8 @@ class Phase6CostBudget(Phase6ControlRecord):
             raise ValueError("hourly and per-second GPU rates are inconsistent")
         if self.planned_paid_jobs + self.diagnostic_retries > self.maximum_paid_jobs:
             raise ValueError("planned jobs exceed the Phase 6 paid-job cap")
+        if self.worst_case_cold_start_seconds_per_job < self.expected_cold_start_seconds_per_job:
+            raise ValueError("worst-case cold start cannot be shorter than expected")
         normal_billable_seconds = Decimal(
             self.expected_cold_start_seconds_per_job * self.planned_paid_jobs
             + self.expected_bootstrap_execution_seconds
@@ -259,7 +264,7 @@ class Phase6CostBudget(Phase6ControlRecord):
         worst_billable_seconds = Decimal(
             self.maximum_paid_jobs
             * (
-                self.expected_cold_start_seconds_per_job
+                self.worst_case_cold_start_seconds_per_job
                 + self.maximum_job_execution_seconds
                 + self.idle_seconds_per_job
             )

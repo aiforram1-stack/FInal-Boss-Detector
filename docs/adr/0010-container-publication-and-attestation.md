@@ -2,6 +2,7 @@
 
 - Status: Accepted for Phase 5
 - Date: 2026-08-24
+- Updated: 2026-08-25
 - Scope: Community Forensics image-worker build, publication, and verification
 
 ## Context
@@ -156,6 +157,20 @@ verifiers are repaired through an ordinary reviewable pull request; the
 GitHub feature/visibility decision remains an explicit owner action rather than
 a workflow bypass.
 
+The owner subsequently approved making the GitHub repository public while
+keeping the source-linked GHCR package private. Repair PR #16 updated the
+BuildKit evidence parser and package-link verifier without bypassing a gate.
+After merge, protected run
+[`32769244299`](https://github.com/aiforram1-stack/FInal-Boss-Detector/actions/runs/32769244299)
+accepted source commit `4062b946a29288330242d108dbbed9ded4d9d736` and Linux AMD64
+digest
+`sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437`.
+SBOM, provenance, GitHub attestation creation and repository-bound verification,
+pull-by-digest identity, mock smoke, filesystem inspection, package linkage,
+release checksum, vulnerability policy, and the final fail-closed gate all
+passed. That digest is the first Phase 5 release approved for the Phase 6
+proposal; it does not claim checkpoint or CUDA validation.
+
 Trivy configuration/filesystem scans run on pull requests and an image scan
 runs on the published digest. Machine-readable JSON is retained. Unexcepted
 critical findings fail the corresponding gate. Any exception must name the
@@ -169,8 +184,9 @@ incident evidence and avoiding destructive package actions.
 RunPod supports saved private-registry credentials and refers to them by a
 registry-authentication ID. Phase 6 may create a narrowly scoped GHCR
 `read:packages` credential outside this repository, save it in RunPod, and use
-the immutable digest in a temporary Pod. Phase 5 only supplies placeholders and
-instructions. It creates no token, RunPod key, credential record, template,
+the immutable digest in one queue-based Serverless endpoint. Phase 5 only
+supplies placeholders and instructions. It creates no token, RunPod key,
+credential record, template,
 Pod, volume, endpoint, or billable resource.
 
 ## Consequences
@@ -179,10 +195,9 @@ Pod, volume, endpoint, or billable resource.
   jobs are authoritative for image construction.
 - PR validation is intentionally slower because it builds both final bases and
   does not reuse untrusted caches in protected publication.
-- The first protected publication can push an image and subsequently fail a
-  critical scan or unsupported GitHub attestation. Such an image is not
-  approved or deployable; the failed workflow and release artifact are the
-  audit trail.
+- A protected publication can push an image and subsequently fail a critical
+  scan or unsupported GitHub attestation. Such an image is not approved or
+  deployable; the failed workflow and release artifact remain the audit trail.
 - Phase 5 proves container construction and supply-chain identity only. It does
   not prove checkpoint availability, CUDA fitness, detector accuracy, or real
   Community Forensics inference.

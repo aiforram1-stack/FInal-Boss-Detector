@@ -60,8 +60,11 @@ def proposal(**overrides: object) -> EndpointProposal:
         "excluded_gpu_type_ids": ("NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",),
         "disk_gb": 20,
         "model_repository": "OwensLab/commfor-model-384",
-        "model_revision": "c" * 40,
-        "runpod_model_reference": "OwensLab/commfor-model-384",
+        "model_revision": "6076002bf0d9dd37537f965ee2f06f826c333b61",
+        "runpod_model_reference": (
+            "https://huggingface.co/OwensLab/commfor-model-384:"
+            "6076002bf0d9dd37537f965ee2f06f826c333b61"
+        ),
     }
     values.update(overrides)
     return EndpointProposal.model_validate(values)
@@ -74,6 +77,7 @@ def budget(**overrides: object) -> Phase6CostBudget:
         "gpu_rate_per_hour_usd": Decimal("0.72"),
         "gpu_rate_per_second_usd": Decimal("0.0002"),
         "expected_cold_start_seconds_per_job": 120,
+        "worst_case_cold_start_seconds_per_job": 300,
         "expected_bootstrap_execution_seconds": 120,
         "expected_validation_execution_seconds": 180,
         "estimated_container_disk_cost_usd": Decimal("0.01"),
@@ -136,6 +140,7 @@ def test_endpoint_proposal_is_queue_only_digest_pinned_and_lockable() -> None:
     assert configured.network_volume_ids == ()
     assert configured.gpu_pool_ids == ("AMPERE_24",)
     assert configured.flashboot == "FLASHBOOT"
+    assert configured.runpod_model_reference.endswith(configured.model_revision)
     assert (
         configured.runtime_environment.as_runpod_env()["IMAGE_COMMUNITY_PHASE6_ONLY_MODE"] == "true"
     )
@@ -150,7 +155,9 @@ def test_endpoint_proposal_is_queue_only_digest_pinned_and_lockable() -> None:
     with pytest.raises(ValidationError, match="completely partitioned"):
         proposal(excluded_gpu_type_ids=())
     with pytest.raises(ValidationError):
-        proposal(runpod_model_reference=f"OwensLab/commfor-model-384:{'c' * 40}")
+        proposal(
+            runpod_model_reference=(f"https://huggingface.co/OwensLab/commfor-model-384:{'c' * 40}")
+        )
     with pytest.raises(ValidationError, match="container digest"):
         proposal(
             runtime_environment={
@@ -167,6 +174,13 @@ def test_endpoint_proposal_is_queue_only_digest_pinned_and_lockable() -> None:
 
 def test_cost_budget_rejects_more_than_two_dollars_or_insufficient_balance() -> None:
     assert budget().maximum_paid_jobs == 3
+    legacy_values = budget().model_dump(mode="json")
+    legacy_values.pop("worst_case_cold_start_seconds_per_job")
+    legacy_values["estimated_worst_case_cost_usd"] = "1.50"
+    assert (
+        Phase6CostBudget.model_validate(legacy_values).worst_case_cold_start_seconds_per_job
+        == 1_200
+    )
     with pytest.raises(ValidationError, match="exceeds the Phase 6 cap"):
         budget(estimated_worst_case_cost_usd=Decimal("2.01"))
     with pytest.raises(ValidationError, match="does not cover"):
@@ -175,6 +189,8 @@ def test_cost_budget_rejects_more_than_two_dollars_or_insufficient_balance() -> 
         budget(gpu_rate_per_hour_usd=Decimal("0.69"))
     with pytest.raises(ValidationError, match="normal estimate understates"):
         budget(estimated_normal_cost_usd=Decimal("0.01"))
+    with pytest.raises(ValidationError, match="cannot be shorter"):
+        budget(worst_case_cold_start_seconds_per_job=119)
 
 
 def test_async_payload_uses_run_policy_not_runsync() -> None:
