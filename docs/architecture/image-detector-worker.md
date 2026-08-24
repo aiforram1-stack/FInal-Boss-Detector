@@ -30,7 +30,7 @@ flowchart LR
     Digest --> Supply[SBOM + provenance + GitHub attestation]
     Verify --> Manifest[container-release.json + SHA-256]
     Supply --> Manifest
-    Manifest -. explicit later authorization .-> GPU[Phase 6 temporary GPU Pod]
+    Manifest -. release gates + exact cost approval .-> GPU[Phase 6 queue-only Serverless]
 ```
 
 ```mermaid

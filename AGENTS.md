@@ -10,12 +10,13 @@ produce structured evidence records.
 
 - Read `PLAN.md` before starting work.
 - Phase 6, first real Community Forensics GPU validation on RunPod Serverless,
-  is the only active implementation phase. GitHub PRs #2, #4, #6, and #8 are
-  still open and stacked; no cloud deployment may claim those phases are
-  merged until GitHub proves it.
-- Phase 6 repository preparation may add the cache resolver, bootstrap and GPU
-  validation modes, local control-plane contracts/tests, documentation, and a
-  reviewable stacked pull request.
+  is the only active implementation phase. GitHub PRs #2, #4, #6, #8, and #10
+  are merged into `main`. The first protected Phase 6 publication failed
+  closed, so its pushed image is unapproved and must not be deployed.
+- Phase 6 repository work may repair the protected release verifier, keep
+  status/runbook documentation current, and prepare a reviewable pull request.
+  Do not weaken or bypass any failed SBOM, provenance, package-link, GitHub
+  attestation, vulnerability, identity, or pull-by-digest gate.
 - RunPod account, catalog, registry, billing, and resource reads are allowed.
   Do not create or modify an endpoint, worker, job, Pod, volume, registry
   credential, or other billable resource until the user sends exactly
@@ -26,6 +27,8 @@ produce structured evidence records.
   most one during approved validation and zero at completion, one GPU per
   worker, no network volume, no Pod, no private evidence, and no more than
   $2.00 total approved spend. Do not connect the main API or begin Phase 7.
+- Changing repository visibility or GHCR package access/linkage requires an
+  explicit user confirmation immediately before the settings change.
 
 # Non-Negotiable Rules
 

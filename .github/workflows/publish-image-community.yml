@@ -13,6 +13,7 @@ on:
       - "scripts/inspect_image_contents.py"
       - "scripts/validate_image_worker_docker.py"
       - "scripts/validate_workflow_policy.py"
+      - "scripts/verify_buildkit_attestations.py"
       - "scripts/verify_package_access.py"
       - "scripts/verify_published_image.sh"
       - "security/vulnerability-exceptions.yaml"
@@ -141,27 +142,14 @@ jobs:
         env:
           DIGEST_REFERENCE: ${{ steps.digest.outputs.digest_reference }}
         run: |
-          if ! docker buildx imagetools inspect "$DIGEST_REFERENCE" \
-            --format '{{ json (index .SBOM "linux/amd64").SPDX }}' > sbom.spdx.json; then
-            docker buildx imagetools inspect "$DIGEST_REFERENCE" \
-              --format '{{ json .SBOM.SPDX }}' > sbom.spdx.json
-          fi
-          if ! docker buildx imagetools inspect "$DIGEST_REFERENCE" \
-            --format '{{ json (index .Provenance "linux/amd64").SLSA }}' > provenance.slsa.json; then
-            docker buildx imagetools inspect "$DIGEST_REFERENCE" \
-              --format '{{ json .Provenance.SLSA }}' > provenance.slsa.json
-          fi
-          uv run --frozen python - <<'PY'
-          import json
-          from pathlib import Path
-
-          sbom = json.loads(Path("sbom.spdx.json").read_text(encoding="utf-8"))
-          provenance = json.loads(Path("provenance.slsa.json").read_text(encoding="utf-8"))
-          if not isinstance(sbom, dict) or not sbom.get("SPDXID"):
-              raise SystemExit("attached SPDX SBOM is absent or malformed")
-          if not isinstance(provenance, dict) or not provenance.get("buildType"):
-              raise SystemExit("attached BuildKit provenance is absent or malformed")
-          PY
+          docker buildx imagetools inspect "$DIGEST_REFERENCE" \
+            --format '{{ json .SBOM }}' > sbom.spdx.json
+          docker buildx imagetools inspect "$DIGEST_REFERENCE" \
+            --format '{{ json .Provenance }}' > provenance.slsa.json
+          uv run --frozen scripts/verify_buildkit_attestations.py \
+            --sbom sbom.spdx.json \
+            --provenance provenance.slsa.json \
+            --platform linux/amd64
       - name: Set up pinned Trivy scanner
         uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # reviewed release v0.3.1
         with:
@@ -220,6 +208,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PACKAGE_OWNER: ${{ github.repository_owner }}
           SOURCE_REPOSITORY: ${{ github.repository }}
+          DIGEST_REFERENCE: ${{ steps.digest.outputs.digest_reference }}
+          EXPECTED_SOURCE_URL: ${{ steps.identity.outputs.source_url }}
         run: |
           if gh api "/users/$PACKAGE_OWNER/packages/container/forensic-image-community" > ghcr-package.json; then
             echo "resolved package through user scope"
@@ -230,9 +220,15 @@ jobs:
             echo "An owner must verify private visibility and repository linkage manually." >&2
             exit 1
           fi
+          docker pull "$DIGEST_REFERENCE"
+          observed_source_url=$(docker image inspect \
+            --format '{{ index .Config.Labels "org.opencontainers.image.source" }}' \
+            "$DIGEST_REFERENCE")
+          test "$observed_source_url" = "$EXPECTED_SOURCE_URL"
           uv run --frozen scripts/verify_package_access.py \
             --package-json ghcr-package.json \
-            --repository "$SOURCE_REPOSITORY"
+            --repository "$SOURCE_REPOSITORY" \
+            --observed-source-url "$observed_source_url"
       - name: Generate validated release manifest and checksum
         id: release_manifest
         env:
@@ -335,7 +331,7 @@ jobs:
             echo "| GitHub attestation verification | $ATTESTATION_VERIFY_OUTCOME |"
             echo "| Private package and repository link | $PACKAGE_ACCESS_OUTCOME |"
             echo "| Real GPU inference | not run |"
-            echo "| Next action | Phase 6 temporary GPU Pod verification |"
+            echo "| Next action | Phase 6 queue-only Serverless proposal and cost approval |"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Fail closed when any protected verification did not pass
         env:

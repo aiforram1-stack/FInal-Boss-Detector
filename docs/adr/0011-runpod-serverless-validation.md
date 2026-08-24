@@ -1,6 +1,6 @@
 # ADR 0011: Queue-only RunPod Serverless validation
 
-- Status: Proposed for Phase 6 preparation review
+- Status: Accepted for Phase 6; cloud execution pending
 - Date: 2026-08-24
 - Scope: first controlled Community Forensics GPU validation
 
@@ -13,10 +13,9 @@ queue-based RunPod Serverless endpoint, but no billable operation is allowed
 until an exact configuration and cost proposal receives the exact approval
 phrase.
 
-The repository history is stacked. Pull requests for Phases 2 through 5 remain
-open, so this preparation branch is based on Phase 5 and must target that branch.
-It cannot supply an authoritative `main` image digest until the stack is
-reviewed, merged, and protected publication succeeds.
+Pull requests for Phases 2 through 6 preparation are merged. Protected
+publication has pushed an immutable diagnostic image, but its release gates did
+not all pass, so no authoritative deployable image exists yet.
 
 Current official RunPod documentation describes asynchronous queue operations
 (`/run`, `/status`, `/cancel`, `/retry`, `/purge-queue`, `/health`), scale-to-zero
@@ -29,9 +28,10 @@ type IDs. On the audit date, `AMPERE_24` costs USD 0.69/hour and contains L4,
 RTX A5000, RTX 3090, and a 24 GB Blackwell MIG type. The last type is not
 approved by this phase. The current `set-endpoint-gpus` operation supports pool
 selection plus explicit type exclusions and a minimum CUDA version. REST v2
-endpoint creation does not expose the cached-model field; the console documents
-one Model field per endpoint but does not document that this field guarantees
-the worker's required immutable revision.
+endpoint creation does not expose the cached-model field. The supported
+`runpodctl` Serverless path exposes `--model-reference` and accepts a full
+Hugging Face URL plus `:ref`; Phase 6 requires `runpodctl` 2.4.0 or newer and
+the exact 40-character model revision.
 
 ## Decision
 
@@ -64,13 +64,13 @@ weight files, inconsistent refs, malformed bounded safetensors metadata, byte
 length mismatches, and SHA-256 mismatches fail closed. Runtime downloads remain
 disabled.
 
-The RunPod Model field records only `OwensLab/commfor-model-384`. Because the
-current REST v2/MCP creation surface does not configure that field and the
-console documentation does not promise immutable-revision semantics, a
-supported authenticated control path must attach and then prove the field
-before a job. The worker still requires the exact pinned snapshot directory and
-consistent ref; a default-branch move fails closed instead of becoming a model
-update.
+The RunPod model reference is
+`https://huggingface.co/OwensLab/commfor-model-384:6076002bf0d9dd37537f965ee2f06f826c333b61`.
+The current REST v2/MCP creation surface cannot attach it, so an authenticated
+`runpodctl serverless create --model-reference` control path must attach and
+then prove it before a job. The worker independently requires the exact pinned
+snapshot directory and consistent ref; a default-branch move fails closed
+instead of becoming a model update.
 
 Bootstrap mode observes the actual cached byte length and hash and labels the
 receipt `OBSERVED_BOOTSTRAP_HASH`. It does not claim final verification. Normal

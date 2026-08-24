@@ -12,10 +12,10 @@ image:
   checkpoint_included: false
 template:
   registry_credential_id: "<runpod-managed-read-only-ghcr-credential-id>"
-  # Current console/API documentation accepts the repository identifier but
-  # does not make the worker's pinned revision guarantee. The worker below is
-  # the fail-closed revision authority.
-  model_reference: OwensLab/commfor-model-384
+  # Attach with runpodctl >=2.4.0 --model-reference. REST v2/MCP endpoint create
+  # does not currently expose this field. The worker remains the independent
+  # fail-closed revision authority.
+  model_reference: https://huggingface.co/OwensLab/commfor-model-384:6076002bf0d9dd37537f965ee2f06f826c333b61
   required_model_revision: 6076002bf0d9dd37537f965ee2f06f826c333b61
   environment:
     IMAGE_COMMUNITY_ENVIRONMENT: production

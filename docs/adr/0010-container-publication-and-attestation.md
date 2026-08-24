@@ -11,11 +11,9 @@ real CUDA backends. Phase 5 may package and verify that implementation, but it
 may not download the model checkpoint, run CUDA, rent a GPU, deploy to RunPod,
 connect the API, or claim that real inference has been verified.
 
-The repository history is still stacked: Phase 4 is unmerged. Phase 5 therefore
-uses `feat/phase-5-publish-image-worker` on top of
-`feat/phase-4-community-forensics-worker`; its pull request targets the Phase 4
-branch until the earlier changes merge. Publication remains restricted to an
-exact commit on protected `main` or a manual dispatch whose ref is `main`.
+Phase 4 and the Phase 5 pipeline are now merged. Publication remains restricted
+to an exact commit on protected `main` or a manual dispatch whose ref is
+`main`.
 
 ## Documentation reviewed
 
@@ -129,6 +127,14 @@ disabled explicitly because they require the additional
 workflow also extracts and validates the attached SPDX SBOM and SLSA provenance
 from the immutable registry digest rather than assuming their presence.
 
+Buildx exposes these inspection records through documented wrapper objects:
+`.SBOM` contains an `SPDX` document and `.Provenance` contains a `SLSA`
+predicate or in-toto statement. Verification accepts only those documented
+direct, wrapper, or exact `linux/amd64` wrapper shapes. It validates the SPDX
+document identity/version/license/creator metadata and either legacy BuildKit
+or SLSA v1 provenance fields. Unknown recursive matches, missing subjects,
+malformed SHA-256 subjects, and non-SLSA statements fail closed.
+
 GitHub currently documents artifact attestations for private repositories as a
 GitHub Enterprise Cloud feature. Attestation creation and verification are
 therefore captured as explicit outcomes so a plan limitation can still produce
@@ -136,6 +142,19 @@ a diagnostic release manifest and summary. The final publication gate fails if
 either outcome is not successful. Docker provenance and SBOM remain attached;
 the workflow never converts an unavailable GitHub feature into a passing or
 fabricated attestation status.
+
+The first protected Phase 6 publication on 2026-08-24 proved that the image can
+be built, pushed, pulled by digest, scanned, inspected, and run in CPU mock mode,
+but failed the final gate. Buildx's current provenance envelope was not handled
+by the original inline parser; GitHub rejected artifact-attestation storage for
+this private user-owned repository; and the package API omitted its repository
+field. Signed-in package settings independently confirmed that the private
+package is source-linked to this repository, grants it Actions Admin access,
+and inherits repository access. The pushed digest is retained as diagnostic
+evidence and is not approved for deployment. The attestation and package
+verifiers are repaired through an ordinary reviewable pull request; the
+GitHub feature/visibility decision remains an explicit owner action rather than
+a workflow bypass.
 
 Trivy configuration/filesystem scans run on pull requests and an image scan
 runs on the published digest. Machine-readable JSON is retained. Unexcepted

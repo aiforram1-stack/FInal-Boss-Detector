@@ -86,6 +86,13 @@ def main() -> None:
             "password: ${{ secrets.GITHUB_TOKEN }}",
             'test "$GITHUB_ACTIONS" = "true"',
             "/usr/local/lib/android",
+            '"scripts/verify_buildkit_attestations.py"',
+            "--format '{{ json .SBOM }}'",
+            "--format '{{ json .Provenance }}'",
+            "uv run --frozen scripts/verify_buildkit_attestations.py",
+            "org.opencontainers.image.source",
+            '--observed-source-url "$observed_source_url"',
+            "Phase 6 queue-only Serverless proposal and cost approval",
         )
         for fragment in required_publish_fragments:
             if fragment not in publish_text:
