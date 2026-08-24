@@ -1,0 +1,25 @@
+schema_version: "1.0"
+phase: "phase-6-placeholder-only"
+image:
+  repository: "ghcr.io/<github-owner>/forensic-image-community"
+  tag_reference: "ghcr.io/<github-owner>/forensic-image-community:sha-<full-git-commit>"
+  digest_reference: "ghcr.io/<github-owner>/forensic-image-community@sha256:<published-image-digest>"
+  source_commit: "<full-git-commit>"
+  platform: "linux/amd64"
+  checkpoint_included: false
+runpod:
+  registry_auth_id: "<saved-read-only-registry-auth-id>"
+  gpu_vram_minimum_gb: 24
+  allowed_cuda_version: "12.6"
+  model_cache_mount: "/models/community-forensics"
+  terminate_after_test: true
+model:
+  repository: "OwensLab/commfor-model-384"
+  revision: "6076002bf0d9dd37537f965ee2f06f826c333b61"
+  filename: "model.safetensors"
+  expected_sha256: "b89f36275f3bf5e2b040eee36597a8f19db051bff9a473a9cf7b2466284fb387"
+  verification_status: "pending_phase_6_gpu_environment"
+prohibited:
+  create_serverless_endpoint: true
+  connect_main_api: true
+  store_registry_secret_in_file: true

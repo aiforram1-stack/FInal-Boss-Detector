@@ -9,14 +9,14 @@ produce structured evidence records.
 # Current Authorization
 
 - Read `PLAN.md` before starting work.
-- Phases 0–3 are complete on stacked feature branches. Phase 4, the first
-  Community Forensics image-worker adapter, is the only active implementation
-  phase.
-- Phase 4 development is CPU-only on macOS. Required tests use the mock backend,
-  generated fixtures, fake HTTP transports, no checkpoint and no CUDA.
-- The real backend and Linux AMD64 CUDA image definition may exist, but do not
-  download weights, run real inference, rent a GPU, deploy RunPod, publish an
-  image, connect the API to the worker, or begin Phase 5.
+- Phases 0–4 are complete on stacked feature branches. Phase 5, immutable build,
+  protected private-GHCR publication, and verification of the first Community
+  Forensics GPU-shaped container, is the only active implementation phase.
+- Local development remains CPU-only on macOS. Required tests use the mock
+  backend, generated fixtures, fake HTTP transports, no checkpoint and no CUDA.
+- Phase 5 may define read-only PR builds and protected main/manual publication,
+  but must not download weights, run real inference, rent a GPU, deploy RunPod,
+  connect the API to the worker, train a model, or begin Phase 6.
 
 # Non-Negotiable Rules
 
@@ -71,6 +71,7 @@ produce structured evidence records.
 - `make db-upgrade`
 - `make api`
 - `make safety`
+- `make image-community-container-check`
 
 # Definition of Done
 

@@ -1,14 +1,14 @@
 # Multimedia Forensic Platform
 
 Repository foundation, shared contracts, immutable local evidence intake,
-CPU-only structural reporting, and the Phase 4 Community Forensics image-worker
-adapter for an evidence-first multimedia forensic platform. Originals are
+CPU-only structural reporting, and the Phase 5 publication pipeline for the
+Community Forensics image-worker adapter. Originals are
 content-addressed, re-hashed before local analysis, and reported through
 canonical JSON plus escaped self-contained HTML. The new detector boundary is
-tested locally with a deterministic mock; the real CUDA backend is prepared but
-has not been executed.
+tested locally with a deterministic mock; the real CUDA backend and immutable
+Linux AMD64 container are prepared but CUDA has not been executed.
 
-No real detector inference, model download, cloud deployment, frontend,
+No real detector inference, model download, GPU rental, RunPod deployment, frontend,
 authentication, training, PDF, OSINT, or real media are included. Reports
 contain structural observations and coverage only—never a real/fake,
 authorship, or AI-generation verdict. Detector raw scores are likewise
@@ -47,7 +47,7 @@ make structural-smoke
 make report-smoke
 ```
 
-The Phase 4 Mac-safe worker gate is:
+The Phase 5 Mac-safe worker and container-policy gate is:
 
 ```bash
 make image-community-manifest-check
@@ -57,10 +57,14 @@ make image-community-typecheck
 make image-community-test
 make image-community-docker-lint
 make image-community-mock
+make image-community-container-check
 ```
 
 These commands perform no checkpoint download, CUDA execution, live object
-fetch, RunPod call, container publication, or GPU provisioning.
+fetch, RunPod call, container publication, or GPU provisioning. The separate
+GitHub pull-request workflow builds both Linux AMD64 image targets without
+publishing; protected main/manual publication is documented in
+`docs/adr/0010-container-publication-and-attestation.md`.
 
 `make schemas` must not change committed files after a clean generation.
 

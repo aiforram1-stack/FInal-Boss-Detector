@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "worker": {
+    "worker_id": "image-community",
+    "detector_id": "community-forensics-384"
+  },
+  "source": {
+    "repository": "example/forensic-platform",
+    "repository_url": "https://github.com/example/forensic-platform",
+    "git_commit": "1111111111111111111111111111111111111111",
+    "workflow_run_id": "123456789",
+    "workflow_run_attempt": 1,
+    "workflow_run_url": "https://github.com/example/forensic-platform/actions/runs/123456789"
+  },
+  "container": {
+    "repository": "ghcr.io/example/forensic-image-community",
+    "tag": "sha-1111111111111111111111111111111111111111",
+    "tag_reference": "ghcr.io/example/forensic-image-community:sha-1111111111111111111111111111111111111111",
+    "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "digest_reference": "ghcr.io/example/forensic-image-community@sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "platform": "linux/amd64",
+    "architecture": "amd64",
+    "created_at": "2026-08-24T12:00:00Z",
+    "image_size_bytes": 1000000,
+    "base_image": "pytorch/pytorch:2.7.1-cuda12.6-cudnn9-runtime@sha256:2b59b1b91885677814f78be1f8df48a25d5dc952eb6580eaecfefca510f9afd3",
+    "base_image_digest": "sha256:2b59b1b91885677814f78be1f8df48a25d5dc952eb6580eaecfefca510f9afd3",
+    "oci_labels": {
+      "org.opencontainers.image.title": "Community Forensics image worker",
+      "org.opencontainers.image.description": "Pinned Community Forensics worker; GPU inference is not yet verified",
+      "org.opencontainers.image.source": "https://github.com/example/forensic-platform",
+      "org.opencontainers.image.revision": "1111111111111111111111111111111111111111",
+      "org.opencontainers.image.created": "2026-08-24T12:00:00Z",
+      "org.opencontainers.image.version": "sha-1111111111111111111111111111111111111111",
+      "org.opencontainers.image.licenses": "LicenseRef-Proprietary",
+      "org.opencontainers.image.vendor": "example"
+    }
+  },
+  "model": {
+    "model_revision": "6076002bf0d9dd37537f965ee2f06f826c333b61",
+    "detector_repository_commit": "ee5b71d43db0f3779e1edd64ee927b13f2dd6ad4",
+    "expected_checkpoint_sha256": "b89f36275f3bf5e2b040eee36597a8f19db051bff9a473a9cf7b2466284fb387",
+    "checkpoint_included": false,
+    "checkpoint_sha256": null,
+    "checkpoint_status": "pending_gpu_verification"
+  },
+  "vulnerability": {
+    "status": "passed",
+    "critical": 0,
+    "high": 0,
+    "excepted_critical": 0,
+    "report_artifact": "image-community-vulnerability-reports"
+  },
+  "supply_chain": {
+    "sbom_attached": true,
+    "sbom_reference": "ghcr.io/example/forensic-image-community@sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "provenance_attached": true,
+    "provenance_reference": "ghcr.io/example/forensic-image-community@sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "github_attestation_created": true,
+    "github_attestation_verified": true,
+    "github_attestation_subject": "oci://ghcr.io/example/forensic-image-community@sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "github_attestation_repository": "example/forensic-platform"
+  },
+  "verification": {
+    "unit_tests": "passed",
+    "mock_container_test": "passed",
+    "pull_by_digest_test": "passed",
+    "architecture_check": "passed",
+    "image_content_inspection": "passed",
+    "package_access_check": "passed",
+    "vulnerability_scan": "passed",
+    "sbom": "passed",
+    "provenance": "passed",
+    "github_attestation": "passed",
+    "real_gpu_inference": "not_run"
+  }
+}

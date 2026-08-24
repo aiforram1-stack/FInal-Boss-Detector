@@ -1,6 +1,8 @@
 # Community Forensics worker scope
 
-- Phase 4 only. Do not connect this worker to the API or implement Phase 5.
+- Phase 5 only. Package and verify the existing worker; do not connect it to the
+  API, rent a GPU, deploy RunPod, download a checkpoint, run real inference, or
+  implement Phase 6.
 - Ordinary local and CI commands must use the mock backend and must not perform
   real network requests, import CUDA libraries, or download model weights.
 - Treat URLs and media as hostile. Fetch only HTTPS from exact configured
@@ -19,3 +21,9 @@
   references. Preserve the upstream MIT notice.
 - Do not add media, weights, cache files, receipts, credentials or user evidence
   to Git.
+- Pull-request workflows are read-only and cannot publish. Protected
+  publication uses the repository `GITHUB_TOKEN`, a full source-SHA tag, and the
+  returned digest as authoritative identity. Never use a moving deployment tag.
+- Both `mock-test` and `gpu-runtime` targets use the same contracts and job
+  service. Neither target may contain a checkpoint; the mock smoke fixture must
+  be generated in memory.

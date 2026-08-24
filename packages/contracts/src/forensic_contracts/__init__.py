@@ -1,5 +1,16 @@
 """Versioned contracts shared by the future API, workers, and reporting code."""
 
+from forensic_contracts.container_release import (
+    ContainerReleaseImage,
+    ContainerReleaseManifest,
+    ContainerReleaseModel,
+    ContainerReleaseSource,
+    ContainerReleaseSupplyChain,
+    ContainerReleaseVerification,
+    ContainerReleaseWorker,
+    ReleaseCheckStatus,
+    VulnerabilitySummary,
+)
 from forensic_contracts.models import (
     ArtifactReference,
     AudioStructuralSummary,
@@ -46,6 +57,13 @@ __all__ = [
     "Case",
     "CaseStatus",
     "ConsistencyFinding",
+    "ContainerReleaseImage",
+    "ContainerReleaseManifest",
+    "ContainerReleaseModel",
+    "ContainerReleaseSource",
+    "ContainerReleaseSupplyChain",
+    "ContainerReleaseVerification",
+    "ContainerReleaseWorker",
     "DetectorIdentity",
     "DetectorJob",
     "DetectorResult",
@@ -60,6 +78,7 @@ __all__ = [
     "IntegrityStatus",
     "IntegrityVerification",
     "PrivacyMode",
+    "ReleaseCheckStatus",
     "ReportArtifact",
     "ReportEvidenceReference",
     "ReportManifest",
@@ -76,4 +95,5 @@ __all__ = [
     "ToolAvailabilityStatus",
     "ToolInventoryEntry",
     "VideoStructuralSummary",
+    "VulnerabilitySummary",
 ]

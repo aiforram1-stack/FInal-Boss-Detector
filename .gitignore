@@ -10,6 +10,17 @@ build/
 *.egg-info/
 .coverage
 coverage.xml
+htmlcov/
+
+# Container release and supply-chain workflow output
+/container-release.json
+/container-release.sha256
+/trivy-*.json
+/vulnerability-*-summary.json
+/github-attestation-verification.json
+/ghcr-package.json
+/*.spdx.json
+/*.cyclonedx.json
 
 # Operating systems and editors
 .DS_Store

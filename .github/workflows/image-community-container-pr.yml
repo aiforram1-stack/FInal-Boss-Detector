@@ -1,0 +1,178 @@
+name: Image Community Container PR
+
+on:
+  pull_request:
+    paths:
+      - ".dockerignore"
+      - ".github/workflows/image-community-container-pr.yml"
+      - ".github/workflows/publish-image-community.yml"
+      - "packages/contracts/**"
+      - "pyproject.toml"
+      - "scripts/evaluate_vulnerabilities.py"
+      - "scripts/generate_container_release.py"
+      - "scripts/inspect_image_contents.py"
+      - "scripts/validate_image_worker_docker.py"
+      - "scripts/validate_workflow_policy.py"
+      - "scripts/verify_package_access.py"
+      - "scripts/verify_published_image.sh"
+      - "security/vulnerability-exceptions.yaml"
+      - "uv.lock"
+      - "workers/image-community/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: image-community-container-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate-container:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Check out exact pull-request commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # reviewed release v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # reviewed release v7.0.0
+        with:
+          python-version: "3.11"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # reviewed release v9.0.0
+        with:
+          version: "0.11.2"
+          enable-cache: true
+      - name: Install locked project tooling
+        run: uv sync --frozen --extra dev
+      - name: Validate workflow and Docker policy
+        run: make image-community-container-policy
+      - name: Run formatting, lint, strict typing, contracts, and worker tests
+        run: |
+          make lint
+          make typecheck
+          uv run --frozen pytest packages/contracts/tests workers/image-community/tests -m "not gpu and not integration"
+      - name: Verify generated contracts and pinned model manifest
+        run: |
+          make schemas
+          git diff --exit-code -- schemas
+          make image-community-manifest-check
+          make image-community-checkpoint-dry-run
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # reviewed release v4.0.0
+      - name: Set public OCI build metadata
+        id: metadata
+        env:
+          SOURCE_REPOSITORY: ${{ github.repository }}
+          SOURCE_COMMIT: ${{ github.sha }}
+        run: |
+          created_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo "created_at=$created_at" >> "$GITHUB_OUTPUT"
+          echo "source_url=https://github.com/$SOURCE_REPOSITORY" >> "$GITHUB_OUTPUT"
+          echo "version=sha-$SOURCE_COMMIT" >> "$GITHUB_OUTPUT"
+      - name: Set up pinned Trivy scanner
+        uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # reviewed release v0.3.1
+        with:
+          version: v0.74.0
+          cache: true
+      - name: Scan workflow configuration and source filesystem
+        run: |
+          trivy config --format json --output trivy-config.json .
+          trivy fs --scanners vuln,secret,misconfig --format json --output trivy-filesystem.json .
+          uv run --frozen scripts/evaluate_vulnerabilities.py \
+            --report trivy-config.json \
+            --report trivy-filesystem.json \
+            --exceptions security/vulnerability-exceptions.yaml \
+            --summary vulnerability-source-summary.json
+      - name: Build Linux AMD64 mock-test target without publishing
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # reviewed release v7.0.0
+        with:
+          context: .
+          file: workers/image-community/Dockerfile
+          target: mock-test
+          platforms: linux/amd64
+          load: true
+          push: false
+          provenance: false
+          sbom: false
+          tags: local/image-community-mock:${{ github.sha }}
+          build-args: |
+            PROJECT_SOURCE_COMMIT=${{ github.sha }}
+            PROJECT_CREATED_AT=${{ steps.metadata.outputs.created_at }}
+            PROJECT_VERSION=${{ steps.metadata.outputs.version }}
+            PROJECT_SOURCE_URL=${{ steps.metadata.outputs.source_url }}
+            PROJECT_VENDOR=${{ github.repository_owner }}
+          cache-from: type=gha,scope=pr-image-community-mock
+          cache-to: type=gha,mode=max,scope=pr-image-community-mock
+      - name: Run network-disabled mock container smoke test
+        env:
+          MOCK_IMAGE: local/image-community-mock:${{ github.sha }}
+        run: make image-community-container-smoke IMAGE="$MOCK_IMAGE"
+      - name: Inspect mock image contents
+        env:
+          MOCK_IMAGE: local/image-community-mock:${{ github.sha }}
+        run: uv run --frozen scripts/inspect_image_contents.py --image "$MOCK_IMAGE"
+      - name: Scan mock image
+        env:
+          MOCK_IMAGE: local/image-community-mock:${{ github.sha }}
+        run: |
+          trivy image --scanners vuln,secret --format json --output trivy-mock-image.json "$MOCK_IMAGE"
+          uv run --frozen scripts/evaluate_vulnerabilities.py \
+            --report trivy-mock-image.json \
+            --exceptions security/vulnerability-exceptions.yaml \
+            --summary vulnerability-mock-summary.json
+      - name: Build Linux AMD64 gpu-runtime target without publishing or CUDA execution
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # reviewed release v7.0.0
+        with:
+          context: .
+          file: workers/image-community/Dockerfile
+          target: gpu-runtime
+          platforms: linux/amd64
+          load: true
+          push: false
+          provenance: false
+          sbom: false
+          tags: local/image-community-gpu:${{ github.sha }}
+          build-args: |
+            PROJECT_SOURCE_COMMIT=${{ github.sha }}
+            PROJECT_CREATED_AT=${{ steps.metadata.outputs.created_at }}
+            PROJECT_VERSION=${{ steps.metadata.outputs.version }}
+            PROJECT_SOURCE_URL=${{ steps.metadata.outputs.source_url }}
+            PROJECT_VENDOR=${{ github.repository_owner }}
+          cache-from: type=gha,scope=pr-image-community-gpu
+          cache-to: type=gha,mode=max,scope=pr-image-community-gpu
+      - name: Inspect and mock-smoke the production-shaped image without CUDA
+        env:
+          GPU_IMAGE: local/image-community-gpu:${{ github.sha }}
+        run: |
+          uv run --frozen scripts/inspect_image_contents.py --image "$GPU_IMAGE"
+          make image-community-container-smoke IMAGE="$GPU_IMAGE"
+      - name: Scan production-shaped image
+        env:
+          GPU_IMAGE: local/image-community-gpu:${{ github.sha }}
+        run: |
+          trivy image --scanners vuln,secret --format json --output trivy-gpu-image.json "$GPU_IMAGE"
+          uv run --frozen scripts/evaluate_vulnerabilities.py \
+            --report trivy-gpu-image.json \
+            --exceptions security/vulnerability-exceptions.yaml \
+            --summary vulnerability-gpu-summary.json
+      - name: Report image and layer sizes
+        env:
+          MOCK_IMAGE: local/image-community-mock:${{ github.sha }}
+          GPU_IMAGE: local/image-community-gpu:${{ github.sha }}
+        run: |
+          docker image inspect --format 'mock bytes={{.Size}} architecture={{.Architecture}}' "$MOCK_IMAGE"
+          docker image inspect --format 'gpu bytes={{.Size}} architecture={{.Architecture}}' "$GPU_IMAGE"
+          docker history --no-trunc "$MOCK_IMAGE"
+          docker history --no-trunc "$GPU_IMAGE"
+      - name: Retain machine-readable scan reports
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # reviewed release v6.0.0
+        with:
+          name: image-community-pr-vulnerability-reports
+          path: |
+            trivy-*.json
+            vulnerability-*-summary.json
+          if-no-files-found: warn
+          retention-days: 30
