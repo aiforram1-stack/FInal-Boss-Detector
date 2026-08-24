@@ -39,7 +39,8 @@ COPY pyproject.toml uv.lock README.md ./
 COPY packages/contracts ./packages/contracts
 COPY workers/image-community ./workers/image-community
 
-RUN python -m pip install --no-cache-dir uv==0.11.2 && \
+RUN mkdir -p /work/tmp && \
+    python -m pip install --no-cache-dir uv==0.11.2 && \
     uv export --no-cache --frozen --only-group image-community-mock-runtime --no-emit-project --output-file /tmp/requirements.txt && \
     python -m pip install --no-cache-dir --requirement /tmp/requirements.txt && \
     python -m pip install --no-cache-dir --no-deps . && \
@@ -94,7 +95,8 @@ COPY pyproject.toml uv.lock README.md ./
 COPY packages/contracts ./packages/contracts
 COPY workers/image-community ./workers/image-community
 
-RUN python -m pip install --no-cache-dir uv==0.11.2 && \
+RUN mkdir -p /work/tmp && \
+    python -m pip install --no-cache-dir uv==0.11.2 && \
     uv export --no-cache --frozen --only-group image-community-runtime --no-emit-project --output-file /tmp/requirements.txt && \
     python -m pip install --no-cache-dir --requirement /tmp/requirements.txt && \
     python -m pip install --no-cache-dir --no-deps . && \

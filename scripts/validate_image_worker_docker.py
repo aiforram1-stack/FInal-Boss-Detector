@@ -48,6 +48,7 @@ def main() -> None:
         "GPU dependency boundary": "--only-group image-community-runtime",
         "dependency export cache disabled": "uv export --no-cache --frozen",
         "uv build cache removal": "rm -rf /root/.cache/uv",
+        "build temporary root creation": "RUN mkdir -p /work/tmp",
         "model downloading disabled": "IMAGE_COMMUNITY_ALLOW_MODEL_DOWNLOAD=false",
         "external temporary root": "TMPDIR=/work/tmp",
         "shared contracts only": "COPY packages/contracts ./packages/contracts",
@@ -60,6 +61,8 @@ def main() -> None:
         failures.append("both final targets must disable the uv export cache")
     if dockerfile.count("rm -rf /root/.cache/uv") != 2:
         failures.append("both final targets must remove any uv build cache")
+    if dockerfile.count("RUN mkdir -p /work/tmp") != 2:
+        failures.append("both final targets must create TMPDIR before dependency export")
     for label in REQUIRED_OCI_LABELS:
         if dockerfile.count(label) != 2:
             failures.append(f"OCI label must be present on both final targets: {label}")
