@@ -2,15 +2,17 @@
 
 ## Authorization boundary
 
-**Only Phase 0 and Phase 1 are authorized in the current task.** All later
-phases are planning context. Do not implement Phase 2 or beyond without explicit
-user authorization.
+**Only Phase 0, Phase 1, and Phase 2 are authorized in the current task.** All
+later phases are planning context. Do not implement Phase 3 or beyond without
+explicit user authorization.
 
 Current status (2026-08-24):
 
 - [x] Phase 0 repository foundation completed.
 - [x] Phase 1 shared contracts completed and verified.
-- [ ] Phase 2 is not authorized and has not been implemented.
+- [x] Phase 2 local evidence intake is complete on
+  `feat/phase-2-evidence-intake` and awaiting review.
+- [ ] Phase 3 is not authorized and has not been implemented.
 
 ## Mission and first vertical slice
 
@@ -81,20 +83,75 @@ Acceptance:
 - no detector, evidence storage, API, cloud, frontend, training, model download,
   or real-media implementation is present.
 
-### Phase 2 — Immutable evidence storage and local API (not authorized)
+### Phase 2 — Immutable evidence storage and local API (completed)
 
 Dependencies: Phase 1 contracts merged.
 
-Candidate worktrees: `feat/002-evidence-storage`, followed by
-`feat/003-upload-api` after the storage interface stabilizes.
+Current branch: `feat/phase-2-evidence-intake`. The repository is a normal clean
+checkout, so this bounded branch is used instead of creating a worktree.
 
 Deliverables: streaming SHA-256/SHA-512, create-only storage backend, SQLite
 development persistence, migrations, case/upload/read endpoints, file limits,
 signature-based MIME validation, and untrusted-path defenses.
 
-Acceptance: one rights-cleared test JPEG is stored once; repeat uploads do not
-duplicate bytes; originals cannot be overwritten; size, corrupted-stream, MIME,
-and traversal tests pass.
+Acceptance: a case can be created and retrieved; small generated image, audio,
+and video fixtures can be uploaded in bounded chunks; authoritative SHA-256 and
+SHA-512 plus detected MIME type and exact size are persisted; same-case uploads
+are idempotent; cross-case uploads share one blob; originals cannot be
+overwritten; storage URIs reveal no physical path; SQLite foreign keys and
+uniqueness are enforced; staging cleanup, database rollback, health, OpenAPI,
+size, malformed upload, unsupported type, write failure, concurrency, and path
+tests pass on macOS without network, models, CUDA, FFmpeg, or external programs.
+
+#### Phase 2 internal architecture
+
+```text
+FastAPI routes
+    -> case/evidence application services
+        -> SQLAlchemy repositories -> SQLite (foreign keys enabled)
+        -> StorageBackend protocol
+            -> LocalContentAddressedStorage
+                staging/.part -> one-pass hashes/type -> atomic hard-link put-if-absent
+```
+
+The upload transaction boundary is intentionally compensating rather than fully
+atomic across SQLite and the filesystem:
+
+1. stream into a unique same-filesystem staging file while hashing;
+2. validate size and byte signature;
+3. atomically promote with a no-overwrite hard link;
+4. insert/reuse the blob and case association in one database transaction;
+5. return only after the database commit and a final object-existence check.
+
+If the database fails after a newly promoted blob is created, the request fails
+and the unreferenced immutable blob is retained rather than deleted during a
+concurrent race. A reconciliation command reports unreferenced blobs for an
+operator to review. It never deletes them automatically.
+
+#### Phase 2 implementation sequence
+
+1. Add validated environment configuration and structured request-ID logging.
+2. Add SQLAlchemy models, foreign-key-enabled sessions, repositories, and one
+   Alembic migration for cases, evidence blobs, and case evidence assets.
+3. Define `StorageBackend` and implement bounded staged writes, signature-based
+   type detection, hash-derived paths, atomic hard-link promotion, read-only
+   permissions, deduplication, and reconciliation inventory.
+4. Add case and evidence-intake services that map persistence records to the
+   shared Phase 1 `Case` and `EvidenceAsset` contracts.
+5. Add `/health`, case creation/retrieval, upload, and evidence metadata routes
+   with versioned safe errors and no raw download endpoint.
+6. Add generated tiny fixtures and comprehensive unit/API/failure/concurrency
+   tests using temporary database and storage roots.
+7. Add CI, ADR 0004, local runbook, README/Makefile/configuration updates, and a
+   bounded-memory local smoke test.
+8. Review every Phase 2 change for overwrite, traversal, partial state, path
+   disclosure, unbounded reads, unsafe logging, and accidental tracked data.
+
+Completion evidence (2026-08-24): 51 contract/storage/API tests pass on macOS;
+Ruff formatting and lint, strict mypy, JSON Schema regeneration, OpenAPI
+generation, repository safety scanning, migration upgrade, and an 8 MiB
+generated upload smoke test pass. The smoke test used 64 KiB storage chunks and
+left one content object with no staging residue.
 
 ### Phase 3 — First image detector worker (not authorized)
 

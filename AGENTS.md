@@ -9,10 +9,12 @@ produce structured evidence records.
 # Current Authorization
 
 - Read `PLAN.md` before starting work.
-- Phase 0 and Phase 1 are the only currently authorized phases.
-- Do not implement evidence storage, APIs, detector inference, cloud deployment,
-  frontend code, model downloads, or training until the user authorizes the
-  corresponding later phase.
+- Phase 0, Phase 1, and Phase 2 local evidence intake are authorized.
+- Phase 2 is CPU-only local case creation, bounded upload, hashing, byte-signature
+  type detection, append-only storage, SQLite persistence, and metadata retrieval.
+- Do not implement detector inference, report generation, cloud deployment,
+  frontend code, model downloads, OSINT, training, or Phase 3 work until the user
+  explicitly authorizes the corresponding later phase.
 
 # Non-Negotiable Rules
 
@@ -55,6 +57,9 @@ produce structured evidence records.
 - `make lint`
 - `make typecheck`
 - `make test`
+- `make test-api`
+- `make db-upgrade`
+- `make api`
 - `make safety`
 
 # Definition of Done

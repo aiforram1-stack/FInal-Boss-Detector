@@ -8,11 +8,18 @@ version = "0.1.0"
 description = "Evidence-first multimedia forensic analysis platform"
 requires-python = ">=3.11"
 dependencies = [
+  "alembic>=1.16,<2",
+  "fastapi>=0.116,<1",
   "pydantic>=2.11,<3",
+  "pydantic-settings>=2.10,<3",
+  "python-multipart>=0.0.20,<1",
+  "sqlalchemy>=2.0,<3",
+  "uvicorn[standard]>=0.35,<1",
 ]
 
 [project.optional-dependencies]
 dev = [
+  "httpx>=0.28,<1",
   "mypy>=1.15,<2",
   "pytest>=8.3,<9",
   "pytest-cov>=6,<8",
@@ -22,14 +29,18 @@ dev = [
 [tool.setuptools.packages.find]
 where = [
   "packages/contracts/src",
+  "packages/evidence/src",
+  "apps/api/src",
 ]
 
 [tool.pytest.ini_options]
 addopts = "-ra --strict-config --strict-markers"
-testpaths = ["packages/contracts/tests"]
+testpaths = ["packages/contracts/tests", "packages/evidence/tests", "apps/api/tests"]
 pythonpath = [
   ".",
   "packages/contracts/src",
+  "packages/evidence/src",
+  "apps/api/src",
 ]
 
 [tool.ruff]
@@ -47,4 +58,4 @@ strict = true
 warn_unused_configs = true
 exclude = ["private_cases", "var"]
 plugins = ["pydantic.mypy"]
-mypy_path = ".:packages/contracts/src"
+mypy_path = ".:packages/contracts/src:packages/evidence/src:apps/api/src"
