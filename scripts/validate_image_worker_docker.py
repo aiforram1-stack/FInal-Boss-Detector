@@ -46,6 +46,8 @@ def main() -> None:
         "pinned CUDA base": f"@{GPU_BASE_DIGEST}",
         "CPU dependency boundary": "--only-group image-community-mock-runtime",
         "GPU dependency boundary": "--only-group image-community-runtime",
+        "dependency export cache disabled": "uv export --no-cache --frozen",
+        "uv build cache removal": "rm -rf /root/.cache/uv",
         "model downloading disabled": "IMAGE_COMMUNITY_ALLOW_MODEL_DOWNLOAD=false",
         "external temporary root": "TMPDIR=/work/tmp",
         "shared contracts only": "COPY packages/contracts ./packages/contracts",
@@ -54,6 +56,10 @@ def main() -> None:
     for label, fragment in required_fragments.items():
         if fragment not in dockerfile:
             failures.append(f"Dockerfile is missing {label}")
+    if dockerfile.count("uv export --no-cache --frozen") != 2:
+        failures.append("both final targets must disable the uv export cache")
+    if dockerfile.count("rm -rf /root/.cache/uv") != 2:
+        failures.append("both final targets must remove any uv build cache")
     for label in REQUIRED_OCI_LABELS:
         if dockerfile.count(label) != 2:
             failures.append(f"OCI label must be present on both final targets: {label}")

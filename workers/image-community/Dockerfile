@@ -40,10 +40,10 @@ COPY packages/contracts ./packages/contracts
 COPY workers/image-community ./workers/image-community
 
 RUN python -m pip install --no-cache-dir uv==0.11.2 && \
-    uv export --frozen --only-group image-community-mock-runtime --no-emit-project --output-file /tmp/requirements.txt && \
+    uv export --no-cache --frozen --only-group image-community-mock-runtime --no-emit-project --output-file /tmp/requirements.txt && \
     python -m pip install --no-cache-dir --requirement /tmp/requirements.txt && \
     python -m pip install --no-cache-dir --no-deps . && \
-    rm -f /tmp/requirements.txt && \
+    rm -rf /root/.cache/uv /tmp/requirements.txt && \
     groupadd --system --gid 10001 forensic && \
     useradd --system --uid 10001 --gid forensic --home-dir /nonexistent --shell /usr/sbin/nologin forensic && \
     mkdir -p /models/community-forensics /models/huggingface /work/tmp && \
@@ -95,10 +95,10 @@ COPY packages/contracts ./packages/contracts
 COPY workers/image-community ./workers/image-community
 
 RUN python -m pip install --no-cache-dir uv==0.11.2 && \
-    uv export --frozen --only-group image-community-runtime --no-emit-project --output-file /tmp/requirements.txt && \
+    uv export --no-cache --frozen --only-group image-community-runtime --no-emit-project --output-file /tmp/requirements.txt && \
     python -m pip install --no-cache-dir --requirement /tmp/requirements.txt && \
     python -m pip install --no-cache-dir --no-deps . && \
-    rm -f /tmp/requirements.txt && \
+    rm -rf /root/.cache/uv /tmp/requirements.txt && \
     groupadd --system --gid 10001 forensic && \
     useradd --system --uid 10001 --gid forensic --home-dir /nonexistent --shell /usr/sbin/nologin forensic && \
     mkdir -p /models/community-forensics /models/huggingface /work/tmp && \
