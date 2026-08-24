@@ -9,13 +9,14 @@ produce structured evidence records.
 # Current Authorization
 
 - Read `PLAN.md` before starting work.
-- Phases 0–2 are complete. Phase 3 structural media analysis and deterministic
-  JSON/HTML reporting is the only active implementation phase.
-- Phase 3 is CPU-only, integrity-gated, shell-free, bounded local metadata
-  inspection. Optional tools must fail visibly without preventing API startup.
-- Do not implement detector inference, cloud deployment, frontend code, model
-  downloads, OSINT, training, PDF reporting, or Phase 4 work until the user
-  explicitly authorizes the corresponding later phase.
+- Phases 0–3 are complete on stacked feature branches. Phase 4, the first
+  Community Forensics image-worker adapter, is the only active implementation
+  phase.
+- Phase 4 development is CPU-only on macOS. Required tests use the mock backend,
+  generated fixtures, fake HTTP transports, no checkpoint and no CUDA.
+- The real backend and Linux AMD64 CUDA image definition may exist, but do not
+  download weights, run real inference, rent a GPU, deploy RunPod, publish an
+  image, connect the API to the worker, or begin Phase 5.
 
 # Non-Negotiable Rules
 
@@ -49,6 +50,8 @@ produce structured evidence records.
 - Structural tool adapters and deterministic reporting belong under
   `packages/structural`.
 - Detector-specific logic belongs under `workers`.
+- Phase 4 Community Forensics code belongs under `workers/image-community` and
+  must follow its scoped `AGENTS.md`.
 - The API must not import detector implementation code.
 - GPU workers accept and return versioned JSON contracts.
 - Large files are referenced through hashes and object-store locations.
