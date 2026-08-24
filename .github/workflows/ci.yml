@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  phase-2-cpu:
+  phase-3-cpu:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -30,11 +30,13 @@ jobs:
         run: make lint
       - name: Strict type checking
         run: make typecheck
-      - name: Contract, storage, and API tests
+      - name: Contract, storage, structural, report, security, and API tests
         run: make test
       - name: Validate generated contracts
         run: make schemas && git diff --exit-code -- schemas
       - name: Generate OpenAPI
         run: make openapi
+      - name: Structural and report smoke tests
+        run: make structural-smoke && make report-smoke
       - name: Repository safety scan
         run: make safety

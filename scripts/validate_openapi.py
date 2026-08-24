@@ -25,12 +25,15 @@ def main() -> None:
             "/v1/cases/{case_id}",
             "/v1/cases/{case_id}/evidence",
             "/v1/cases/{case_id}/evidence/{evidence_id}",
+            "/v1/cases/{case_id}/evidence/{evidence_id}/structural-analysis",
+            "/v1/cases/{case_id}/reports/structural.json",
+            "/v1/cases/{case_id}/reports/structural.html",
         }
         if not required_paths.issubset(document["paths"]):
-            raise SystemExit("OpenAPI document is missing required Phase 2 paths")
+            raise SystemExit("OpenAPI document is missing required Phase 3 paths")
         if "local-sha256://" in encoded or str(root) in encoded:
             raise SystemExit("OpenAPI document leaked runtime storage details")
-    print("Phase 2 OpenAPI generation passed")
+    print("Phase 3 OpenAPI generation passed")
 
 
 if __name__ == "__main__":

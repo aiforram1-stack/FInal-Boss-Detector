@@ -9,6 +9,8 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from forensic_evidence import LocalContentAddressedStorage, StorageBackend
+from forensic_structural import LocalResultStorage, SafeSubprocessRunner
+from forensic_structural.service import StructuralAnalysisEngine
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import Response
 
@@ -21,10 +23,11 @@ from forensic_api.logging_config import (
     request_id_context,
     safe_request_id,
 )
-from forensic_api.routes import cases, evidence, health
+from forensic_api.routes import cases, evidence, health, structural
 from forensic_api.schemas import ErrorDetail, ErrorEnvelope
 from forensic_api.services.cases import CaseService
 from forensic_api.services.evidence_intake import EvidenceIntakeService
+from forensic_api.services.structural import StructuralAnalysisService
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +48,8 @@ def create_app(
     *,
     database: Database | None = None,
     storage: StorageBackend | None = None,
+    result_storage: LocalResultStorage | None = None,
+    structural_engine: StructuralAnalysisEngine | None = None,
     initialize_schema: bool = False,
 ) -> FastAPI:
     configured = settings or Settings()
@@ -56,21 +61,47 @@ def create_app(
         upload_chunk_bytes=configured.upload_chunk_bytes,
         allowed_media_types=configured.allowed_media_types,
     )
+    configured_result_storage = result_storage or LocalResultStorage(
+        configured.structural_result_root
+    )
+    runner = SafeSubprocessRunner(
+        timeout_seconds=configured.structural_tool_timeout_seconds,
+        max_output_bytes=configured.structural_max_output_bytes,
+    )
+    configured_engine = structural_engine or StructuralAnalysisEngine(
+        runner=runner,
+        exiftool_binary=configured.exiftool_binary,
+        ffprobe_binary=configured.ffprobe_binary,
+        mediainfo_binary=configured.mediainfo_binary,
+    )
     if initialize_schema:
         configured_database.create_schema_for_tests()
 
     repository = Repository(configured_database.sessions)
     app = FastAPI(
-        title="Multimedia Forensic Platform — Local Evidence Intake",
-        version="0.2.0",
-        description="CPU-only Phase 2 API. No evidence download or detector inference.",
+        title="Multimedia Forensic Platform — Local Structural Analysis",
+        version="0.3.0",
+        description=(
+            "CPU-only Phase 3 API with immutable evidence intake and deterministic "
+            "structural reporting. No evidence download or detector inference."
+        ),
     )
     app.state.settings = configured
     app.state.database = configured_database
     app.state.storage = configured_storage
+    app.state.result_storage = configured_result_storage
     app.state.repository = repository
     app.state.case_service = CaseService(repository)
     app.state.evidence_service = EvidenceIntakeService(repository, configured_storage)
+    app.state.structural_service = StructuralAnalysisService(
+        repository=repository,
+        evidence_storage=configured_storage,
+        result_storage=configured_result_storage,
+        engine=configured_engine,
+        template_directory=configured.report_template_dir,
+        enabled=configured.structural_analysis_enabled,
+        git_commit=configured.structural_git_commit,
+    )
 
     @app.middleware("http")
     async def correlation_id(
@@ -109,4 +140,5 @@ def create_app(
     app.include_router(health.router)
     app.include_router(cases.router)
     app.include_router(evidence.router)
+    app.include_router(structural.router)
     return app

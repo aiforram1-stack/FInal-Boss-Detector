@@ -15,6 +15,8 @@ from forensic_contracts import (
     EvidenceDerivative,
     ForensicTestResult,
     ReportManifest,
+    StructuralAnalysisRun,
+    StructuralReport,
 )
 from pydantic import BaseModel
 
@@ -30,6 +32,8 @@ MODELS: tuple[type[BaseModel], ...] = (
     DetectorResult,
     ForensicTestResult,
     ReportManifest,
+    StructuralAnalysisRun,
+    StructuralReport,
 )
 
 

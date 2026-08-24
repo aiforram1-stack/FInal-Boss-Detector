@@ -9,6 +9,7 @@ from alembic.config import Config
 from conftest import PNG_A, AppClient, CaseFactory
 from fastapi.testclient import TestClient
 from forensic_api.db.models import EvidenceAssetRecord
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.exc import IntegrityError, OperationalError
 
 
@@ -99,3 +100,10 @@ def test_alembic_upgrade_creates_schema(tmp_path: Path, monkeypatch: pytest.Monk
     config = Config("alembic.ini")
     command.upgrade(config, "head")
     assert database_path.exists()
+    tables = set(inspect(create_engine(f"sqlite:///{database_path}")).get_table_names())
+    assert {
+        "structural_analysis_runs",
+        "structural_test_results",
+        "structural_artifacts",
+        "structural_reports",
+    }.issubset(tables)

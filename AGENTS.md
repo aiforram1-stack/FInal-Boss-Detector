@@ -9,11 +9,12 @@ produce structured evidence records.
 # Current Authorization
 
 - Read `PLAN.md` before starting work.
-- Phase 0, Phase 1, and Phase 2 local evidence intake are authorized.
-- Phase 2 is CPU-only local case creation, bounded upload, hashing, byte-signature
-  type detection, append-only storage, SQLite persistence, and metadata retrieval.
-- Do not implement detector inference, report generation, cloud deployment,
-  frontend code, model downloads, OSINT, training, or Phase 3 work until the user
+- Phases 0–2 are complete. Phase 3 structural media analysis and deterministic
+  JSON/HTML reporting is the only active implementation phase.
+- Phase 3 is CPU-only, integrity-gated, shell-free, bounded local metadata
+  inspection. Optional tools must fail visibly without preventing API startup.
+- Do not implement detector inference, cloud deployment, frontend code, model
+  downloads, OSINT, training, PDF reporting, or Phase 4 work until the user
   explicitly authorizes the corresponding later phase.
 
 # Non-Negotiable Rules
@@ -45,6 +46,8 @@ produce structured evidence records.
 
 - Shared contracts belong under `packages/contracts`.
 - Evidence preservation belongs under `packages/evidence`.
+- Structural tool adapters and deterministic reporting belong under
+  `packages/structural`.
 - Detector-specific logic belongs under `workers`.
 - The API must not import detector implementation code.
 - GPU workers accept and return versioned JSON contracts.
@@ -58,6 +61,10 @@ produce structured evidence records.
 - `make typecheck`
 - `make test`
 - `make test-api`
+- `make test-structural`
+- `make structural-check-tools`
+- `make structural-smoke`
+- `make report-smoke`
 - `make db-upgrade`
 - `make api`
 - `make safety`

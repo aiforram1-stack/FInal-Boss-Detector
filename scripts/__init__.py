@@ -1,1 +1,1 @@
-"""Repository verification and schema-generation scripts."""
+"""Repository validation and smoke-test scripts."""
