@@ -62,6 +62,7 @@ docker run --rm \
   --env IMAGE_COMMUNITY_ALLOW_MODEL_DOWNLOAD=false \
   --env IMAGE_COMMUNITY_REQUIRE_CUDA=false \
   --env IMAGE_COMMUNITY_TEMP_ROOT=/work/tmp \
+  --env TMPDIR=/work/tmp \
   "$image_reference" \
   /app/workers/image-community/scripts/container_smoke.py
 

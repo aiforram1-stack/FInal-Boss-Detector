@@ -106,7 +106,7 @@ image-community-container-build-mock:
 
 image-community-container-smoke:
 	test -n "$${IMAGE:-}"
-	docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --pids-limit 256 --tmpfs /work/tmp:rw,noexec,nosuid,size=64m,mode=1777 --entrypoint python --env IMAGE_COMMUNITY_ENVIRONMENT=test --env IMAGE_COMMUNITY_BACKEND=mock --env IMAGE_COMMUNITY_ALLOW_MODEL_DOWNLOAD=false --env IMAGE_COMMUNITY_REQUIRE_CUDA=false --env IMAGE_COMMUNITY_TEMP_ROOT=/work/tmp "$${IMAGE}" /app/workers/image-community/scripts/container_smoke.py
+	docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --pids-limit 256 --tmpfs /work/tmp:rw,noexec,nosuid,size=64m,mode=1777 --entrypoint python --env IMAGE_COMMUNITY_ENVIRONMENT=test --env IMAGE_COMMUNITY_BACKEND=mock --env IMAGE_COMMUNITY_ALLOW_MODEL_DOWNLOAD=false --env IMAGE_COMMUNITY_REQUIRE_CUDA=false --env IMAGE_COMMUNITY_TEMP_ROOT=/work/tmp --env TMPDIR=/work/tmp "$${IMAGE}" /app/workers/image-community/scripts/container_smoke.py
 
 image-community-container-scan:
 	test -n "$${IMAGE:-}"

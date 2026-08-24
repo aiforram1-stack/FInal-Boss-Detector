@@ -30,7 +30,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     IMAGE_COMMUNITY_TEMP_ROOT=/work/tmp \
     IMAGE_COMMUNITY_DEVICE=cuda \
     IMAGE_COMMUNITY_REQUIRE_CUDA=false \
-    HF_HOME=/models/huggingface
+    HF_HOME=/models/huggingface \
+    TMPDIR=/work/tmp
 
 WORKDIR /app
 
@@ -84,7 +85,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     IMAGE_COMMUNITY_TEMP_ROOT=/work/tmp \
     IMAGE_COMMUNITY_DEVICE=cuda \
     IMAGE_COMMUNITY_REQUIRE_CUDA=true \
-    HF_HOME=/models/huggingface
+    HF_HOME=/models/huggingface \
+    TMPDIR=/work/tmp
 
 WORKDIR /app
 

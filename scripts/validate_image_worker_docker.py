@@ -47,6 +47,7 @@ def main() -> None:
         "CPU dependency boundary": "--only-group image-community-mock-runtime",
         "GPU dependency boundary": "--only-group image-community-runtime",
         "model downloading disabled": "IMAGE_COMMUNITY_ALLOW_MODEL_DOWNLOAD=false",
+        "external temporary root": "TMPDIR=/work/tmp",
         "shared contracts only": "COPY packages/contracts ./packages/contracts",
         "generated mock smoke entrypoint": "scripts/container_smoke.py",
     }
