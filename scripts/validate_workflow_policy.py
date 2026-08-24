@@ -61,6 +61,10 @@ def main() -> None:
                 failures.append(f"PR workflow contains prohibited capability: {prohibited}")
         if "platforms: linux/amd64" not in pr_text:
             failures.append("PR workflow must build Linux AMD64 explicitly")
+        if "builder: default" not in pr_text:
+            failures.append("PR GPU validation must use the native Docker builder")
+        if 'docker image rm "$MOCK_IMAGE"' not in pr_text:
+            failures.append("PR workflow must reclaim the verified mock image before GPU build")
 
         publish_text = PUBLISH_WORKFLOW.read_text(encoding="utf-8")
         required_publish_fragments = (

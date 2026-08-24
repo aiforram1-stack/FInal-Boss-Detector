@@ -77,8 +77,15 @@ The pull-request workflow has only `contents: read`; it never logs in to a
 registry, pushes an image, creates an attestation, receives a secret, or uses
 `pull_request_target`. It builds native `linux/amd64` targets on a GitHub-hosted
 AMD64 runner, runs the mock container with networking disabled, scans source
-and images, and inspects image contents. PR BuildKit caches use PR-only scopes
-and are never read by the release build.
+and images, and inspects image contents. The small mock target uses a PR-only
+GitHub Actions cache. After that target is verified, its local image and
+container-driver cache are removed from the ephemeral runner. The load-required
+CUDA target uses Docker's native builder, which loads directly into the local
+image store rather than retaining a second container-driver copy of the large
+CUDA layers. Docker documents that the native `docker` driver loads directly
+but does not support the GitHub Actions cache backend, so that PR step is
+intentionally uncached. None of these PR paths are read by the protected
+release build.
 
 The publication workflow runs only for relevant pushes to `main` or a manual
 dispatch on `main`. It has exactly `contents: read`, `packages: write`,

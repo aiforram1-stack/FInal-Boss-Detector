@@ -60,6 +60,7 @@ jobs:
           make image-community-manifest-check
           make image-community-checkpoint-dry-run
       - name: Set up Docker Buildx
+        id: buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # reviewed release v4.0.0
       - name: Set public OCI build metadata
         id: metadata
@@ -122,9 +123,20 @@ jobs:
             --report trivy-mock-image.json \
             --exceptions security/vulnerability-exceptions.yaml \
             --summary vulnerability-mock-summary.json
-      - name: Build Linux AMD64 gpu-runtime target without publishing or CUDA execution
+      - name: Record mock image size and reclaim ephemeral runner space
+        env:
+          BUILDX_BUILDER: ${{ steps.buildx.outputs.name }}
+          MOCK_IMAGE: local/image-community-mock:${{ github.sha }}
+        run: |
+          docker image inspect --format 'mock bytes={{.Size}} architecture={{.Architecture}}' "$MOCK_IMAGE" | tee mock-image-size.txt
+          docker history --no-trunc "$MOCK_IMAGE" > mock-image-history.txt
+          docker image rm "$MOCK_IMAGE"
+          docker buildx prune --builder "$BUILDX_BUILDER" --all --force
+          docker system df
+      - name: Build Linux AMD64 gpu-runtime with native Docker driver without publishing or CUDA execution
         uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # reviewed release v7.0.0
         with:
+          builder: default
           context: .
           file: workers/image-community/Dockerfile
           target: gpu-runtime
@@ -140,8 +152,6 @@ jobs:
             PROJECT_VERSION=${{ steps.metadata.outputs.version }}
             PROJECT_SOURCE_URL=${{ steps.metadata.outputs.source_url }}
             PROJECT_VENDOR=${{ github.repository_owner }}
-          cache-from: type=gha,scope=pr-image-community-gpu
-          cache-to: type=gha,mode=max,scope=pr-image-community-gpu
       - name: Inspect and mock-smoke the production-shaped image without CUDA
         env:
           GPU_IMAGE: local/image-community-gpu:${{ github.sha }}
@@ -159,12 +169,11 @@ jobs:
             --summary vulnerability-gpu-summary.json
       - name: Report image and layer sizes
         env:
-          MOCK_IMAGE: local/image-community-mock:${{ github.sha }}
           GPU_IMAGE: local/image-community-gpu:${{ github.sha }}
         run: |
-          docker image inspect --format 'mock bytes={{.Size}} architecture={{.Architecture}}' "$MOCK_IMAGE"
+          cat mock-image-size.txt
+          cat mock-image-history.txt
           docker image inspect --format 'gpu bytes={{.Size}} architecture={{.Architecture}}' "$GPU_IMAGE"
-          docker history --no-trunc "$MOCK_IMAGE"
           docker history --no-trunc "$GPU_IMAGE"
       - name: Retain machine-readable scan reports
         if: always()
