@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
+import time
 from pathlib import Path
 from typing import Any
 
@@ -13,13 +15,21 @@ from pydantic import ValidationError
 
 from forensic_image_community.config import ImageCommunitySettings
 from forensic_image_community.errors import WorkerError, WorkerErrorCode
-from forensic_image_community.factory import build_job_service
+from forensic_image_community.factory import build_job_service, build_phase6_validation_service
 from forensic_image_community.fixture_data import generated_rgb_png
 from forensic_image_community.input_fetcher import MemoryInputFetcher
 from forensic_image_community.job_service import ImageCommunityJobService
+from forensic_image_community.phase6_contracts import (
+    CheckpointBootstrapRequest,
+    GpuValidationRequest,
+)
+from forensic_image_community.phase6_validation import Phase6ValidationService
 
 MAX_LOCAL_EVENT_BYTES = 1024 * 1024
 _default_handler: WorkerHandler | None = None
+_phase6_service: Phase6ValidationService | None = None
+RUNPOD_JOB_ID_RE = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
+WORKER_PROCESS_STARTED_NS = time.perf_counter_ns()
 
 
 class WorkerHandler:
@@ -73,11 +83,78 @@ def build_ready_handler(
     return WorkerHandler(service)
 
 
+def _safe_runpod_job_id(event: dict[str, Any]) -> str:
+    value = event.get("id")
+    if value is None:
+        raise WorkerError(WorkerErrorCode.INVALID_JOB, "RunPod job identifier is required.")
+    if not isinstance(value, str) or not RUNPOD_JOB_ID_RE.fullmatch(value):
+        raise WorkerError(WorkerErrorCode.INVALID_JOB, "RunPod job identifier is invalid.")
+    return value
+
+
+def _phase6_handle(event: dict[str, Any], service: Phase6ValidationService) -> dict[str, object]:
+    raw_input = event.get("input")
+    if not isinstance(raw_input, dict):
+        raise WorkerError(WorkerErrorCode.INVALID_JOB, "Job input must be an object.")
+    operation = raw_input.get("operation")
+    runpod_job_id = _safe_runpod_job_id(event)
+    if operation == "checkpoint_bootstrap":
+        bootstrap_request = CheckpointBootstrapRequest.model_validate(raw_input)
+        return service.checkpoint_bootstrap(
+            bootstrap_request,
+            runpod_job_id=runpod_job_id,
+        ).model_dump(mode="json")
+    if operation == "gpu_validation":
+        validation_request = GpuValidationRequest.model_validate(raw_input)
+        return service.gpu_validation(
+            validation_request,
+            runpod_job_id=runpod_job_id,
+        ).model_dump(mode="json")
+    raise WorkerError(WorkerErrorCode.INVALID_JOB, "Phase 6 operation is unsupported.")
+
+
+def _initialize_phase6_worker(settings: ImageCommunitySettings) -> Phase6ValidationService:
+    service = build_phase6_validation_service(settings)
+    service.assert_startup_ready()
+    service.record_worker_initialization_ms(
+        max(0, round((time.perf_counter_ns() - WORKER_PROCESS_STARTED_NS) / 1_000_000))
+    )
+    return service
+
+
 def runpod_handler(event: dict[str, Any]) -> dict[str, object]:
-    global _default_handler
-    if _default_handler is None:
-        _default_handler = build_ready_handler(ImageCommunitySettings())
-    return _default_handler.handle(event)
+    global _default_handler, _phase6_service
+    try:
+        settings = ImageCommunitySettings()
+        raw_input = event.get("input")
+        if isinstance(raw_input, dict) and raw_input.get("operation") in {
+            "checkpoint_bootstrap",
+            "gpu_validation",
+        }:
+            if _phase6_service is None:
+                _phase6_service = _initialize_phase6_worker(settings)
+            return _phase6_handle(event, _phase6_service)
+        if settings.phase6_only_mode:
+            raise WorkerError(
+                WorkerErrorCode.INVALID_JOB,
+                "This endpoint accepts only controlled Phase 6 operations.",
+            )
+        if _default_handler is None:
+            _default_handler = build_ready_handler(settings)
+        return _default_handler.handle(event)
+    except WorkerError as exc:
+        return exc.external_dict()
+    except ValidationError:
+        return WorkerError(
+            WorkerErrorCode.INVALID_JOB,
+            "Job input did not satisfy the Phase 6 contract.",
+        ).external_dict()
+    except Exception as exc:
+        return WorkerError(
+            WorkerErrorCode.INTERNAL_ERROR,
+            "Worker encountered an internal error.",
+            internal_detail=type(exc).__name__,
+        ).external_dict()
 
 
 def _read_local_event(path: Path) -> dict[str, object]:
@@ -133,6 +210,10 @@ def main() -> None:
             import runpod  # type: ignore[import-not-found]
         except ImportError as exc:
             raise SystemExit("RunPod dependency is unavailable in this runtime") from exc
+        settings = ImageCommunitySettings()
+        if settings.environment == "production":
+            global _phase6_service
+            _phase6_service = _initialize_phase6_worker(settings)
         runpod.serverless.start({"handler": runpod_handler})
         return
     settings = ImageCommunitySettings()

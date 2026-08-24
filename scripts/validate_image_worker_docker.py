@@ -50,6 +50,16 @@ def main() -> None:
         "uv build cache removal": "rm -rf /root/.cache/uv",
         "build temporary root creation": "RUN mkdir -p /work/tmp",
         "model downloading disabled": "IMAGE_COMMUNITY_ALLOW_MODEL_DOWNLOAD=false",
+        "RunPod model cache root": (
+            "IMAGE_COMMUNITY_MODEL_CACHE_ROOT=/runpod-volume/huggingface-cache/hub"
+        ),
+        "verified checkpoint default": "IMAGE_COMMUNITY_REQUIRE_VERIFIED_CHECKPOINT_HASH=true",
+        "Phase 6-only mode default": "IMAGE_COMMUNITY_PHASE6_ONLY_MODE=false",
+        "sanitized inline validation output": (
+            "IMAGE_COMMUNITY_VALIDATION_OUTPUT_MODE=inline_sanitized"
+        ),
+        "Hugging Face offline mode": "HF_HUB_OFFLINE=1",
+        "Transformers offline mode": "TRANSFORMERS_OFFLINE=1",
         "external temporary root": "TMPDIR=/work/tmp",
         "shared contracts only": "COPY packages/contracts ./packages/contracts",
         "generated mock smoke entrypoint": "scripts/container_smoke.py",

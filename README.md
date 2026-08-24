@@ -1,14 +1,15 @@
 # Multimedia Forensic Platform
 
 Repository foundation, shared contracts, immutable local evidence intake,
-CPU-only structural reporting, and the Phase 5 publication pipeline for the
-Community Forensics image-worker adapter. Originals are
+CPU-only structural reporting, and Phase 6 preparation for queue-based RunPod
+Serverless validation of the Community Forensics image-worker adapter. Originals are
 content-addressed, re-hashed before local analysis, and reported through
 canonical JSON plus escaped self-contained HTML. The new detector boundary is
-tested locally with a deterministic mock; the real CUDA backend and immutable
-Linux AMD64 container are prepared but CUDA has not been executed.
+tested locally with a deterministic mock; the real CUDA backend, strict model-cache
+resolver, bootstrap job, combined GPU-validation job, and local safety controls
+are prepared but CUDA has not been executed.
 
-No real detector inference, model download, GPU rental, RunPod deployment, frontend,
+No real detector inference, model download, GPU rental, RunPod resource, frontend,
 authentication, training, PDF, OSINT, or real media are included. Reports
 contain structural observations and coverage only—never a real/fake,
 authorship, or AI-generation verdict. Detector raw scores are likewise
@@ -47,7 +48,7 @@ make structural-smoke
 make report-smoke
 ```
 
-The Phase 5 Mac-safe worker and container-policy gate is:
+The Phase 6 Mac-safe preparation and container-policy gate is:
 
 ```bash
 make image-community-manifest-check
@@ -58,13 +59,16 @@ make image-community-test
 make image-community-docker-lint
 make image-community-mock
 make image-community-container-check
+make phase6-check
 ```
 
 These commands perform no checkpoint download, CUDA execution, live object
-fetch, RunPod call, container publication, or GPU provisioning. The separate
+fetch, RunPod mutation, container publication, or GPU provisioning. The separate
 GitHub pull-request workflow builds both Linux AMD64 image targets without
 publishing; protected main/manual publication is documented in
-`docs/adr/0010-container-publication-and-attestation.md`.
+`docs/adr/0010-container-publication-and-attestation.md`. Queue-only validation,
+the USD 2.00 cap, exact approval binding, and final zero-worker lock are defined
+in `docs/adr/0011-runpod-serverless-validation.md`.
 
 `make schemas` must not change committed files after a clean generation.
 
@@ -103,8 +107,9 @@ curl \
 - `packages/structural/`: safe tool runner, adapters, normalization, consistency,
   create-only result artifacts, and deterministic report rendering.
 - `workers/image-community/`: pinned manifest, secure input/decoder pipeline,
-  deterministic mock, unexecuted real CUDA backend, RunPod-compatible handler,
-  Docker definition, and GPU-test scaffolding.
+  deterministic mock, unexecuted real CUDA backend, strict RunPod model-cache
+  resolver, versioned control jobs, Docker definition, and CPU-only validation
+  scaffolding.
 - `apps/api/`: FastAPI routes, services, SQLite persistence, and migrations.
 - `schemas/`: generated JSON Schemas committed for non-Python consumers.
 - `docs/model-cards/community-forensics.md`: scope, immutable identity, raw-score

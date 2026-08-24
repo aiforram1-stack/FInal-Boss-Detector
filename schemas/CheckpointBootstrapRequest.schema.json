@@ -1,0 +1,58 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "detector_id": {
+      "const": "community-forensics-384",
+      "title": "Detector Id",
+      "type": "string"
+    },
+    "expected_checkpoint_filename": {
+      "pattern": "^[A-Za-z0-9._-]+$",
+      "title": "Expected Checkpoint Filename",
+      "type": "string"
+    },
+    "expected_model_repository": {
+      "maxLength": 255,
+      "minLength": 3,
+      "title": "Expected Model Repository",
+      "type": "string"
+    },
+    "expected_model_revision": {
+      "pattern": "^[a-f0-9]{40}$",
+      "title": "Expected Model Revision",
+      "type": "string"
+    },
+    "fixture_id": {
+      "const": "phase6-generated-fixture",
+      "title": "Fixture Id",
+      "type": "string"
+    },
+    "operation": {
+      "const": "checkpoint_bootstrap",
+      "title": "Operation",
+      "type": "string"
+    },
+    "perform_basic_load": {
+      "const": true,
+      "default": true,
+      "title": "Perform Basic Load",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "operation",
+    "detector_id",
+    "expected_model_repository",
+    "expected_model_revision",
+    "expected_checkpoint_filename",
+    "fixture_id"
+  ],
+  "title": "CheckpointBootstrapRequest",
+  "type": "object"
+}

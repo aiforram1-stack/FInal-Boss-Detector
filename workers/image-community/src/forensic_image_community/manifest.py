@@ -56,7 +56,7 @@ class ModelDefinition(ManifestRecord):
     format: Literal["safetensors"]
     checkpoint_sha256: str = Field(pattern=SHA256_PATTERN)
     checkpoint_byte_length: int = Field(gt=0)
-    checkpoint_hash_status: Literal["verified_from_huggingface_lfs_oid"]
+    checkpoint_hash_status: Literal["verified_from_huggingface_lfs_oid", "OBSERVED_BOOTSTRAP_HASH"]
     input_resolution: Literal[384]
     architecture: str = Field(min_length=1, max_length=255)
 

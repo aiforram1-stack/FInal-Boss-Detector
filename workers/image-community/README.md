@@ -1,11 +1,11 @@
 # Community Forensics image worker
 
-This Phase 4 adapter and Phase 5 container pipeline consume the shared versioned `DetectorJob`, securely
+This adapter, container pipeline, and Phase 6 preparation consume the shared versioned `DetectorJob`, securely
 acquires and verifies one image, performs the pinned Community Forensics
 evaluation preprocessing, invokes an injected backend, and returns the shared
 `DetectorResult`. Local and CI execution use a deterministic mock. The CUDA
-backend and RunPod entry point are present for later validation but are not run
-or deployed in Phase 5.
+backend and queue-based RunPod entry point are present for controlled validation
+but have not been run or deployed.
 
 ## Commands
 
@@ -21,6 +21,7 @@ make image-community-checkpoint-dry-run
 make image-community-docker-lint
 make image-community-mock
 make image-community-container-check
+make phase6-check
 ```
 
 These ordinary commands require neither CUDA nor torch and do not download a
@@ -38,6 +39,11 @@ through `MemoryInputFetcher`.
 - `preprocessing.py`: pinned resize, crop, scaling, normalization, and fingerprint;
 - `mock_backend.py`: deterministic local-only raw output;
 - `community_backend.py`: lazy CUDA model loading and checkpoint verification;
+- `cache_resolver.py`: strict pinned RunPod Hugging Face snapshot resolution;
+- `phase6_contracts.py`: versioned bootstrap and combined validation artifacts;
+- `phase6_validation.py`: observational bootstrap plus one-job GPU validation;
+- `phase6_control.py`: pure approval, budget, polling, cancellation, sanitization,
+  and final endpoint-lock controls;
 - `job_service.py`: framework-independent orchestration and cleanup;
 - `result_builder.py`: shared result construction and complete identity;
 - `fitness.py`: structured mock/real readiness;
@@ -61,9 +67,12 @@ The Dockerfile exposes two digest-pinned Linux AMD64 targets:
   the generated-fixture smoke path; it does not install PyTorch, CUDA, RunPod,
   timm, safetensors, or Hugging Face tooling.
 - `gpu-runtime` retains PyTorch 2.7.1, CUDA 12.6, cuDNN 9, the real backend and
-  RunPod runtime, but no checkpoint. It defaults to production/community mode
-  and cannot pass readiness until a later GPU phase supplies CUDA, a verified
-  external checkpoint, and the immutable container digest.
+  RunPod runtime, but no checkpoint. It defaults to production/community and
+  verified-checkpoint mode, reads only the standard RunPod model cache, and
+  cannot pass readiness until the endpoint supplies CUDA, the exact cached
+  snapshot, immutable container digest, source commit, and release identity.
+  Phase 6 sets `IMAGE_COMMUNITY_PHASE6_ONLY_MODE=true` so this validation
+  endpoint rejects ordinary evidence jobs.
 
 Both targets run as UID/GID 10001, separate `/models` from `/work/tmp`, use the
 same contracts and job service, and contain no stored media fixture. Builds must
@@ -92,8 +101,8 @@ protected workflow and requires `IMAGE_DIGEST_REFERENCE` and
 
 See the [architecture note](../../docs/architecture/image-detector-worker.md),
 [model card](../../docs/model-cards/community-forensics.md), and
-[future GPU runbook](../../docs/runbooks/image-worker-future-gpu.md). Phase 5
-publication decisions are in
-[ADR 0010](../../docs/adr/0010-container-publication-and-attestation.md), and
-private-GHCR RunPod preparation is in the
-[Phase 6 preparation runbook](../../docs/runbooks/runpod-ghcr-private-image.md).
+[Phase 6 Serverless runbook](../../docs/runbooks/runpod-ghcr-private-image.md).
+Publication decisions are in
+[ADR 0010](../../docs/adr/0010-container-publication-and-attestation.md); the
+queue, approval, budget, cache, and final-lock decisions are in
+[ADR 0011](../../docs/adr/0011-runpod-serverless-validation.md).

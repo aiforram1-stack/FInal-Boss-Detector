@@ -26,7 +26,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     IMAGE_COMMUNITY_BACKEND=mock \
     IMAGE_COMMUNITY_MODEL_MANIFEST=/app/workers/image-community/model-manifest.yaml \
     IMAGE_COMMUNITY_MODEL_CACHE=/models/community-forensics \
+    IMAGE_COMMUNITY_MODEL_CACHE_ROOT=/runpod-volume/huggingface-cache/hub \
     IMAGE_COMMUNITY_ALLOW_MODEL_DOWNLOAD=false \
+    IMAGE_COMMUNITY_CHECKPOINT_BOOTSTRAP_MODE=false \
+    IMAGE_COMMUNITY_REQUIRE_VERIFIED_CHECKPOINT_HASH=true \
+    IMAGE_COMMUNITY_PHASE6_ONLY_MODE=false \
+    IMAGE_COMMUNITY_VALIDATION_OUTPUT_MODE=inline_sanitized \
     IMAGE_COMMUNITY_TEMP_ROOT=/work/tmp \
     IMAGE_COMMUNITY_DEVICE=cuda \
     IMAGE_COMMUNITY_REQUIRE_CUDA=false \
@@ -55,7 +60,7 @@ USER 10001:10001
 ENTRYPOINT ["python", "/app/workers/image-community/scripts/container_smoke.py"]
 
 
-# Production-shaped CUDA target. The checkpoint remains external and Phase 6 is not authorized.
+# Production CUDA target. The checkpoint remains externally cached and paid use is approval-gated.
 # Registry digest rechecked 2026-08-24.
 FROM --platform=linux/amd64 pytorch/pytorch:2.7.1-cuda12.6-cudnn9-runtime@sha256:2b59b1b91885677814f78be1f8df48a25d5dc952eb6580eaecfefca510f9afd3 AS gpu-runtime
 
@@ -82,11 +87,19 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     IMAGE_COMMUNITY_BACKEND=community \
     IMAGE_COMMUNITY_MODEL_MANIFEST=/app/workers/image-community/model-manifest.yaml \
     IMAGE_COMMUNITY_MODEL_CACHE=/models/community-forensics \
+    IMAGE_COMMUNITY_MODEL_CACHE_ROOT=/runpod-volume/huggingface-cache/hub \
     IMAGE_COMMUNITY_ALLOW_MODEL_DOWNLOAD=false \
+    IMAGE_COMMUNITY_CHECKPOINT_BOOTSTRAP_MODE=false \
+    IMAGE_COMMUNITY_REQUIRE_VERIFIED_CHECKPOINT_HASH=true \
+    IMAGE_COMMUNITY_PHASE6_ONLY_MODE=false \
+    IMAGE_COMMUNITY_VALIDATION_OUTPUT_MODE=inline_sanitized \
+    IMAGE_COMMUNITY_PROJECT_SOURCE_COMMIT=${PROJECT_SOURCE_COMMIT} \
     IMAGE_COMMUNITY_TEMP_ROOT=/work/tmp \
     IMAGE_COMMUNITY_DEVICE=cuda \
     IMAGE_COMMUNITY_REQUIRE_CUDA=true \
-    HF_HOME=/models/huggingface \
+    HF_HOME=/runpod-volume/huggingface-cache \
+    HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1 \
     TMPDIR=/work/tmp
 
 WORKDIR /app

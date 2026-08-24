@@ -9,14 +9,23 @@ produce structured evidence records.
 # Current Authorization
 
 - Read `PLAN.md` before starting work.
-- Phases 0–4 are complete on stacked feature branches. Phase 5, immutable build,
-  protected private-GHCR publication, and verification of the first Community
-  Forensics GPU-shaped container, is the only active implementation phase.
+- Phase 6, first real Community Forensics GPU validation on RunPod Serverless,
+  is the only active implementation phase. GitHub PRs #2, #4, #6, and #8 are
+  still open and stacked; no cloud deployment may claim those phases are
+  merged until GitHub proves it.
+- Phase 6 repository preparation may add the cache resolver, bootstrap and GPU
+  validation modes, local control-plane contracts/tests, documentation, and a
+  reviewable stacked pull request.
+- RunPod account, catalog, registry, billing, and resource reads are allowed.
+  Do not create or modify an endpoint, worker, job, Pod, volume, registry
+  credential, or other billable resource until the user sends exactly
+  `APPROVE PHASE 6 SERVERLESS COST` for the reported configuration.
 - Local development remains CPU-only on macOS. Required tests use the mock
   backend, generated fixtures, fake HTTP transports, no checkpoint and no CUDA.
-- Phase 5 may define read-only PR builds and protected main/manual publication,
-  but must not download weights, run real inference, rent a GPU, deploy RunPod,
-  connect the API to the worker, train a model, or begin Phase 6.
+- Phase 6 must use one queue endpoint, minimum workers zero, maximum workers at
+  most one during approved validation and zero at completion, one GPU per
+  worker, no network volume, no Pod, no private evidence, and no more than
+  $2.00 total approved spend. Do not connect the main API or begin Phase 7.
 
 # Non-Negotiable Rules
 
@@ -72,6 +81,7 @@ produce structured evidence records.
 - `make api`
 - `make safety`
 - `make image-community-container-check`
+- `make phase6-check`
 
 # Definition of Done
 

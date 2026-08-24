@@ -29,7 +29,21 @@ def test_safe_local_configuration_defaults_and_host_parsing(
     [
         {"environment": "production", "backend": "mock"},
         {"environment": "production", "backend": "community", "container_digest": None},
+        {
+            "environment": "production",
+            "backend": "community",
+            "container_digest": f"sha256:{'a' * 64}",
+            "project_source_commit": None,
+        },
+        {
+            "environment": "production",
+            "backend": "community",
+            "container_digest": f"sha256:{'a' * 64}",
+            "project_source_commit": "b" * 40,
+            "endpoint_release_identity": None,
+        },
         {"backend": "community", "require_cuda": False},
+        {"checkpoint_bootstrap_mode": True, "require_verified_checkpoint_hash": True},
         {"allow_redirects": True, "max_redirects": 0},
         {"download_chunk_bytes": 1024, "max_input_bytes": 512},
         {"allowed_input_hosts": {"https://bad.example"}},
@@ -88,3 +102,28 @@ def test_manifest_path_and_temp_root_are_configurable(tmp_path: Path) -> None:
     configured = settings(tmp_path)
     assert configured.model_manifest == WORKER_ROOT / "model-manifest.yaml"
     assert configured.ensure_temp_root() == (tmp_path / "worker-temp").resolve()
+
+
+def test_phase6_bootstrap_and_verified_production_modes_are_mutually_exclusive(
+    tmp_path: Path,
+) -> None:
+    common = {
+        "environment": "production",
+        "backend": "community",
+        "container_digest": f"sha256:{'a' * 64}",
+        "project_source_commit": "b" * 40,
+        "endpoint_release_identity": "phase6-test-release",
+        "temp_root": tmp_path / "temp",
+    }
+    bootstrap = ImageCommunitySettings.model_validate(
+        {
+            **common,
+            "checkpoint_bootstrap_mode": True,
+            "require_verified_checkpoint_hash": False,
+        }
+    )
+    verified = ImageCommunitySettings.model_validate(common)
+    assert bootstrap.checkpoint_bootstrap_mode is True
+    assert bootstrap.require_verified_checkpoint_hash is False
+    assert verified.checkpoint_bootstrap_mode is False
+    assert verified.require_verified_checkpoint_hash is True

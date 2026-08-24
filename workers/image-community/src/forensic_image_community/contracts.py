@@ -65,6 +65,7 @@ class FitnessResult(InternalRecord):
     checks: dict[str, bool]
     error_code: str | None = None
     message: str
+    telemetry: dict[str, JsonValue] = Field(default_factory=dict)
 
 
 @dataclass(slots=True)

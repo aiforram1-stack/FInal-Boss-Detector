@@ -1,8 +1,13 @@
 # Community Forensics worker scope
 
-- Phase 5 only. Package and verify the existing worker; do not connect it to the
-  API, rent a GPU, deploy RunPod, download a checkpoint, run real inference, or
-  implement Phase 6.
+- Phase 6 only. Prepare and validate the existing worker for one controlled,
+  queue-based RunPod Serverless endpoint. Do not connect it to the main API,
+  create a Pod or network volume, add a detector, train a model, or begin
+  Phase 7.
+- Local and ordinary CI commands remain CPU-only. A real checkpoint and CUDA
+  may be used only inside an explicitly cost-approved RunPod Serverless job.
+- Before the exact approval phrase `APPROVE PHASE 6 SERVERLESS COST`, only
+  repository work and read-only RunPod/GitHub checks are allowed.
 - Ordinary local and CI commands must use the mock backend and must not perform
   real network requests, import CUDA libraries, or download model weights.
 - Treat URLs and media as hostile. Fetch only HTTPS from exact configured
@@ -23,7 +28,13 @@
   to Git.
 - Pull-request workflows are read-only and cannot publish. Protected
   publication uses the repository `GITHUB_TOKEN`, a full source-SHA tag, and the
-  returned digest as authoritative identity. Never use a moving deployment tag.
+  returned digest as authoritative identity. RunPod must use that digest, never
+  a moving deployment tag.
 - Both `mock-test` and `gpu-runtime` targets use the same contracts and job
   service. Neither target may contain a checkpoint; the mock smoke fixture must
   be generated in memory.
+- `checkpoint_bootstrap` may observe and report a cached checkpoint hash but
+  must not label it final production verification. `gpu_validation` must fail
+  closed until the checked-in manifest records an observed bootstrap hash and
+  must combine fitness, upstream parity, inference, repeatability,
+  performance, and negative tests in one paid job.

@@ -1,0 +1,148 @@
+{
+  "$defs": {
+    "JsonValue": {},
+    "ReleaseIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "checkpoint_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Checkpoint Sha256",
+          "type": "string"
+        },
+        "container_digest": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Container Digest",
+          "type": "string"
+        },
+        "detector_id": {
+          "const": "community-forensics-384",
+          "title": "Detector Id",
+          "type": "string"
+        },
+        "endpoint_release_identity": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Endpoint Release Identity",
+          "type": "string"
+        },
+        "model_repository": {
+          "maxLength": 255,
+          "minLength": 3,
+          "title": "Model Repository",
+          "type": "string"
+        },
+        "model_revision": {
+          "pattern": "^[a-f0-9]{40}$",
+          "title": "Model Revision",
+          "type": "string"
+        },
+        "project_source_commit": {
+          "pattern": "^[a-f0-9]{40}$",
+          "title": "Project Source Commit",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "upstream_repository_commit": {
+          "pattern": "^[a-f0-9]{40}$",
+          "title": "Upstream Repository Commit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "project_source_commit",
+        "container_digest",
+        "endpoint_release_identity",
+        "detector_id",
+        "upstream_repository_commit",
+        "model_repository",
+        "model_revision",
+        "checkpoint_sha256"
+      ],
+      "title": "ReleaseIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "artifact_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Artifact Sha256",
+      "type": "string"
+    },
+    "artifact_type": {
+      "pattern": "^[a-z0-9][a-z0-9_-]+$",
+      "title": "Artifact Type",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "fixture_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Fixture Sha256"
+    },
+    "identity": {
+      "$ref": "#/$defs/ReleaseIdentity"
+    },
+    "payload": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Payload",
+      "type": "object"
+    },
+    "runtime_versions": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Runtime Versions",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "pattern": "^[A-Z][A-Z0-9_]+$",
+      "title": "Status",
+      "type": "string"
+    },
+    "warnings": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "created_at",
+    "identity",
+    "runtime_versions",
+    "status",
+    "payload",
+    "artifact_sha256"
+  ],
+  "title": "ArtifactEnvelope",
+  "type": "object"
+}

@@ -7,6 +7,10 @@ from pathlib import Path
 import httpx
 from pydantic import ValidationError
 
+from forensic_image_community.cache_resolver import (
+    CachedCheckpoint,
+    RunPodModelCacheResolver,
+)
 from forensic_image_community.community_backend import CommunityForensicsBackend
 from forensic_image_community.config import ImageCommunitySettings
 from forensic_image_community.errors import WorkerError, WorkerErrorCode
@@ -21,6 +25,7 @@ from forensic_image_community.job_service import ImageCommunityJobService
 from forensic_image_community.manifest import ModelManifest, load_model_manifest
 from forensic_image_community.mock_backend import MockCommunityBackend
 from forensic_image_community.model_backend import DetectorBackend
+from forensic_image_community.phase6_validation import Phase6ValidationService
 from forensic_image_community.preprocessing import CommunityForensicsPreprocessor
 from forensic_image_community.result_builder import ResultBuilder
 from forensic_image_community.secure_transport import PinnedHTTPTransport
@@ -35,6 +40,30 @@ def validated_manifest(path: Path) -> ModelManifest:
             "Pinned model manifest is invalid.",
             internal_detail=type(exc).__name__,
         ) from exc
+
+
+def resolve_runpod_checkpoint(
+    settings: ImageCommunitySettings, manifest: ModelManifest
+) -> CachedCheckpoint:
+    if settings.require_verified_checkpoint_hash and (
+        manifest.model.checkpoint_hash_status != "OBSERVED_BOOTSTRAP_HASH"
+    ):
+        raise WorkerError(
+            WorkerErrorCode.WORKER_NOT_READY,
+            "Verified mode requires an observed bootstrap checkpoint hash.",
+        )
+    expected_byte_length: int | None = manifest.model.checkpoint_byte_length
+    expected_sha256: str | None = manifest.model.checkpoint_sha256
+    if settings.checkpoint_bootstrap_mode:
+        expected_byte_length = None
+        expected_sha256 = None
+    return RunPodModelCacheResolver(settings.model_cache_root).resolve(
+        repository=manifest.model.repository,
+        revision=manifest.model.revision,
+        filename=manifest.model.filename,
+        expected_byte_length=expected_byte_length,
+        expected_sha256=expected_sha256,
+    )
 
 
 def build_job_service(
@@ -71,9 +100,12 @@ def build_job_service(
     if settings.backend == "mock":
         backend = MockCommunityBackend()
     else:
+        checkpoint_path = settings.model_cache / manifest.model.filename
+        if settings.environment == "production":
+            checkpoint_path = resolve_runpod_checkpoint(settings, manifest).checkpoint_path
         backend = CommunityForensicsBackend(
             manifest=manifest,
-            checkpoint_path=settings.model_cache / manifest.model.filename,
+            checkpoint_path=checkpoint_path,
             container_digest=settings.container_digest,
             min_free_vram_bytes=settings.min_free_vram_bytes,
         )
@@ -91,3 +123,40 @@ def build_job_service(
         result_builder=ResultBuilder(),
     )
     return service, WorkerFitnessCheck(settings=settings, manifest=manifest, backend=backend)
+
+
+def build_phase6_validation_service(
+    settings: ImageCommunitySettings,
+) -> Phase6ValidationService:
+    if settings.environment != "production" or settings.backend != "community":
+        raise WorkerError(
+            WorkerErrorCode.WORKER_NOT_READY,
+            "Phase 6 control jobs require the real production backend.",
+        )
+    manifest = validated_manifest(settings.model_manifest)
+    checkpoint = resolve_runpod_checkpoint(settings, manifest)
+    backend = CommunityForensicsBackend(
+        manifest=manifest,
+        checkpoint_path=checkpoint.checkpoint_path,
+        container_digest=settings.container_digest,
+        min_free_vram_bytes=settings.min_free_vram_bytes,
+        checkpoint_expected_sha256=checkpoint.sha256,
+        checkpoint_expected_byte_length=checkpoint.byte_length,
+    )
+    decoder = PillowImageDecoder(
+        max_width=settings.max_width,
+        max_height=settings.max_height,
+        max_pixels=settings.max_pixels,
+        max_decoded_memory_bytes=settings.max_decoded_memory_bytes,
+    )
+    preprocessor = CommunityForensicsPreprocessor(manifest)
+    fitness = WorkerFitnessCheck(settings=settings, manifest=manifest, backend=backend)
+    return Phase6ValidationService(
+        settings=settings,
+        manifest=manifest,
+        checkpoint=checkpoint,
+        backend=backend,
+        fitness=fitness,
+        decoder=decoder,
+        preprocessor=preprocessor,
+    )

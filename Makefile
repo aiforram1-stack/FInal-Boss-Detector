@@ -3,7 +3,7 @@ VENV_PYTHON := .venv/bin/python
 VENV_PIP := .venv/bin/pip
 PROJECT_PYTHONPATH := .:packages/contracts/src:packages/evidence/src:packages/structural/src:apps/api/src:workers/image-community/src
 
-.PHONY: setup schemas format lint typecheck test test-api test-structural test-tool-integration openapi db-upgrade api safety reconcile structural-check-tools structural-smoke report-smoke image-community-setup image-community-lint image-community-typecheck image-community-test image-community-mock image-community-manifest-check image-community-checkpoint-dry-run image-community-docker-lint image-community-gpu-test image-community-container-check image-community-container-build-mock image-community-container-smoke image-community-container-policy image-community-container-scan image-community-release-manifest-check image-community-attestation-verify
+.PHONY: setup schemas format lint typecheck test test-api test-structural test-tool-integration openapi db-upgrade api safety reconcile structural-check-tools structural-smoke report-smoke image-community-setup image-community-lint image-community-typecheck image-community-test image-community-mock image-community-manifest-check image-community-checkpoint-dry-run image-community-docker-lint image-community-gpu-test image-community-container-check image-community-container-build-mock image-community-container-smoke image-community-container-policy image-community-container-scan image-community-release-manifest-check image-community-attestation-verify phase6-check
 
 setup:
 	test -x $(VENV_PYTHON) || $(PYTHON) -m uv venv --python 3.11 .venv
@@ -116,3 +116,10 @@ image-community-attestation-verify:
 	test -n "$${IMAGE_DIGEST_REFERENCE:-}"
 	test -n "$${GITHUB_REPOSITORY:-}"
 	gh attestation verify "oci://$${IMAGE_DIGEST_REFERENCE}" --repo "$${GITHUB_REPOSITORY}"
+
+phase6-check: image-community-container-check
+	PYTHONPATH=$(PROJECT_PYTHONPATH) $(VENV_PYTHON) -m pytest \
+		workers/image-community/tests/test_phase6_cache_resolver.py \
+		workers/image-community/tests/test_phase6_contracts.py \
+		workers/image-community/tests/test_phase6_control.py \
+		workers/image-community/tests/test_phase6_validation.py
