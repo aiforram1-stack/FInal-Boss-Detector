@@ -18,15 +18,15 @@ Current status (2026-08-25):
 - [x] Phase 3 structural media analysis and deterministic reporting were
   merged by GitHub PR #4.
 - [x] Phase 4 Community Forensics worker adapter was merged by GitHub PR #6.
-- [ ] Phase 5 container pipeline implementation was merged by GitHub PR #8,
-  but protected publication is not accepted. The latest `main` attempt pushed
-  an immutable private image and passed build, pull, mock smoke, content, and
-  critical-vulnerability checks; it failed closed on Buildx attestation
-  parsing, unavailable GitHub attestations for a private user-owned
-  repository, and a GHCR package-API linkage false negative.
+- [x] Phase 5 container pipeline implementation was merged by GitHub PR #8.
+  Release-verifier repair PR #16 was merged, and protected publication from
+  merge commit `4062b946a29288330242d108dbbed9ded4d9d736` passed every gate for
+  immutable Linux AMD64 digest
+  `sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437`.
 - [ ] Phase 6 preparation was merged by GitHub PR #10 and is tracked by issue
-  #9. No real GPU validation has run. Cloud deployment remains behind the exact
-  cost-approval phrase and all Phase 5 release gates.
+  #9. No real GPU validation has run. RunPod still has no endpoint, worker,
+  queued/running job, Pod, volume, template, or registry credential. Cloud
+  mutation remains behind the exact cost-approval phrase.
 - [ ] Phase 7 and later are not authorized.
 
 ## Mission and first vertical slice
@@ -286,13 +286,14 @@ TOCTOU. No checkpoint, real inference, CUDA runtime, live input request, RunPod
 resource, GPU, container build/publication, API integration or Phase 5 work was
 performed.
 
-### Phase 5 — Immutable worker-image build, publication, and verification (verification incomplete)
+### Phase 5 — Immutable worker-image build, publication, and verification (completed)
 
 Dependencies: the Phase 4 worker passes locally and its contracts are frozen.
-The implementation was merged by GitHub PR #8; issue
+The implementation was merged by GitHub PR #8; verifier repair PR #16 is also
+merged. Issue
 [#7](https://github.com/aiforram1-stack/FInal-Boss-Detector/issues/7) retains the
-historical scope. Phase 5 remains incomplete until a protected `main`
-publication satisfies every release gate.
+historical scope. Protected `main` publication now satisfies every release
+gate.
 
 Candidate worktrees: workflow/release-contract work and container-hardening
 work are separable after the Docker target and manifest interface are agreed.
@@ -326,12 +327,23 @@ report, local database, private path, token, credential, or unexpected large
 file appears in the context, layers, logs, workflow artifacts, or release
 manifest. The published package remains private and linked to this repository.
 
-No part of Phase 5 may rent or start a GPU, create a RunPod Pod or Serverless
-endpoint, download a checkpoint, run real inference, connect the main API,
-deploy frontend/cloud infrastructure, train a model, mutate evidence, or begin
-Phase 6. Because this task must stop with an unmerged pull request, actual GHCR
-publication and its post-push digest evidence are expected only after a later
-authorized merge/manual run; no publication is claimed during PR validation.
+No part of Phase 5 rented or started a GPU, created a RunPod Pod or Serverless
+endpoint, downloaded a checkpoint, ran real inference, connected the main API,
+deployed frontend/cloud infrastructure, trained a model, mutated evidence, or
+performed Phase 6 GPU execution.
+
+Completion evidence (2026-08-25): protected run
+[`32769244299`](https://github.com/aiforram1-stack/FInal-Boss-Detector/actions/runs/32769244299)
+published and verified
+`ghcr.io/aiforram1-stack/forensic-image-community@sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437`
+for source commit `4062b946a29288330242d108dbbed9ded4d9d736`. The image is
+Linux AMD64 and 6,629,471,788 bytes. BuildKit SPDX SBOM and provenance,
+GitHub artifact attestation, repository-bound attestation verification,
+pull-by-digest identity, CPU mock smoke, image-content policy, package source
+linkage, checksum, and the final fail-closed gate all passed. Trivy reported
+zero critical, twelve high, zero excepted critical, and zero unexcepted
+critical findings. The checkpoint is absent and real GPU inference is still
+marked not run.
 
 #### Phase 5 implementation sequence
 
@@ -370,19 +382,13 @@ and an excluded 24 GB Blackwell MIG type. The account's worker quota is not
 exposed by the connected v2 control surface or visible account settings and
 remains a pre-approval check. No endpoint or paid job has been created.
 
-Preparation remains blocked from cloud execution by failed protected release
-gates, absence of a RunPod private-GHCR credential, and an unverified account
-worker quota. Protected run
-[`32761130191`](https://github.com/aiforram1-stack/FInal-Boss-Detector/actions/runs/32761130191)
-pushed source commit `114a23e1e55a63ebd85b416c28503ee9af156e5d`
-as Linux AMD64 digest
-`sha256:3a3cfc27fa43ef4c1d88218f17bd55ab43820bf57669e7cddd271037eb13b77b`;
-the image is 6,629,472,122 bytes but is explicitly unapproved. Buildx evidence
-verification and the package-API compatibility check need fixes. Signed-in
-package settings independently confirm that GHCR is private, source-linked to
-this repository, grants it Actions Admin access, and inherits repository
-access. GitHub artifact attestations still require a supported repository
-visibility or account plan. No endpoint or paid job may use this digest.
+Protected release gates are complete. The GitHub repository is public, while
+the GHCR package remains private, source-linked to this repository, grants it
+Actions Admin access, and inherits repository access. Cloud execution is now
+blocked only by the absent RunPod private-GHCR credential, unauthenticated local
+`runpodctl`, the account worker quota not being exposed by current read-only
+surfaces, and the mandatory exact cost-approval phrase. No endpoint or paid job
+has been created.
 
 Deliverables:
 

@@ -5,13 +5,21 @@ authorization:
   approved: false
   maximum_spend_usd: "2.00"
   maximum_paid_jobs: 3
+readiness:
+  endpoint_proposal_hash_status: BLOCKED_MISSING_REGISTRY_CREDENTIAL_ID
+  registry_credential_present: false
+  runpodctl_authenticated: false
+  account_worker_quota_verified: false
 image:
-  digest_reference: "ghcr.io/<github-owner>/forensic-image-community@sha256:<digest>"
-  source_commit: "<full-lowercase-source-commit>"
+  digest_reference: "ghcr.io/aiforram1-stack/forensic-image-community@sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437"
+  source_commit: "4062b946a29288330242d108dbbed9ded4d9d736"
   platform: linux/amd64
+  size_bytes: 6629471788
+  package_visibility: private
   checkpoint_included: false
 template:
   registry_credential_id: "<runpod-managed-read-only-ghcr-credential-id>"
+  planned_registry_credential_name: ghcr-aiforram1-phase6-readonly
   # Attach with runpodctl >=2.4.0 --model-reference. REST v2/MCP endpoint create
   # does not currently expose this field. The worker remains the independent
   # fail-closed revision authority.
@@ -27,9 +35,9 @@ template:
     IMAGE_COMMUNITY_PHASE6_ONLY_MODE: "true"
     IMAGE_COMMUNITY_VALIDATION_OUTPUT_MODE: inline_sanitized
     IMAGE_COMMUNITY_REQUIRE_CUDA: "true"
-    IMAGE_COMMUNITY_CONTAINER_DIGEST: "sha256:<digest>"
-    IMAGE_COMMUNITY_PROJECT_SOURCE_COMMIT: "<full-lowercase-source-commit>"
-    IMAGE_COMMUNITY_ENDPOINT_RELEASE_IDENTITY: "<non-secret-release-identity>"
+    IMAGE_COMMUNITY_CONTAINER_DIGEST: "sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437"
+    IMAGE_COMMUNITY_PROJECT_SOURCE_COMMIT: "4062b946a29288330242d108dbbed9ded4d9d736"
+    IMAGE_COMMUNITY_ENDPOINT_RELEASE_IDENTITY: phase6-bootstrap-4062b946
     HF_HUB_OFFLINE: "1"
     TRANSFORMERS_OFFLINE: "1"
 endpoint:
@@ -51,6 +59,11 @@ endpoint:
     - NVIDIA RTX A5000
   excluded_gpu_type_ids:
     - NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb
+  observed_availability:
+    NVIDIA GeForce RTX 3090: LOW
+    NVIDIA L4: LOW
+    NVIDIA RTX A5000: HIGH
+    NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb: HIGH
   gpu_count: 1
   min_cuda_version: "12.4"
   workers_min: 0
@@ -60,9 +73,34 @@ endpoint:
   scaler_value: 4
   execution_timeout_ms: 600000
   flashboot: FLASHBOOT
-  disk_gb: "<smallest-safe-value-from-measured-image-size>"
+  disk_gb: 10
   data_center_ids: []
   network_volume_ids: []
+cost_budget:
+  schema_version: "1.0"
+  starting_balance_usd: "10.00"
+  gpu_pool_id: AMPERE_24
+  gpu_rate_per_hour_usd: "0.69"
+  gpu_rate_per_second_usd: "0.0001916667"
+  expected_cold_start_seconds_per_job: 600
+  worst_case_cold_start_seconds_per_job: 1200
+  expected_bootstrap_execution_seconds: 180
+  expected_validation_execution_seconds: 360
+  idle_seconds_per_job: 5
+  maximum_job_execution_seconds: 600
+  model_cache_download_billed_to_worker: false
+  planned_paid_jobs: 2
+  diagnostic_retries: 1
+  maximum_paid_jobs: 3
+  estimated_container_disk_cost_usd: "0.01"
+  estimated_normal_cost_usd: "0.35"
+  estimated_worst_case_cost_usd: "1.20"
+  hard_maximum_spend_usd: "2.00"
+cost_breakdown:
+  estimated_bootstrap_compute_usd: "0.1505"
+  estimated_validation_compute_usd: "0.1850"
+  estimated_normal_compute_usd: "0.3355"
+  estimated_worst_case_compute_usd: "1.04"
 final_lock:
   workers_min: 0
   workers_max: 0

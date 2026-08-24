@@ -205,7 +205,7 @@
       "type": "string"
     },
     "model_revision": {
-      "pattern": "^[a-f0-9]{40}$",
+      "const": "6076002bf0d9dd37537f965ee2f06f826c333b61",
       "title": "Model Revision",
       "type": "string"
     },
@@ -245,7 +245,7 @@
       "type": "string"
     },
     "runpod_model_reference": {
-      "const": "OwensLab/commfor-model-384",
+      "const": "https://huggingface.co/OwensLab/commfor-model-384:6076002bf0d9dd37537f965ee2f06f826c333b61",
       "title": "Runpod Model Reference",
       "type": "string"
     },

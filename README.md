@@ -9,6 +9,13 @@ tested locally with a deterministic mock; the real CUDA backend, strict model-ca
 resolver, bootstrap job, combined GPU-validation job, and local safety controls
 are prepared but CUDA has not been executed.
 
+The GitHub repository is public and its source-linked GHCR worker package remains
+private. Protected publication has accepted Linux AMD64 image
+`ghcr.io/aiforram1-stack/forensic-image-community@sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437`
+for source commit `4062b946a29288330242d108dbbed9ded4d9d736`. This verifies the
+container supply chain and CPU mock only; it does not verify the checkpoint,
+CUDA, or real detector inference.
+
 No real detector inference, model download, GPU rental, RunPod resource, frontend,
 authentication, training, PDF, OSINT, or real media are included. Reports
 contain structural observations and coverage only—never a real/fake,

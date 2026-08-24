@@ -56,7 +56,7 @@
       "type": "integer"
     },
     "expected_cold_start_seconds_per_job": {
-      "maximum": 600,
+      "maximum": 1200,
       "minimum": 0,
       "title": "Expected Cold Start Seconds Per Job",
       "type": "integer"
@@ -161,6 +161,13 @@
         }
       ],
       "title": "Starting Balance Usd"
+    },
+    "worst_case_cold_start_seconds_per_job": {
+      "default": 1200,
+      "maximum": 1800,
+      "minimum": 0,
+      "title": "Worst Case Cold Start Seconds Per Job",
+      "type": "integer"
     }
   },
   "required": [
