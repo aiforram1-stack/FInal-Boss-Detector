@@ -100,11 +100,13 @@ RUN mkdir -p /work/tmp && \
     uv export --no-cache --frozen --only-group image-community-runtime --no-emit-project --output-file /tmp/requirements.txt && \
     python -m pip install --no-cache-dir --requirement /tmp/requirements.txt && \
     python -m pip install --no-cache-dir --no-deps . && \
+    apt-get purge --yes linux-libc-dev && \
     rm -rf \
       /opt/conda/etc/conda/test-files \
       /opt/conda/pkgs \
       /root/.cache/uv \
-      /tmp/requirements.txt && \
+      /tmp/requirements.txt \
+      /var/lib/apt/lists/* && \
     groupadd --system --gid 10001 forensic && \
     useradd --system --uid 10001 --gid forensic --home-dir /nonexistent --shell /usr/sbin/nologin forensic && \
     mkdir -p /models/community-forensics /models/huggingface /work/tmp && \

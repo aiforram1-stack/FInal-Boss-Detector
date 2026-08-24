@@ -70,6 +70,10 @@ Registry manifest responses were rechecked on the ADR date. The GPU image is
 Python 3.11 with PyTorch 2.7.1, CUDA 12.6, cuDNN 9, and its upstream runtime OS.
 Both final targets use UID/GID 10001, an explicit entrypoint, no secret build
 arguments, and complete OCI source/revision/version/created/license metadata.
+The CUDA base's `linux-libc-dev` package is removed after dependency
+installation because the runtime compiles no code and does not need kernel
+headers. This also removes development-only kernel CVEs from the published
+artifact instead of masking them with vulnerability exceptions.
 
 ### PR validation and protected publication are separate
 

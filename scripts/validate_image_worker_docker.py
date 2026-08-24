@@ -66,6 +66,8 @@ def main() -> None:
     for inherited_path in ("/opt/conda/etc/conda/test-files", "/opt/conda/pkgs"):
         if inherited_path not in dockerfile:
             failures.append(f"gpu-runtime must remove inherited Conda content: {inherited_path}")
+    if "apt-get purge --yes linux-libc-dev" not in dockerfile:
+        failures.append("gpu-runtime must remove unused kernel development headers")
     for label in REQUIRED_OCI_LABELS:
         if dockerfile.count(label) != 2:
             failures.append(f"OCI label must be present on both final targets: {label}")
