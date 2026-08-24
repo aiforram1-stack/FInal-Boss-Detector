@@ -59,6 +59,18 @@ jobs:
           make image-community-checkpoint-dry-run
           make safety
           uv run --frozen pytest packages/contracts/tests workers/image-community/tests -m "not gpu and not integration"
+      - name: Reclaim unused ephemeral runner SDK space for CUDA image verification
+        run: |
+          test "$GITHUB_ACTIONS" = "true"
+          df -h /
+          sudo rm -rf -- \
+            /opt/ghc \
+            /opt/hostedtoolcache/CodeQL \
+            /usr/local/.ghcup \
+            /usr/local/lib/android \
+            /usr/share/dotnet
+          sudo apt-get clean
+          df -h /
       - name: Derive lowercase immutable image identity
         id: identity
         env:

@@ -65,6 +65,10 @@ def main() -> None:
             failures.append("PR GPU validation must use the native Docker builder")
         if 'docker image rm "$MOCK_IMAGE"' not in pr_text:
             failures.append("PR workflow must reclaim the verified mock image before GPU build")
+        if 'test "$GITHUB_ACTIONS" = "true"' not in pr_text:
+            failures.append("PR runner cleanup must be guarded as GitHub Actions-only")
+        if "/usr/local/lib/android" not in pr_text:
+            failures.append("PR workflow must reclaim unused hosted-runner SDK space")
 
         publish_text = PUBLISH_WORKFLOW.read_text(encoding="utf-8")
         required_publish_fragments = (
@@ -80,6 +84,8 @@ def main() -> None:
             "SOURCE_COMMIT: ${{ github.sha }}",
             "tag_reference=$image_repository:sha-$SOURCE_COMMIT",
             "password: ${{ secrets.GITHUB_TOKEN }}",
+            'test "$GITHUB_ACTIONS" = "true"',
+            "/usr/local/lib/android",
         )
         for fragment in required_publish_fragments:
             if fragment not in publish_text:

@@ -87,6 +87,16 @@ but does not support the GitHub Actions cache backend, so that PR step is
 intentionally uncached. None of these PR paths are read by the protected
 release build.
 
+The pinned PyTorch/CUDA image is large enough that local loading plus Trivy's
+Docker export can exceed the default free space on a standard hosted runner.
+Both container workflows therefore delete only an explicit allowlist of
+unneeded, preinstalled Android, .NET, GHC, and CodeQL SDK directories after all
+Python checks pass. The cleanup is guarded by `GITHUB_ACTIONS=true`, runs only
+on GitHub's disposable job machine, prints capacity before and after, and does
+not touch the checkout, Docker, Python, Node action runtime, credentials, or
+any persistent service. Each hosted runner starts from a fresh image, so no
+durable data is deleted.
+
 The publication workflow runs only for relevant pushes to `main` or a manual
 dispatch on `main`. It has exactly `contents: read`, `packages: write`,
 `id-token: write`, and `attestations: write`. It uses `GITHUB_TOKEN`, derives a
