@@ -189,7 +189,7 @@ jobs:
           docker history --no-trunc "$GPU_IMAGE"
       - name: Retain machine-readable scan reports
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # reviewed release v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # reviewed release v7.0.1
         with:
           name: image-community-pr-vulnerability-reports
           path: |
