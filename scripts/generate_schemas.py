@@ -19,6 +19,18 @@ from forensic_contracts import (
     StructuralAnalysisRun,
     StructuralReport,
 )
+from forensic_image_community.phase6_contracts import (
+    ArtifactEnvelope,
+    CheckpointBootstrapRequest,
+    CheckpointBootstrapResponse,
+    GpuValidationRequest,
+    GpuValidationResponse,
+)
+from forensic_image_community.phase6_control import (
+    EndpointHealth,
+    EndpointProposal,
+    Phase6CostBudget,
+)
 from pydantic import BaseModel
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,6 +47,14 @@ MODELS: tuple[type[BaseModel], ...] = (
     ReportManifest,
     StructuralAnalysisRun,
     StructuralReport,
+    ArtifactEnvelope,
+    CheckpointBootstrapRequest,
+    CheckpointBootstrapResponse,
+    GpuValidationRequest,
+    GpuValidationResponse,
+    EndpointHealth,
+    EndpointProposal,
+    Phase6CostBudget,
 )
 
 

@@ -1,0 +1,84 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "detector_id": {
+      "const": "community-forensics-384",
+      "title": "Detector Id",
+      "type": "string"
+    },
+    "expected_checkpoint_byte_length": {
+      "exclusiveMinimum": 0,
+      "title": "Expected Checkpoint Byte Length",
+      "type": "integer"
+    },
+    "expected_checkpoint_filename": {
+      "pattern": "^[A-Za-z0-9._-]+$",
+      "title": "Expected Checkpoint Filename",
+      "type": "string"
+    },
+    "expected_checkpoint_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Expected Checkpoint Sha256",
+      "type": "string"
+    },
+    "expected_fixture_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Expected Fixture Sha256",
+      "type": "string"
+    },
+    "expected_model_repository": {
+      "maxLength": 255,
+      "minLength": 3,
+      "title": "Expected Model Repository",
+      "type": "string"
+    },
+    "expected_model_revision": {
+      "pattern": "^[a-f0-9]{40}$",
+      "title": "Expected Model Revision",
+      "type": "string"
+    },
+    "fixture_id": {
+      "const": "phase6-generated-fixture",
+      "title": "Fixture Id",
+      "type": "string"
+    },
+    "measured_repetitions": {
+      "default": 5,
+      "maximum": 20,
+      "minimum": 5,
+      "title": "Measured Repetitions",
+      "type": "integer"
+    },
+    "operation": {
+      "const": "gpu_validation",
+      "title": "Operation",
+      "type": "string"
+    },
+    "parity_absolute_tolerance": {
+      "default": 1e-06,
+      "exclusiveMinimum": 0,
+      "maximum": 0.0001,
+      "title": "Parity Absolute Tolerance",
+      "type": "number"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "operation",
+    "detector_id",
+    "expected_model_repository",
+    "expected_model_revision",
+    "expected_checkpoint_filename",
+    "expected_checkpoint_byte_length",
+    "expected_checkpoint_sha256",
+    "fixture_id",
+    "expected_fixture_sha256"
+  ],
+  "title": "GpuValidationRequest",
+  "type": "object"
+}

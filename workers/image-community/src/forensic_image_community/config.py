@@ -12,6 +12,7 @@ from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 WORKER_ROOT = Path(__file__).resolve().parents[2]
 CONTAINER_DIGEST_RE = re.compile(r"^sha256:[a-f0-9]{64}$")
+COMMIT_RE = re.compile(r"^[a-f0-9]{40}$")
 
 
 def _parse_hosts(value: object) -> object:
@@ -36,7 +37,12 @@ class ImageCommunitySettings(BaseSettings):
     backend: Literal["mock", "community"] = "mock"
     model_manifest: Path = WORKER_ROOT / "model-manifest.yaml"
     model_cache: Path = Path("/models/community-forensics")
+    model_cache_root: Path = Path("/runpod-volume/huggingface-cache/hub")
     allow_model_download: bool = False
+    checkpoint_bootstrap_mode: bool = False
+    require_verified_checkpoint_hash: bool = True
+    phase6_only_mode: bool = False
+    validation_output_mode: Literal["inline_sanitized"] = "inline_sanitized"
     max_input_bytes: int = Field(default=25 * 1024 * 1024, gt=0, le=1024 * 1024 * 1024)
     max_width: int = Field(default=16_384, gt=0, le=100_000)
     max_height: int = Field(default=16_384, gt=0, le=100_000)
@@ -54,7 +60,10 @@ class ImageCommunitySettings(BaseSettings):
     precision: Literal["float32"] = "float32"
     require_cuda: bool = True
     min_free_vram_bytes: int = Field(default=1024 * 1024 * 1024, ge=0)
+    min_total_vram_bytes: int = Field(default=20 * 1024 * 1024 * 1024, gt=0)
     container_digest: str | None = None
+    project_source_commit: str | None = None
+    endpoint_release_identity: str | None = Field(default=None, min_length=1, max_length=255)
 
     @field_validator("allowed_input_hosts")
     @classmethod
@@ -73,6 +82,15 @@ class ImageCommunitySettings(BaseSettings):
             raise ValueError("container digest must be an immutable sha256 digest")
         return value
 
+    @field_validator("project_source_commit")
+    @classmethod
+    def validate_source_commit(cls, value: str | None) -> str | None:
+        if value is None or value == "":
+            return None
+        if not COMMIT_RE.fullmatch(value):
+            raise ValueError("project source commit must be a complete lowercase Git commit")
+        return value
+
     @model_validator(mode="after")
     def validate_mode(self) -> Self:
         if self.download_chunk_bytes > self.max_input_bytes:
@@ -85,10 +103,24 @@ class ImageCommunitySettings(BaseSettings):
             raise ValueError("redirects require an explicit positive maximum")
         if self.environment == "production" and self.backend == "mock":
             raise ValueError("mock backend is prohibited in production")
+        if self.environment == "production" and self.allow_model_download:
+            raise ValueError("production model downloads are prohibited")
         if self.environment == "production" and self.container_digest is None:
             raise ValueError("production requires a container digest")
+        if self.environment == "production" and self.project_source_commit is None:
+            raise ValueError("production requires the immutable project source commit")
+        if self.environment == "production" and self.endpoint_release_identity is None:
+            raise ValueError("production requires an endpoint release identity")
         if self.backend == "community" and not self.require_cuda:
             raise ValueError("the Community Forensics production backend requires CUDA")
+        if self.checkpoint_bootstrap_mode and self.require_verified_checkpoint_hash:
+            raise ValueError("bootstrap mode cannot require a previously observed checkpoint hash")
+        if (
+            self.environment == "production"
+            and not self.checkpoint_bootstrap_mode
+            and not self.require_verified_checkpoint_hash
+        ):
+            raise ValueError("normal production validation must require a verified checkpoint hash")
         return self
 
     def ensure_temp_root(self) -> Path:

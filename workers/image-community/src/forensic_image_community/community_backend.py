@@ -29,16 +29,27 @@ class CommunityForensicsBackend:
         checkpoint_path: Path,
         container_digest: str | None,
         min_free_vram_bytes: int,
+        checkpoint_expected_sha256: str | None = None,
+        checkpoint_expected_byte_length: int | None = None,
         random_seed: int = 11997733,
     ) -> None:
         self.manifest = manifest
         self.checkpoint_path = checkpoint_path
         self.container_digest = container_digest
         self.min_free_vram_bytes = min_free_vram_bytes
+        self.checkpoint_expected_sha256 = (
+            checkpoint_expected_sha256 or manifest.model.checkpoint_sha256
+        )
+        self.checkpoint_expected_byte_length = (
+            checkpoint_expected_byte_length or manifest.model.checkpoint_byte_length
+        )
         self.random_seed = random_seed
         self._torch: ModuleType | None = None
         self._model: Any | None = None
         self._model_load_ms: int | None = None
+        self._checkpoint_sha256: str | None = None
+        self._checkpoint_byte_length: int | None = None
+        self._checkpoint_verification_ms: int | None = None
 
     @property
     def mock_backend(self) -> bool:
@@ -58,10 +69,34 @@ class CommunityForensicsBackend:
             repository_commit=self.manifest.source.repository_commit,
             container_digest=self.container_digest,
             model_revision=self.manifest.model.revision,
-            checkpoint_sha256=self.manifest.model.checkpoint_sha256,
+            checkpoint_sha256=self.checkpoint_expected_sha256,
         )
 
-    def verify_checkpoint(self) -> None:
+    @property
+    def model_loaded(self) -> bool:
+        return self._model is not None
+
+    @property
+    def model_training(self) -> bool | None:
+        if self._model is None:
+            return None
+        return bool(self._model.training)
+
+    @property
+    def model_load_ms(self) -> int | None:
+        return self._model_load_ms
+
+    @property
+    def checkpoint_verification_ms(self) -> int | None:
+        return self._checkpoint_verification_ms
+
+    def verify_checkpoint(
+        self,
+        *,
+        expected_sha256: str | None = None,
+        expected_byte_length: int | None = None,
+    ) -> tuple[int, str]:
+        verification_started = time.perf_counter_ns()
         try:
             stat = self.checkpoint_path.stat()
         except OSError as exc:
@@ -75,7 +110,15 @@ class CommunityForensicsBackend:
                 WorkerErrorCode.CHECKPOINT_UNAVAILABLE,
                 "Verified checkpoint is unavailable.",
             )
-        if stat.st_size != self.manifest.model.checkpoint_byte_length:
+        required_byte_length = (
+            self.checkpoint_expected_byte_length
+            if expected_byte_length is None
+            else expected_byte_length
+        )
+        required_sha256 = (
+            self.checkpoint_expected_sha256 if expected_sha256 is None else expected_sha256
+        )
+        if stat.st_size != required_byte_length:
             raise WorkerError(
                 WorkerErrorCode.CHECKPOINT_HASH_MISMATCH,
                 "Checkpoint length does not match the pinned manifest.",
@@ -91,11 +134,19 @@ class CommunityForensicsBackend:
                 "Checkpoint could not be verified.",
                 internal_detail=type(exc).__name__,
             ) from exc
-        if digest.hexdigest() != self.manifest.model.checkpoint_sha256:
+        actual_sha256 = digest.hexdigest()
+        if actual_sha256 != required_sha256:
             raise WorkerError(
                 WorkerErrorCode.CHECKPOINT_HASH_MISMATCH,
                 "Checkpoint SHA-256 does not match the pinned manifest.",
             )
+        self._checkpoint_byte_length = stat.st_size
+        self._checkpoint_sha256 = actual_sha256
+        self._checkpoint_verification_ms = max(
+            0,
+            round((time.perf_counter_ns() - verification_started) / 1_000_000),
+        )
+        return stat.st_size, actual_sha256
 
     def ensure_loaded(self) -> None:
         if self._model is not None:
@@ -152,6 +203,33 @@ class CommunityForensicsBackend:
         self._torch = torch
         self._model = model
 
+    def runtime_environment(self) -> dict[str, object]:
+        self.ensure_loaded()
+        torch = self._torch
+        if torch is None:
+            raise WorkerError(WorkerErrorCode.WORKER_NOT_READY, "GPU runtime is not ready.")
+        device_index = torch.cuda.current_device()
+        properties = torch.cuda.get_device_properties(device_index)
+        free_vram, total_vram = torch.cuda.mem_get_info()
+        try:
+            driver_version: str | None = str(torch._C._cuda_getDriverVersion())
+        except (AttributeError, RuntimeError):
+            driver_version = None
+        return {
+            "gpu_model": str(properties.name),
+            "gpu_count": int(torch.cuda.device_count()),
+            "total_vram_bytes": int(total_vram),
+            "free_vram_bytes": int(free_vram),
+            "cuda_version": str(torch.version.cuda),
+            "cuda_driver_version": driver_version,
+            "pytorch_version": str(torch.__version__),
+            "precision": "float32",
+            "random_seed": self.random_seed,
+            "deterministic_algorithms": True,
+            "cudnn_deterministic": True,
+            "cudnn_benchmark": False,
+        }
+
     def infer(self, preprocessed: PreprocessedImage) -> BackendOutput:
         self.ensure_loaded()
         torch = self._torch
@@ -185,16 +263,26 @@ class CommunityForensicsBackend:
                 )
             raw_logit = float(output.detach().to(device="cpu", dtype=torch.float32).item())
             peak_vram = int(torch.cuda.max_memory_allocated())
+            peak_reserved_vram = int(torch.cuda.max_memory_reserved())
+            free_after, _ = torch.cuda.mem_get_info()
             device_index = torch.cuda.current_device()
             properties = torch.cuda.get_device_properties(device_index)
+            try:
+                driver_version: str | None = str(torch._C._cuda_getDriverVersion())
+            except (AttributeError, RuntimeError):
+                driver_version = None
             device_metadata = {
                 "device_type": "cuda",
                 "gpu_model": properties.name,
+                "gpu_count": int(torch.cuda.device_count()),
                 "cuda_version": str(torch.version.cuda),
+                "cuda_driver_version": driver_version,
                 "pytorch_version": str(torch.__version__),
                 "total_vram_bytes": int(total_vram),
                 "free_vram_before_inference_bytes": int(free_before),
+                "free_vram_after_inference_bytes": int(free_after),
                 "peak_allocated_vram_bytes": peak_vram,
+                "peak_reserved_vram_bytes": peak_reserved_vram,
             }
             del output
             del tensor

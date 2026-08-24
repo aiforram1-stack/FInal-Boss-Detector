@@ -1,25 +1,77 @@
 schema_version: "1.0"
-phase: "phase-6-placeholder-only"
+phase: phase-6-serverless-proposal-only
+authorization:
+  exact_phrase_required: APPROVE PHASE 6 SERVERLESS COST
+  approved: false
+  maximum_spend_usd: "2.00"
+  maximum_paid_jobs: 3
 image:
-  repository: "ghcr.io/<github-owner>/forensic-image-community"
-  tag_reference: "ghcr.io/<github-owner>/forensic-image-community:sha-<full-git-commit>"
-  digest_reference: "ghcr.io/<github-owner>/forensic-image-community@sha256:<published-image-digest>"
-  source_commit: "<full-git-commit>"
-  platform: "linux/amd64"
+  digest_reference: "ghcr.io/<github-owner>/forensic-image-community@sha256:<digest>"
+  source_commit: "<full-lowercase-source-commit>"
+  platform: linux/amd64
   checkpoint_included: false
-runpod:
-  registry_auth_id: "<saved-read-only-registry-auth-id>"
-  gpu_vram_minimum_gb: 24
-  allowed_cuda_version: "12.6"
-  model_cache_mount: "/models/community-forensics"
-  terminate_after_test: true
-model:
-  repository: "OwensLab/commfor-model-384"
-  revision: "6076002bf0d9dd37537f965ee2f06f826c333b61"
-  filename: "model.safetensors"
-  expected_sha256: "b89f36275f3bf5e2b040eee36597a8f19db051bff9a473a9cf7b2466284fb387"
-  verification_status: "pending_phase_6_gpu_environment"
+template:
+  registry_credential_id: "<runpod-managed-read-only-ghcr-credential-id>"
+  # Current console/API documentation accepts the repository identifier but
+  # does not make the worker's pinned revision guarantee. The worker below is
+  # the fail-closed revision authority.
+  model_reference: OwensLab/commfor-model-384
+  required_model_revision: 6076002bf0d9dd37537f965ee2f06f826c333b61
+  environment:
+    IMAGE_COMMUNITY_ENVIRONMENT: production
+    IMAGE_COMMUNITY_BACKEND: community
+    IMAGE_COMMUNITY_MODEL_CACHE_ROOT: /runpod-volume/huggingface-cache/hub
+    IMAGE_COMMUNITY_ALLOW_MODEL_DOWNLOAD: "false"
+    IMAGE_COMMUNITY_CHECKPOINT_BOOTSTRAP_MODE: "true"
+    IMAGE_COMMUNITY_REQUIRE_VERIFIED_CHECKPOINT_HASH: "false"
+    IMAGE_COMMUNITY_PHASE6_ONLY_MODE: "true"
+    IMAGE_COMMUNITY_VALIDATION_OUTPUT_MODE: inline_sanitized
+    IMAGE_COMMUNITY_REQUIRE_CUDA: "true"
+    IMAGE_COMMUNITY_CONTAINER_DIGEST: "sha256:<digest>"
+    IMAGE_COMMUNITY_PROJECT_SOURCE_COMMIT: "<full-lowercase-source-commit>"
+    IMAGE_COMMUNITY_ENDPOINT_RELEASE_IDENTITY: "<non-secret-release-identity>"
+    HF_HUB_OFFLINE: "1"
+    TRANSFORMERS_OFFLINE: "1"
+endpoint:
+  name: forensic-image-community-phase6
+  type: QUEUE
+  compute_type: GPU
+  # REST v2 creates the endpoint from a pool. The complete observed pool is
+  # partitioned into approved and excluded types, then exclusions are applied
+  # with the current set-endpoint-gpus operation before any job submission.
+  gpu_pool_ids: [AMPERE_24]
+  observed_gpu_type_ids:
+    - NVIDIA GeForce RTX 3090
+    - NVIDIA L4
+    - NVIDIA RTX A5000
+    - NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb
+  approved_gpu_type_ids:
+    - NVIDIA GeForce RTX 3090
+    - NVIDIA L4
+    - NVIDIA RTX A5000
+  excluded_gpu_type_ids:
+    - NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb
+  gpu_count: 1
+  min_cuda_version: "12.4"
+  workers_min: 0
+  workers_max: 1
+  idle_timeout_seconds: 5
+  scaler_type: QUEUE_DELAY
+  scaler_value: 4
+  execution_timeout_ms: 600000
+  flashboot: FLASHBOOT
+  disk_gb: "<smallest-safe-value-from-measured-image-size>"
+  data_center_ids: []
+  network_volume_ids: []
+final_lock:
+  workers_min: 0
+  workers_max: 0
+  active_workers: 0
+  queued_jobs: 0
+  running_jobs: 0
 prohibited:
-  create_serverless_endpoint: true
-  connect_main_api: true
-  store_registry_secret_in_file: true
+  mutable_image_tag: true
+  network_volume: true
+  pod: true
+  main_api_connection: true
+  private_evidence: true

@@ -361,13 +361,24 @@ def test_every_forensic_test_status_is_supported(test_status: ForensicTestStatus
 
 def test_json_schemas_are_generated_and_committed() -> None:
     generated = generate_schema_documents()
-    assert len(generated) == 12
+    phase6_schemas = {
+        "ArtifactEnvelope.schema.json",
+        "CheckpointBootstrapRequest.schema.json",
+        "CheckpointBootstrapResponse.schema.json",
+        "EndpointHealth.schema.json",
+        "EndpointProposal.schema.json",
+        "GpuValidationRequest.schema.json",
+        "GpuValidationResponse.schema.json",
+        "Phase6CostBudget.schema.json",
+    }
+    assert len(generated) == 20
+    assert phase6_schemas <= generated.keys()
     for filename, expected in generated.items():
         assert (SCHEMA_DIR / filename).read_text(encoding="utf-8") == expected
         schema = json.loads(expected)
         assert "schema_version" in schema["properties"]
         assert "schema_version" in schema["required"]
-        assert schema["additionalProperties"] is True
+        assert schema["additionalProperties"] is (filename not in phase6_schemas)
 
 
 def test_detector_schema_never_names_a_score_probability() -> None:

@@ -1,0 +1,312 @@
+{
+  "$defs": {
+    "EndpointRuntimeEnvironment": {
+      "additionalProperties": false,
+      "properties": {
+        "allow_model_download": {
+          "const": false,
+          "default": false,
+          "title": "Allow Model Download",
+          "type": "boolean"
+        },
+        "backend": {
+          "const": "community",
+          "default": "community",
+          "title": "Backend",
+          "type": "string"
+        },
+        "checkpoint_bootstrap_mode": {
+          "title": "Checkpoint Bootstrap Mode",
+          "type": "boolean"
+        },
+        "container_digest": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Container Digest",
+          "type": "string"
+        },
+        "endpoint_release_identity": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Endpoint Release Identity",
+          "type": "string"
+        },
+        "environment": {
+          "const": "production",
+          "default": "production",
+          "title": "Environment",
+          "type": "string"
+        },
+        "hf_hub_offline": {
+          "const": "1",
+          "default": "1",
+          "title": "Hf Hub Offline",
+          "type": "string"
+        },
+        "log_level": {
+          "const": "INFO",
+          "default": "INFO",
+          "title": "Log Level",
+          "type": "string"
+        },
+        "model_cache_root": {
+          "const": "/runpod-volume/huggingface-cache/hub",
+          "default": "/runpod-volume/huggingface-cache/hub",
+          "title": "Model Cache Root",
+          "type": "string"
+        },
+        "phase6_only_mode": {
+          "const": true,
+          "default": true,
+          "title": "Phase6 Only Mode",
+          "type": "boolean"
+        },
+        "project_source_commit": {
+          "pattern": "^[a-f0-9]{40}$",
+          "title": "Project Source Commit",
+          "type": "string"
+        },
+        "require_cuda": {
+          "const": true,
+          "default": true,
+          "title": "Require Cuda",
+          "type": "boolean"
+        },
+        "require_verified_checkpoint_hash": {
+          "title": "Require Verified Checkpoint Hash",
+          "type": "boolean"
+        },
+        "transformers_offline": {
+          "const": "1",
+          "default": "1",
+          "title": "Transformers Offline",
+          "type": "string"
+        },
+        "validation_output_mode": {
+          "const": "inline_sanitized",
+          "default": "inline_sanitized",
+          "title": "Validation Output Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "checkpoint_bootstrap_mode",
+        "require_verified_checkpoint_hash",
+        "container_digest",
+        "project_source_commit",
+        "endpoint_release_identity"
+      ],
+      "title": "EndpointRuntimeEnvironment",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "approved_gpu_type_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 3,
+      "minItems": 1,
+      "title": "Approved Gpu Type Ids",
+      "type": "array"
+    },
+    "data_center_ids": {
+      "default": [],
+      "maxItems": 0,
+      "minItems": 0,
+      "title": "Data Center Ids",
+      "type": "array"
+    },
+    "disk_gb": {
+      "exclusiveMinimum": 0,
+      "maximum": 100,
+      "title": "Disk Gb",
+      "type": "integer"
+    },
+    "endpoint_release_identity": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Endpoint Release Identity",
+      "type": "string"
+    },
+    "endpoint_type": {
+      "const": "QUEUE",
+      "default": "QUEUE",
+      "title": "Endpoint Type",
+      "type": "string"
+    },
+    "excluded_gpu_type_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 20,
+      "title": "Excluded Gpu Type Ids",
+      "type": "array"
+    },
+    "execution_timeout_ms": {
+      "const": 600000,
+      "default": 600000,
+      "title": "Execution Timeout Ms",
+      "type": "integer"
+    },
+    "flashboot": {
+      "const": "FLASHBOOT",
+      "default": "FLASHBOOT",
+      "title": "Flashboot",
+      "type": "string"
+    },
+    "gpu_count": {
+      "const": 1,
+      "default": 1,
+      "title": "Gpu Count",
+      "type": "integer"
+    },
+    "gpu_pool_ids": {
+      "default": [
+        "AMPERE_24"
+      ],
+      "maxItems": 1,
+      "minItems": 1,
+      "prefixItems": [
+        {
+          "const": "AMPERE_24",
+          "type": "string"
+        }
+      ],
+      "title": "Gpu Pool Ids",
+      "type": "array"
+    },
+    "idle_timeout_seconds": {
+      "const": 5,
+      "default": 5,
+      "title": "Idle Timeout Seconds",
+      "type": "integer"
+    },
+    "image_digest_reference": {
+      "pattern": "^ghcr\\.io/[a-z0-9._-]+/[a-z0-9._-]+@sha256:[a-f0-9]{64}$",
+      "title": "Image Digest Reference",
+      "type": "string"
+    },
+    "min_cuda_version": {
+      "const": "12.4",
+      "default": "12.4",
+      "title": "Min Cuda Version",
+      "type": "string"
+    },
+    "model_cache_root": {
+      "const": "/runpod-volume/huggingface-cache/hub",
+      "default": "/runpod-volume/huggingface-cache/hub",
+      "title": "Model Cache Root",
+      "type": "string"
+    },
+    "model_repository": {
+      "const": "OwensLab/commfor-model-384",
+      "title": "Model Repository",
+      "type": "string"
+    },
+    "model_revision": {
+      "pattern": "^[a-f0-9]{40}$",
+      "title": "Model Revision",
+      "type": "string"
+    },
+    "name": {
+      "const": "forensic-image-community-phase6",
+      "title": "Name",
+      "type": "string"
+    },
+    "network_volume_ids": {
+      "default": [],
+      "maxItems": 0,
+      "minItems": 0,
+      "title": "Network Volume Ids",
+      "type": "array"
+    },
+    "observed_gpu_type_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 20,
+      "minItems": 1,
+      "title": "Observed Gpu Type Ids",
+      "type": "array"
+    },
+    "operation": {
+      "enum": [
+        "checkpoint_bootstrap",
+        "gpu_validation"
+      ],
+      "title": "Operation",
+      "type": "string"
+    },
+    "registry_credential_id": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Registry Credential Id",
+      "type": "string"
+    },
+    "runpod_model_reference": {
+      "const": "OwensLab/commfor-model-384",
+      "title": "Runpod Model Reference",
+      "type": "string"
+    },
+    "runtime_environment": {
+      "$ref": "#/$defs/EndpointRuntimeEnvironment"
+    },
+    "scaler_type": {
+      "const": "QUEUE_DELAY",
+      "default": "QUEUE_DELAY",
+      "title": "Scaler Type",
+      "type": "string"
+    },
+    "scaler_value": {
+      "const": 4,
+      "default": 4,
+      "title": "Scaler Value",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_commit": {
+      "pattern": "^[a-f0-9]{40}$",
+      "title": "Source Commit",
+      "type": "string"
+    },
+    "workers_max": {
+      "default": 1,
+      "enum": [
+        0,
+        1
+      ],
+      "title": "Workers Max",
+      "type": "integer"
+    },
+    "workers_min": {
+      "const": 0,
+      "default": 0,
+      "title": "Workers Min",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "name",
+    "image_digest_reference",
+    "source_commit",
+    "operation",
+    "endpoint_release_identity",
+    "registry_credential_id",
+    "runtime_environment",
+    "observed_gpu_type_ids",
+    "approved_gpu_type_ids",
+    "excluded_gpu_type_ids",
+    "disk_gb",
+    "model_repository",
+    "model_revision",
+    "runpod_model_reference"
+  ],
+  "title": "EndpointProposal",
+  "type": "object"
+}

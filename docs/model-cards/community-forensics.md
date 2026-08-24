@@ -26,7 +26,13 @@ or ground truth. It does not generate a final case verdict.
 
 The checkpoint digest is the verified Hugging Face Git LFS object identifier.
 The Phase 4 Mac did not download or independently hash the checkpoint bytes; a
-future authorized GPU acquisition must verify them before model loading.
+future cost-approved bootstrap job must resolve the pinned RunPod cache snapshot,
+calculate the bytes independently, and record an `OBSERVED_BOOTSTRAP_HASH`
+receipt before final GPU validation.
+
+Phase 6 preparation adds no weight download or CUDA claim. Bootstrap mode is
+observational. Normal validation fails closed until the observed hash status is
+checked into the manifest and a new immutable container digest is published.
 
 ## Inputs and preprocessing
 
@@ -64,7 +70,9 @@ calibrator identity are null.
 - The upstream repository does not declare a minimum CUDA version; the future
   image selects a digest-pinned CUDA 12.6.3/PyTorch 2.7.1 runtime.
 - No checkpoint loading or GPU inference has yet been performed by this project.
-- The detector is not connected to reports or API orchestration in Phase 4.
+- The detector is not connected to reports or API orchestration in Phase 6.
+- One generated-fixture parity run will not establish calibration, general
+  detector accuracy, production throughput, or cross-GPU determinism.
 
 ## License and data
 

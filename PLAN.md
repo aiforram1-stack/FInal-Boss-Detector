@@ -2,27 +2,33 @@
 
 ## Authorization boundary
 
-**Only Phase 0 through Phase 5 are authorized in the current task.** Phase 5 is
-the sole active implementation milestone. All later phases are planning
-context; do not rent a GPU, deploy cloud infrastructure, run a real checkpoint,
-connect the API, or implement Phase 6 or beyond without explicit user
-authorization.
+**Phase 6 is the sole active implementation milestone.** Repository
+preparation and read-only GitHub/RunPod audits are authorized now. Creating or
+modifying a RunPod endpoint, worker, job, Pod, network volume, registry
+credential, or any other billable cloud resource is prohibited until the user
+sends exactly `APPROVE PHASE 6 SERVERLESS COST` for the reported immutable
+image, GPU pool, timeouts, cache plan, and cost estimate. Do not connect the
+main API or begin Phase 7.
 
 Current status (2026-08-24):
 
 - [x] Phase 0 repository foundation completed.
 - [x] Phase 1 shared contracts completed and verified.
-- [x] Phase 2 local evidence intake is complete on
-  `feat/phase-2-evidence-intake` and awaiting review.
-- [x] Phase 3 structural media analysis and deterministic reporting is complete
-  on `feat/phase-3-structural-reporting` and awaiting review.
-- [x] Phase 4 Community Forensics worker adapter is complete locally on
-  `feat/phase-4-community-forensics-worker`, tracked by GitHub issue #5, and
-  awaiting pull-request review.
-- [ ] Phase 5 immutable worker-image build, publication, and verification is
-  authorized and active; publication is permitted only after merge to `main`
-  or an explicitly authorized manual workflow dispatch.
-- [ ] Phase 6 and later are not authorized.
+- [x] Phase 2 local evidence intake implementation is complete on
+  `feat/phase-2-evidence-intake`; GitHub PR #2 is still open.
+- [x] Phase 3 structural media analysis and deterministic reporting
+  implementation is complete on `feat/phase-3-structural-reporting`; GitHub PR
+  #4 is still open.
+- [x] Phase 4 Community Forensics worker adapter implementation is complete on
+  `feat/phase-4-community-forensics-worker`; GitHub PR #6 is still open.
+- [x] Phase 5 container pipeline implementation and PR validation are complete
+  on `feat/phase-5-publish-image-worker`; GitHub PR #8 is still open. Protected
+  `main` publication, the release manifest, the immutable GHCR digest, and its
+  attestation do not exist yet and must not be claimed.
+- [ ] Phase 6 first real GPU validation is authorized on
+  `feat/phase-6-serverless-validation` and tracked by GitHub issue #9. Cloud
+  deployment remains behind the exact cost-approval phrase.
+- [ ] Phase 7 and later are not authorized.
 
 ## Mission and first vertical slice
 
@@ -354,24 +360,113 @@ authorized merge/manual run; no publication is claimed during PR validation.
 8. Create one Phase 5 commit, push, open a stacked pull request linked to the
    Phase 5 issue, wait for PR checks, and fix failures without merging.
 
-### Phase 6 — Async detector orchestration (not authorized)
+### Phase 6 — First real GPU validation on RunPod Serverless (authorized)
 
-Dependencies: Phases 3 and 5.
+Dependencies: the Phase 4 worker and Phase 5 immutable container publication
+must be merged and published from protected `main`. At the start of Phase 6,
+GitHub PRs #2, #4, #6, and #8 remain open; no endpoint may be created until the
+stack is reviewed, merged, republished, and verified.
 
-Candidate worktrees: detector job persistence and cloud client may proceed in
-parallel against frozen contracts.
+Current branch: `feat/phase-6-serverless-validation`, stacked on
+`feat/phase-5-publish-image-worker` while the prerequisite PRs remain open.
+GitHub issue #9 tracks release verification, readiness, cost approval,
+bootstrap, manifest update, republishing, GPU validation, billing, and the
+final safety lock.
 
-Deliverables: asynchronous submission/polling, lifecycle persistence, strict
-returned identity/hash validation, immediate result copying, retries, and a
-private manual-review bundle that composes structural and detector records.
+Preparation audit status (2026-08-24): the connected RunPod control plane
+reports no endpoint, worker, queued/running job, Pod, network volume, registry
+credential, recent Serverless charge, or billable storage. Current spend is
+zero. `AMPERE_24` is the only selected pool and is currently USD 0.69/hour;
+its observed members must be partitioned into approved L4/A5000/RTX 3090 types
+and an excluded 24 GB Blackwell MIG type. The account's worker quota is not
+exposed by the connected v2 control surface or visible account settings and
+remains a pre-approval check. No endpoint or paid job has been created.
 
-Acceptance: an uploaded evidence item can be submitted, polled, validated,
-persisted, and included in a deterministic report without allowing narrative
-tools to alter evidence or machine-produced results.
+Preparation remains blocked from cloud execution by the open prerequisite PR
+stack, absence of a protected-main release digest/manifest/attestation, absence
+of a RunPod private-GHCR credential, and the need to prove a supported cached-
+model attachment path. These findings require the preparation pull request and
+new immutable publication before any cost proposal can be approved.
 
-### Phase 7 — Independent image evidence families (not authorized)
+Deliverables:
 
-Dependencies: the complete Phase 6 vertical slice is stable.
+- a strict resolver for one RunPod-cached Hugging Face model repository and
+  exact snapshot revision, with offline checkpoint discovery, size and SHA-256;
+- distinct `checkpoint_bootstrap` and `gpu_validation` job contracts;
+- bootstrap receipts that label the observed digest
+  `OBSERVED_BOOTSTRAP_HASH`, never final production verification;
+- one-job GPU validation covering CUDA fitness, official-upstream parity, real
+  generated-fixture inference, warm-up plus repeated inference, negative tests,
+  latency and VRAM measurements, and sanitized output;
+- CPU-only tests for cache paths, request/result contracts, sanitization,
+  secret detection, timeout/cancellation, cost budget, and endpoint locking;
+- a queue-endpoint configuration and operator runbook using an immutable GHCR
+  digest, one compatible 24 GB GPU, zero minimum workers, at most one maximum
+  worker, five-second idle timeout, 600-second execution timeout, one cached
+  model, no network volume, and no Pod;
+- a checkpoint-manifest pull request after the approved bootstrap job, a newly
+  published immutable image, and a final validation-record pull request;
+- final endpoint state: minimum workers zero, maximum workers zero, active
+  workers zero, and no queued or running jobs.
+
+Acceptance:
+
+- the exact source commit, GHCR digest, Linux AMD64 platform, OCI revision,
+  SBOM, provenance, private-package state, and GitHub attestation are verified;
+- the user approves the reported configuration by sending exactly
+  `APPROVE PHASE 6 SERVERLESS COST` before any endpoint or paid job exists;
+- total Phase 6 RunPod spend is at most $2.00, one GPU is used per worker,
+  maximum workers never exceeds one, and no Pod or network volume is created;
+- RunPod model caching resolves the pinned repository and revision, the
+  checkpoint filename/length/SHA-256 are observed, and final validation runs
+  offline against the republished manifest;
+- CUDA fitness, official-upstream numeric parity, real uncalibrated inference,
+  repeatability, performance/VRAM measurement, and all negative tests pass in
+  one final job using only a deterministic generated fixture;
+- every result is copied immediately, sanitized, schema-validated, hash-stamped,
+  and contains no secret, signed URL, checkpoint bytes, private evidence, or
+  full environment dump;
+- the main FastAPI application remains disconnected and Phase 7 is not begun.
+
+#### Phase 6 execution order
+
+1. Verify repository instructions, branch/PR state, local non-GPU gates, and
+   the Phase 5 PR checks.
+2. Prepare the cache resolver, job modes, validation bundle, local control
+   contracts/tests, ADR, runbook, and example endpoint configuration.
+3. Open a stacked preparation pull request linked to issue #9; do not merge it.
+4. After prerequisite review/merge, verify the protected publication and exact
+   immutable release evidence.
+5. Authenticate the RunPod MCP and perform a read-only balance, billing,
+   resource, registry-name, GPU-pool, availability, quota, and storage audit.
+6. Present the exact endpoint configuration and current price estimate, then
+   stop for the mandatory approval phrase.
+7. After exact approval only, create one queue endpoint, run one bootstrap job,
+   scale to zero, update the manifest through GitHub, verify the new image, run
+   one complete GPU-validation job, query billing, sanitize records, and set
+   maximum workers to zero.
+
+### Phase 7 — Local API to locked RunPod endpoint integration (not authorized)
+
+Dependencies: Phase 6 endpoint is validated, maximum workers is locked at
+zero, and the serverless request/result contracts are frozen.
+
+Deliverables: connect the local FastAPI application to the locked queue
+endpoint using short-lived evidence references, asynchronous `/run`
+submission, `/status` polling, bounded cancellation, strict returned
+identity/hash validation, immediate result persistence, and deterministic
+report integration. Re-enable maximum workers from zero to one only during
+controlled integration tests.
+
+Acceptance: one stored generated fixture can be submitted, polled, cancelled,
+validated, persisted, and included in a deterministic report without exposing
+evidence paths, retaining signed URLs, altering machine-produced results, or
+adding another detector. The endpoint returns to maximum workers zero after
+every controlled test.
+
+### Phase 8 — Independent image evidence families (not authorized)
+
+Dependencies: the complete Phase 7 vertical slice is stable.
 
 Candidate worktrees: one per detector or evidence family.
 
@@ -382,9 +477,9 @@ reused rather than reimplemented.
 Acceptance: disagreement and unavailable tests remain visible without averaging
 incommensurate raw scores or producing a single-detector verdict.
 
-### Phase 8 — Audio forensics (not authorized)
+### Phase 9 — Audio forensics (not authorized)
 
-Dependencies: Phases 3 and 6; image operational controls proven.
+Dependencies: Phases 3 and 7; image operational controls proven.
 
 Candidate worktrees: audio preprocessing and detector adapters can proceed in
 parallel once their shared output shape is agreed.
@@ -395,9 +490,9 @@ codec/channel context, and timeline reporting.
 Acceptance: originals remain unchanged; derivatives identify exact tools and
 parameters; overlapping results form a timeline instead of one opaque score.
 
-### Phase 9 — Video forensics (not authorized)
+### Phase 10 — Video forensics (not authorized)
 
-Dependencies: Phases 7–8.
+Dependencies: Phases 8–9.
 
 Candidate worktrees: scene/keyframe, temporal detector, face, audio, and
 audiovisual adapters.
@@ -408,9 +503,9 @@ analysis, and cross-modal result correlation.
 Acceptance: image, audio, face, and temporal results resolve to timestamps; no
 long video is reduced to a single center-crop or opaque invocation.
 
-### Phase 10 — Provenance and policy-gated OSINT (not authorized)
+### Phase 11 — Provenance and policy-gated OSINT (not authorized)
 
-Dependencies: Phase 6 reporting and an approved case privacy policy.
+Dependencies: Phase 7 reporting and an approved case privacy policy.
 
 Candidate worktrees: C2PA/provider verification and each approved OSINT adapter.
 
@@ -420,7 +515,7 @@ clients, source citations, and privacy skip states.
 Acceptance: every network call is policy-gated, auditable, and distinct from
 content inference; restricted cases record `SKIPPED_BY_PRIVACY_POLICY`.
 
-### Phase 11 — Calibration and evidence fusion (not authorized)
+### Phase 12 — Calibration and evidence fusion (not authorized)
 
 Dependencies: multiple evidence families and representative evaluation data.
 
@@ -431,10 +526,10 @@ Acceptance: raw scores are never averaged as probabilities; calibration lineage
 is complete; claims do not exceed validation evidence; alternative explanations
 and correlated detector families remain explicit.
 
-### Phase 12 — Dataset and continual-learning plane (not authorized)
+### Phase 13 — Dataset and continual-learning plane (not authorized)
 
 Dependencies: stable production telemetry with explicit training permission,
-dataset governance, Phase 11 evaluation gates, and rollback mechanisms.
+dataset governance, Phase 12 evaluation gates, and rollback mechanisms.
 
 Candidate worktrees: manifests/lineage, augmentation, candidate training,
 evaluation, and promotion policy.
@@ -446,7 +541,7 @@ Acceptance: production evidence is excluded by default; licenses and consent are
 machine-checkable; scheduled training creates candidates only; human approval
 and rollback precede promotion.
 
-### Phase 13 — Optional automated reasoning (not authorized)
+### Phase 14 — Optional automated reasoning (not authorized)
 
 Dependencies: deterministic reports and mature review policy.
 
@@ -460,13 +555,14 @@ mandatory; humans retain approval responsibility.
 
 ```text
 Phase 0 -> Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6
-                                             |                     |
-                                             |                     +-> Phase 7 -> Phase 9
-                                             |                     +-> Phase 8 ----+
-                                             |                     +-> Phase 10
-                                             +-------------------------------------+
-Phase 7 + Phase 10 -> Phase 11 -> Phase 12
-Phase 6 -------------------------------> Phase 13 (optional)
+                                                               |
+                                                               +-> Phase 7
+                                                                      |
+                                                                      +-> Phase 8 -> Phase 10
+                                                                      +-> Phase 9 ----+
+                                                                      +-> Phase 11
+Phase 8 + Phase 11 -> Phase 12 -> Phase 13
+Phase 7 -------------------------------> Phase 14 (optional)
 ```
 
 Contracts merge before independent worktrees begin. Parallel branches must not

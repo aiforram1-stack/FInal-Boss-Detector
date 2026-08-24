@@ -1,0 +1,45 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "jobs_in_progress": {
+      "minimum": 0,
+      "title": "Jobs In Progress",
+      "type": "integer"
+    },
+    "jobs_in_queue": {
+      "minimum": 0,
+      "title": "Jobs In Queue",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "workers_idle": {
+      "minimum": 0,
+      "title": "Workers Idle",
+      "type": "integer"
+    },
+    "workers_listed": {
+      "minimum": 0,
+      "title": "Workers Listed",
+      "type": "integer"
+    },
+    "workers_running": {
+      "minimum": 0,
+      "title": "Workers Running",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "workers_listed",
+    "workers_idle",
+    "workers_running",
+    "jobs_in_queue",
+    "jobs_in_progress"
+  ],
+  "title": "EndpointHealth",
+  "type": "object"
+}

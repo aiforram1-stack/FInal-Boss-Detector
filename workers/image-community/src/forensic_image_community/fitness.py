@@ -6,6 +6,7 @@ import tempfile
 
 import numpy as np
 from forensic_contracts import DetectorJob, DetectorResult
+from pydantic import JsonValue
 
 from forensic_image_community.config import ImageCommunitySettings
 from forensic_image_community.contracts import (
@@ -63,6 +64,7 @@ class WorkerFitnessCheck:
                 self.settings.environment == "production" and self.backend.mock_backend
             ),
         }
+        telemetry: dict[str, JsonValue] = {}
         try:
             temp_root = self.settings.ensure_temp_root()
             with tempfile.NamedTemporaryFile(dir=temp_root, prefix="fitness-", delete=True):
@@ -74,6 +76,10 @@ class WorkerFitnessCheck:
                 raise ValueError("backend probe identity mismatch")
             self.backend.identity()
             checks["backend_probe"] = True
+            telemetry = {
+                "backend_probe_inference_ms": output.inference_ms,
+                "backend_probe_model_load_ms": output.model_load_ms,
+            }
         except WorkerError as exc:
             return FitnessResult(
                 ready=False,
@@ -81,6 +87,7 @@ class WorkerFitnessCheck:
                 checks=checks,
                 error_code=exc.code.value,
                 message=exc.safe_message,
+                telemetry=telemetry,
             )
         except (OSError, ValueError):
             return FitnessResult(
@@ -89,10 +96,12 @@ class WorkerFitnessCheck:
                 checks=checks,
                 error_code="WORKER_NOT_READY",
                 message="Worker readiness validation failed.",
+                telemetry=telemetry,
             )
         return FitnessResult(
             ready=all(checks.values()),
             mode="mock" if self.backend.mock_backend else "real_gpu",
             checks=checks,
             message="Worker readiness checks passed.",
+            telemetry=telemetry,
         )

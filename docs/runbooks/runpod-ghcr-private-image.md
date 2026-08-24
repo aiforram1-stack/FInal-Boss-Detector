@@ -1,103 +1,199 @@
-# RunPod preparation for the private GHCR worker image
+# RunPod Serverless validation runbook
 
-This is a Phase 6 preparation document. Do not create a registry credential,
-template, Pod, volume, endpoint, or GPU while Phase 5 is under review. Do not
-paste credentials into this repository, issue, pull request, shell history, or
-support channel.
+This runbook governs the first Community Forensics GPU validation. It is a
+queue-only, scale-to-zero Phase 6 procedure. The preparation pull request does
+not create a RunPod endpoint, worker, job, Pod, volume, registry credential, or
+other billable resource.
 
-## 1. Find and verify the immutable image
+## Hard gates
 
-After the protected publication workflow succeeds, download its
-`image-community-container-release-<commit>` artifact. Validate
-`container-release.sha256`, then read these fields from
-`container-release.json`:
+Before any endpoint creation or `/run` request:
 
-- `source.git_commit`;
-- `container.tag_reference` for registry browsing only;
-- `container.digest_reference` for every pull and future RunPod setting;
-- `container.platform`, which must be `linux/amd64`;
-- `model.checkpoint_included`, which must be `false`;
-- all verification and supply-chain statuses.
+1. All prerequisite GitHub pull requests must be reviewed and merged in order.
+2. Protected publication from `main` must produce a private Linux AMD64 image,
+   immutable digest, release manifest, SBOM, provenance, and a passing GitHub
+   artifact-attestation verification.
+3. A read-only RunPod audit must confirm balance, recent billing, endpoints,
+   jobs, Pods, volumes, storage, credential names/IDs, GPU availability, rates,
+   and worker quota. Stop if any unexpected billable resource is active.
+4. A read-only GHCR credential must already exist in RunPod. Create it manually
+   in RunPod if absent; never paste its token into Codex, Git, shell history,
+   issues, logs, or reports.
+5. The exact endpoint proposal and cost estimate must be recorded.
+6. The user must send exactly `APPROVE PHASE 6 SERVERLESS COST` for that
+   proposal. Any material configuration or price change invalidates approval.
 
-The SHA tag is release-controlled but the digest reference is authoritative.
-Never substitute a moving convenience tag. The image is only container-build
-verified; CUDA fitness and real inference have not run.
+The maximum approved Phase 6 spend is USD 2.00. At most three paid jobs are
+allowed: the planned bootstrap and validation jobs plus one explicitly recorded
+transient diagnostic retry. Premium GPUs, Pods, and network volumes require
+separate approval and are not part of this runbook.
 
-From a trusted, authenticated workstation with Docker and GitHub CLI:
+## Immutable release verification
+
+The only valid image form is:
+
+```text
+ghcr.io/<owner>/forensic-image-community@sha256:<digest>
+```
+
+Download the protected publication artifact, validate its checksum, and verify
+that `container-release.json` matches the intended source commit, Linux AMD64
+platform, checkpoint-absent state, OCI revision label, SBOM, provenance,
+artifact attestation, and mock smoke result. Real GPU inference must still be
+marked not run.
+
+From a trusted authenticated workstation:
 
 ```bash
-export IMAGE_DIGEST_REFERENCE='ghcr.io/<owner>/forensic-image-community@sha256:<published-digest>'
+export IMAGE_DIGEST_REFERENCE='ghcr.io/<owner>/forensic-image-community@sha256:<digest>'
 export GITHUB_REPOSITORY='<owner>/<repository>'
-gh attestation verify "oci://${IMAGE_DIGEST_REFERENCE}" --repo "${GITHUB_REPOSITORY}"
+make image-community-attestation-verify
 scripts/verify_published_image.sh \
   "${IMAGE_DIGEST_REFERENCE}" \
   '<full-source-commit>' \
   'https://github.com/<owner>/<repository>'
 ```
 
-The verification script rejects tags, checks Linux AMD64 and the OCI
-source/revision/version labels, and runs only the generated-fixture mock path
-with networking disabled. It does not run CUDA or download the checkpoint.
+Never substitute `latest`, `main`, `stable`, or a source-SHA tag for the digest.
 
-## 2. Confirm package settings manually
+## Cached model contract
 
-Open the package settings under the GitHub owner and verify all of the
-following before giving an external service access:
+The public MIT-licensed checkpoint is
+`OwensLab/commfor-model-384`, revision
+`6076002bf0d9dd37537f965ee2f06f826c333b61`, file
+`model.safetensors`. Configure RunPod's one cached model for the endpoint. The
+worker reads the standard cache root:
 
-1. Visibility is **Private**.
-2. The package is linked to `<owner>/<repository>`.
-3. Repository permission inheritance is enabled or this repository has the
-   required package access.
-4. No unrelated repository or user has package access.
+```text
+/runpod-volume/huggingface-cache/hub
+```
 
-The `org.opencontainers.image.source` label is set before publication so GitHub
-can link the package to the source repository. The publication workflow also
-queries package metadata and fails closed if it can observe public or unlinked
-state. Package settings remain an owner-controlled manual boundary.
+It resolves only `models--OwensLab--commfor-model-384/snapshots/<revision>`,
+requires the exact revision, permits only the expected checkpoint, requires its
+resolved bytes to remain inside that model's blob store, bounds and parses the
+safetensors header, and calculates byte length and SHA-256. Handler execution
+never downloads a model. No network volume is attached.
 
-## 3. Prepare a read-only registry credential in Phase 6
+RunPod model-reference syntax must be taken from the connected current MCP/API
+schema at execution time. As reviewed on 2026-08-24, the current REST v2/MCP
+endpoint-create operation does not expose a cached-model field, while the
+RunPod console documents a single Model field containing a Hugging Face
+repository identifier. The committed proposal therefore records
+`OwensLab/commfor-model-384` separately from the required revision. The worker's
+exact `snapshots/<revision>` and `refs/main` checks—not the Model field—are the
+fail-closed revision authority. Configure the Model field through a supported
+authenticated RunPod control path after approval and verify it on the returned
+endpoint before submitting a job. If that cannot be proved, stop; do not create
+a volume or silently use another snapshot.
 
-GitHub's current GHCR documentation requires a classic GitHub personal access
-token for an external private-registry client. In Phase 6, an authorized owner
-may create a dedicated, revocable credential with only `read:packages`; do not
-grant write/delete package access, and do not reuse a broad personal credential.
-Confirm the dedicated account has read access to the private package. Record an
-owner and rotation/expiry date outside Git.
+## Exact endpoint invariants
 
-RunPod supports saved private-registry authentication containing a registry
-username and password/token. Prefer its console/settings flow so the token does
-not enter shell history. If the CLI is used later, obtain the syntax from the
-current [RunPod registry documentation](https://docs.runpod.io/runpodctl/reference/runpodctl-registry)
-and pass the secret through an ephemeral protected prompt or environment—not a
-committed command. Save only the returned registry-authentication ID in the
-future Pod configuration. Never store the token in `image-reference.example.yaml`.
+Use [the committed proposal template](../../infra/runpod/image-reference.example.yaml)
+only as a review document. Copy it to an ignored `infra/runpod/phase6.local.*`
+file for identifiers returned by RunPod.
 
-## 4. Configure the temporary Phase 6 Pod
+- endpoint type: queue;
+- REST v2 GPU pool: `AMPERE_24`, one GPU per worker;
+- approved pool members: L4, RTX A5000, and RTX 3090 only;
+- exclude every other observed member (currently the 24 GB Blackwell MIG SKU)
+  with `set-endpoint-gpus` before submitting a job;
+- minimum host CUDA version: 12.4; do not narrow the allowed-version list;
+- minimum workers: zero;
+- maximum workers: one during approved jobs, zero at final lock;
+- idle timeout: five seconds;
+- scaler: `QUEUE_DELAY`, value four;
+- execution timeout: 600,000 ms;
+- ordinary `FLASHBOOT` enabled;
+- no data-centre restriction unless required for placement;
+- no network volume;
+- one private-registry credential reference;
+- one cached-model reference;
+- smallest safe disk derived from the published image size.
 
-Only after explicit Phase 6 authorization:
+Refresh the Serverless GPU catalog immediately before the cost proposal. The
+proposal must record the complete observed membership of `AMPERE_24`, and that
+set must be fully partitioned into approved and excluded IDs. A new or missing
+pool member, changed rate, changed availability, changed CUDA compatibility, or
+changed model-cache control path invalidates the proposal and requires a new
+approval. Current REST v2 creation accepts pool IDs rather than GPU type IDs;
+the exact SKU exclusions are a second configuration operation performed before
+any `/run` request. Endpoint creation alone must not be treated as ready.
 
-1. Copy `infra/runpod/image-reference.example.yaml` outside the repository and
-   replace placeholders from the validated release manifest.
-2. Select one temporary NVIDIA GPU Pod with at least 24 GB VRAM and CUDA 12.6
-   compatibility.
-3. Set the container image to the exact digest reference and select the saved
-   private-registry credential ID.
-4. Attach external persistent model-cache storage at
-   `/models/community-forensics`; the container image itself must remain
-   checkpoint-free.
-5. Download only the manifest-pinned checkpoint to that external storage using
-   the Phase 4 double-opt-in acquisition path.
-6. Calculate and record its SHA-256, require an exact match to the model
-   manifest, and set the verified container digest in worker configuration.
-7. Run CUDA/VRAM/output-shape fitness first, then one controlled generated or
-   explicitly authorized Community Forensics inference.
-8. Do not create a Serverless endpoint and do not connect the main API yet.
-9. Terminate—not merely stop—the temporary Pod immediately after evidence is
-   collected. Remove or rotate the temporary registry credential if it is no
-   longer needed, and verify that no billable resource remains.
+Production environment configuration must include the exact source commit,
+container digest, and endpoint release identity. Bootstrap mode sets
+`IMAGE_COMMUNITY_CHECKPOINT_BOOTSTRAP_MODE=true` and
+`IMAGE_COMMUNITY_REQUIRE_VERIFIED_CHECKPOINT_HASH=false`. Verified mode reverses
+those values. Both modes set `IMAGE_COMMUNITY_PHASE6_ONLY_MODE=true`, keep model
+downloads disabled, and use the configured cache root. An ordinary
+`DetectorJob` is rejected by this endpoint so private or user-submitted media
+cannot enter the validation-only path. Never record a full environment dump.
 
-Current RunPod documentation confirms that private images use saved registry
-credentials referenced by an authentication ID, Linux AMD64 is the expected
-worker platform, and persistent volumes should hold model caches instead of the
-container filesystem. Recheck the current GitHub and RunPod instructions at the
-start of Phase 6 because authentication and UI mechanics can change.
+## Job 1: checkpoint bootstrap
+
+After approval, create the endpoint with min zero/max one and first confirm no
+worker started. Submit one asynchronous `/run` job using the versioned
+`CheckpointBootstrapRequest`; do not use `/runsync`. The request policy is:
+
+```json
+{"executionTimeout":600000,"ttl":1800000}
+```
+
+Poll `/status/{job_id}` no faster than every five seconds. At the local client
+deadline, call `/cancel/{job_id}`. Persist the sanitized response immediately,
+then confirm health reports zero active, queued, and running work after the
+idle timeout.
+
+The receipt must say `OBSERVED_BOOTSTRAP_HASH`; it is not final production
+verification. Scan it for secrets and internal cache paths. Update the model
+manifest, model card, verification notes, and Phase 6 issue through a pull
+request using `chore(model): record Community Forensics checkpoint hash`. Do
+not merge automatically.
+
+After review and merge, protected publication must create and verify a new
+immutable image digest whose manifest contains the observed checkpoint hash
+while the checkpoint bytes remain absent.
+
+## Job 2: complete GPU validation
+
+First require an empty queue and zero active workers, set maximum workers to
+zero, update the endpoint to the republished digest and verified-mode
+configuration, verify identity, then restore maximum workers to one. Submit one
+asynchronous `GpuValidationRequest`.
+
+The single job performs checkpoint identity verification, CUDA/one-GPU/VRAM
+fitness, evaluation-mode and inference-mode loading, official-upstream parity,
+one controlled generated fixture inference, one warm-up, at least five measured
+repetitions, output stability, wrong-input-hash rejection, wrong-checkpoint-hash
+rejection without changing bytes, mock-mode rejection, timings, and VRAM
+telemetry. A raw logit is uncalibrated supporting evidence, never a probability
+or verdict.
+
+Do not automatically retry checkpoint, revision, preprocessing, parity, input,
+mock-mode, VRAM, or CUDA incompatibility failures. One transient retry is
+possible only within the approved job and cost caps.
+
+## Billing and final lock
+
+After each paid job, query balance, billing, execution duration, and endpoint
+health. Stop as spend approaches USD 2.00, on repeated restarts, on a second
+worker, or on unexpected retry behavior.
+
+At completion or failure:
+
+1. cancel remaining work and purge queued jobs if necessary;
+2. confirm queued jobs, running jobs, idle workers, and running workers are all
+   zero;
+3. set minimum workers to zero and maximum workers to zero;
+4. verify no Pod or network volume exists;
+5. query billing one final time;
+6. leave the endpoint present but unable to start a worker unless the user asks
+   for deletion.
+
+Only sanitized, small, versioned validation summaries may enter Git. Endpoint
+credentials, API keys, registry identifiers, signed URLs, full logs, model
+bytes, cache paths, full endpoint IDs, and private evidence stay out of Git.
+
+The queue lifecycle and state names follow RunPod's current official
+[operation reference](https://docs.runpod.io/serverless/endpoints/operation-reference),
+[job-state reference](https://docs.runpod.io/serverless/endpoints/job-states),
+and [endpoint settings](https://docs.runpod.io/serverless/endpoints/endpoint-configurations).

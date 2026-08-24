@@ -1,0 +1,180 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "diagnostic_retries": {
+      "default": 1,
+      "enum": [
+        0,
+        1
+      ],
+      "title": "Diagnostic Retries",
+      "type": "integer"
+    },
+    "estimated_container_disk_cost_usd": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Estimated Container Disk Cost Usd"
+    },
+    "estimated_normal_cost_usd": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Estimated Normal Cost Usd"
+    },
+    "estimated_worst_case_cost_usd": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Estimated Worst Case Cost Usd"
+    },
+    "expected_bootstrap_execution_seconds": {
+      "exclusiveMinimum": 0,
+      "maximum": 600,
+      "title": "Expected Bootstrap Execution Seconds",
+      "type": "integer"
+    },
+    "expected_cold_start_seconds_per_job": {
+      "maximum": 600,
+      "minimum": 0,
+      "title": "Expected Cold Start Seconds Per Job",
+      "type": "integer"
+    },
+    "expected_validation_execution_seconds": {
+      "exclusiveMinimum": 0,
+      "maximum": 600,
+      "title": "Expected Validation Execution Seconds",
+      "type": "integer"
+    },
+    "gpu_pool_id": {
+      "const": "AMPERE_24",
+      "default": "AMPERE_24",
+      "title": "Gpu Pool Id",
+      "type": "string"
+    },
+    "gpu_rate_per_hour_usd": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Gpu Rate Per Hour Usd"
+    },
+    "gpu_rate_per_second_usd": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Gpu Rate Per Second Usd"
+    },
+    "hard_maximum_spend_usd": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0.0,
+          "maximum": 2.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "2.00",
+      "title": "Hard Maximum Spend Usd"
+    },
+    "idle_seconds_per_job": {
+      "const": 5,
+      "default": 5,
+      "title": "Idle Seconds Per Job",
+      "type": "integer"
+    },
+    "maximum_job_execution_seconds": {
+      "const": 600,
+      "default": 600,
+      "title": "Maximum Job Execution Seconds",
+      "type": "integer"
+    },
+    "maximum_paid_jobs": {
+      "const": 3,
+      "default": 3,
+      "title": "Maximum Paid Jobs",
+      "type": "integer"
+    },
+    "model_cache_download_billed_to_worker": {
+      "const": false,
+      "default": false,
+      "title": "Model Cache Download Billed To Worker",
+      "type": "boolean"
+    },
+    "planned_paid_jobs": {
+      "const": 2,
+      "default": 2,
+      "title": "Planned Paid Jobs",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "starting_balance_usd": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Starting Balance Usd"
+    }
+  },
+  "required": [
+    "schema_version",
+    "starting_balance_usd",
+    "gpu_rate_per_hour_usd",
+    "gpu_rate_per_second_usd",
+    "expected_cold_start_seconds_per_job",
+    "expected_bootstrap_execution_seconds",
+    "expected_validation_execution_seconds",
+    "estimated_container_disk_cost_usd",
+    "estimated_normal_cost_usd",
+    "estimated_worst_case_cost_usd"
+  ],
+  "title": "Phase6CostBudget",
+  "type": "object"
+}
