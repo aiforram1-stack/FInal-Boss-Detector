@@ -23,7 +23,7 @@ Current status (2026-08-25):
   an immutable private image and passed build, pull, mock smoke, content, and
   critical-vulnerability checks; it failed closed on Buildx attestation
   parsing, unavailable GitHub attestations for a private user-owned
-  repository, and missing GHCR repository linkage.
+  repository, and a GHCR package-API linkage false negative.
 - [ ] Phase 6 preparation was merged by GitHub PR #10 and is tracked by issue
   #9. No real GPU validation has run. Cloud deployment remains behind the exact
   cost-approval phrase and all Phase 5 release gates.
@@ -378,9 +378,11 @@ pushed source commit `114a23e1e55a63ebd85b416c28503ee9af156e5d`
 as Linux AMD64 digest
 `sha256:3a3cfc27fa43ef4c1d88218f17bd55ab43820bf57669e7cddd271037eb13b77b`;
 the image is 6,629,472,122 bytes but is explicitly unapproved. Buildx evidence
-verification needs a compatibility fix, GHCR must be linked to this repository,
-and GitHub artifact attestations require a supported repository visibility or
-account plan. No endpoint or paid job may use this digest.
+verification and the package-API compatibility check need fixes. Signed-in
+package settings independently confirm that GHCR is private, source-linked to
+this repository, grants it Actions Admin access, and inherits repository
+access. GitHub artifact attestations still require a supported repository
+visibility or account plan. No endpoint or paid job may use this digest.
 
 Deliverables:
 

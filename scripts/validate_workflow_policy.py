@@ -90,6 +90,8 @@ def main() -> None:
             "--format '{{ json .SBOM }}'",
             "--format '{{ json .Provenance }}'",
             "uv run --frozen scripts/verify_buildkit_attestations.py",
+            "org.opencontainers.image.source",
+            '--observed-source-url "$observed_source_url"',
             "Phase 6 queue-only Serverless proposal and cost approval",
         )
         for fragment in required_publish_fragments:

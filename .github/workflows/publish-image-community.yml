@@ -208,6 +208,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PACKAGE_OWNER: ${{ github.repository_owner }}
           SOURCE_REPOSITORY: ${{ github.repository }}
+          DIGEST_REFERENCE: ${{ steps.digest.outputs.digest_reference }}
+          EXPECTED_SOURCE_URL: ${{ steps.identity.outputs.source_url }}
         run: |
           if gh api "/users/$PACKAGE_OWNER/packages/container/forensic-image-community" > ghcr-package.json; then
             echo "resolved package through user scope"
@@ -218,9 +220,15 @@ jobs:
             echo "An owner must verify private visibility and repository linkage manually." >&2
             exit 1
           fi
+          docker pull "$DIGEST_REFERENCE"
+          observed_source_url=$(docker image inspect \
+            --format '{{ index .Config.Labels "org.opencontainers.image.source" }}' \
+            "$DIGEST_REFERENCE")
+          test "$observed_source_url" = "$EXPECTED_SOURCE_URL"
           uv run --frozen scripts/verify_package_access.py \
             --package-json ghcr-package.json \
-            --repository "$SOURCE_REPOSITORY"
+            --repository "$SOURCE_REPOSITORY" \
+            --observed-source-url "$observed_source_url"
       - name: Generate validated release manifest and checksum
         id: release_manifest
         env:

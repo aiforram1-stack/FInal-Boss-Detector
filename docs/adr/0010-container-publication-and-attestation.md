@@ -147,11 +147,14 @@ The first protected Phase 6 publication on 2026-08-24 proved that the image can
 be built, pushed, pulled by digest, scanned, inspected, and run in CPU mock mode,
 but failed the final gate. Buildx's current provenance envelope was not handled
 by the original inline parser; GitHub rejected artifact-attestation storage for
-this private user-owned repository; and the private GHCR package was not linked
-to the source repository. The pushed digest is retained as diagnostic evidence
-and is not approved for deployment. The parser is repaired through an ordinary
-reviewable pull request; the feature/visibility decision and package-link
-setting remain explicit owner actions rather than workflow bypasses.
+this private user-owned repository; and the package API omitted its repository
+field. Signed-in package settings independently confirmed that the private
+package is source-linked to this repository, grants it Actions Admin access,
+and inherits repository access. The pushed digest is retained as diagnostic
+evidence and is not approved for deployment. The attestation and package
+verifiers are repaired through an ordinary reviewable pull request; the
+GitHub feature/visibility decision remains an explicit owner action rather than
+a workflow bypass.
 
 Trivy configuration/filesystem scans run on pull requests and an image scan
 runs on the published digest. Machine-readable JSON is retained. Unexcepted
