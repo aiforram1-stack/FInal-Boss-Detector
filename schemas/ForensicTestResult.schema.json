@@ -1,0 +1,233 @@
+{
+  "$defs": {
+    "ArtifactReference": {
+      "additionalProperties": true,
+      "properties": {
+        "artifact_id": {
+          "format": "uuid",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "exact_parameters": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Exact Parameters",
+          "type": "object"
+        },
+        "kind": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "lossy": {
+          "title": "Lossy",
+          "type": "boolean"
+        },
+        "mime_type": {
+          "maxLength": 127,
+          "minLength": 1,
+          "title": "Mime Type",
+          "type": "string"
+        },
+        "parent_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Parent Sha256",
+          "type": "string"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "storage_uri": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Storage Uri",
+          "type": "string"
+        },
+        "tool_version": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Tool Version",
+          "type": "string"
+        },
+        "transformation_tool": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Transformation Tool",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "artifact_id",
+        "kind",
+        "storage_uri",
+        "sha256",
+        "byte_length",
+        "mime_type",
+        "parent_sha256",
+        "transformation_tool",
+        "tool_version",
+        "lossy"
+      ],
+      "title": "ArtifactReference",
+      "type": "object"
+    },
+    "ForensicTestStatus": {
+      "enum": [
+        "EXECUTED",
+        "NOT_APPLICABLE",
+        "UNSUPPORTED_INPUT",
+        "FAILED",
+        "PROVIDER_UNAVAILABLE",
+        "SKIPPED_BY_PRIVACY_POLICY",
+        "REQUIRES_MANUAL_REVIEW"
+      ],
+      "title": "ForensicTestStatus",
+      "type": "string"
+    },
+    "JsonValue": {}
+  },
+  "additionalProperties": true,
+  "properties": {
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/ArtifactReference"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "completed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Completed At"
+    },
+    "evidence_id": {
+      "format": "uuid",
+      "title": "Evidence Id",
+      "type": "string"
+    },
+    "findings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Findings",
+      "type": "array"
+    },
+    "raw_outputs": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Raw Outputs",
+      "type": "object"
+    },
+    "runtime_ms": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Runtime Ms"
+    },
+    "schema_version": {
+      "pattern": "^1\\.[0-9]+$",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "started_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Started At"
+    },
+    "status": {
+      "$ref": "#/$defs/ForensicTestStatus"
+    },
+    "status_reason": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Status Reason"
+    },
+    "test_name": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Test Name",
+      "type": "string"
+    },
+    "test_result_id": {
+      "format": "uuid",
+      "title": "Test Result Id",
+      "type": "string"
+    },
+    "test_version": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Test Version",
+      "type": "string"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "test_result_id",
+    "case_id",
+    "evidence_id",
+    "test_name",
+    "test_version",
+    "status"
+  ],
+  "title": "ForensicTestResult",
+  "type": "object"
+}

@@ -1,0 +1,68 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+dist/
+build/
+*.egg-info/
+.coverage
+coverage.xml
+
+# Operating systems and editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Private evidence and reports
+/private_cases/
+/var/
+/evidence/
+/uploads/
+/reports/private/
+*.db
+*.sqlite
+*.sqlite3
+
+# Raw datasets
+/data/raw/
+/data/quarantine/
+/data/training/
+/data/evaluation/
+
+# Model caches and large weights
+/models/cache/
+/checkpoints/
+/model-cache/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.safetensors
+*.bin
+
+# Large media
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.wav
+*.flac
+*.mp3
+*.zip
+*.tar
+*.tar.gz
+
+# Allow intentionally small fixtures and examples
+!tests/fixtures/**
+!docs/examples/**

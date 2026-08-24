@@ -1,0 +1,351 @@
+{
+  "$defs": {
+    "ArtifactReference": {
+      "additionalProperties": true,
+      "properties": {
+        "artifact_id": {
+          "format": "uuid",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "exact_parameters": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Exact Parameters",
+          "type": "object"
+        },
+        "kind": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "lossy": {
+          "title": "Lossy",
+          "type": "boolean"
+        },
+        "mime_type": {
+          "maxLength": 127,
+          "minLength": 1,
+          "title": "Mime Type",
+          "type": "string"
+        },
+        "parent_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Parent Sha256",
+          "type": "string"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "storage_uri": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Storage Uri",
+          "type": "string"
+        },
+        "tool_version": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Tool Version",
+          "type": "string"
+        },
+        "transformation_tool": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Transformation Tool",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "artifact_id",
+        "kind",
+        "storage_uri",
+        "sha256",
+        "byte_length",
+        "mime_type",
+        "parent_sha256",
+        "transformation_tool",
+        "tool_version",
+        "lossy"
+      ],
+      "title": "ArtifactReference",
+      "type": "object"
+    },
+    "CalibrationMetadata": {
+      "additionalProperties": true,
+      "properties": {
+        "applicability": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Applicability",
+          "type": "object"
+        },
+        "calibration_dataset_revision": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Calibration Dataset Revision",
+          "type": "string"
+        },
+        "calibrator_name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Calibrator Name",
+          "type": "string"
+        },
+        "calibrator_version": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Calibrator Version",
+          "type": "string"
+        },
+        "method": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Method",
+          "type": "string"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "calibrator_name",
+        "calibrator_version",
+        "method",
+        "calibration_dataset_revision"
+      ],
+      "title": "CalibrationMetadata",
+      "type": "object"
+    },
+    "DetectorIdentity": {
+      "additionalProperties": true,
+      "properties": {
+        "checkpoint_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Checkpoint Sha256",
+          "type": "string"
+        },
+        "container_digest": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Container Digest",
+          "type": "string"
+        },
+        "detector_name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Detector Name",
+          "type": "string"
+        },
+        "detector_version": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Detector Version",
+          "type": "string"
+        },
+        "model_revision": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Model Revision",
+          "type": "string"
+        },
+        "repository_commit": {
+          "pattern": "^[a-f0-9]{40}$",
+          "title": "Repository Commit",
+          "type": "string"
+        },
+        "repository_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Repository Url",
+          "type": "string"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "detector_name",
+        "detector_version",
+        "repository_url",
+        "repository_commit",
+        "container_digest",
+        "model_revision",
+        "checkpoint_sha256"
+      ],
+      "title": "DetectorIdentity",
+      "type": "object"
+    },
+    "DetectorRunStatus": {
+      "enum": [
+        "PENDING",
+        "QUEUED",
+        "RUNNING",
+        "SUCCEEDED",
+        "FAILED",
+        "TIMED_OUT",
+        "CANCELLED"
+      ],
+      "title": "DetectorRunStatus",
+      "type": "string"
+    },
+    "JsonValue": {}
+  },
+  "additionalProperties": true,
+  "properties": {
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/ArtifactReference"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "calibrated_score": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Calibrated Score"
+    },
+    "calibration": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CalibrationMetadata"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "completed_at": {
+      "format": "date-time",
+      "title": "Completed At",
+      "type": "string"
+    },
+    "detector": {
+      "$ref": "#/$defs/DetectorIdentity"
+    },
+    "evidence_id": {
+      "format": "uuid",
+      "title": "Evidence Id",
+      "type": "string"
+    },
+    "input_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Input Sha256",
+      "type": "string"
+    },
+    "preprocessing": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Preprocessing",
+      "type": "object"
+    },
+    "raw_outputs": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Raw Outputs",
+      "type": "object"
+    },
+    "raw_score": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Raw Score"
+    },
+    "result_id": {
+      "format": "uuid",
+      "title": "Result Id",
+      "type": "string"
+    },
+    "run_id": {
+      "format": "uuid",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "runtime_ms": {
+      "minimum": 0,
+      "title": "Runtime Ms",
+      "type": "integer"
+    },
+    "schema_version": {
+      "pattern": "^1\\.[0-9]+$",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/DetectorRunStatus"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "result_id",
+    "run_id",
+    "case_id",
+    "evidence_id",
+    "detector",
+    "status",
+    "input_sha256",
+    "preprocessing",
+    "runtime_ms",
+    "started_at",
+    "completed_at"
+  ],
+  "title": "DetectorResult",
+  "type": "object"
+}

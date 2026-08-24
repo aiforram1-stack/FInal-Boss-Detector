@@ -1,0 +1,79 @@
+{
+  "additionalProperties": true,
+  "properties": {
+    "byte_length": {
+      "minimum": 0,
+      "title": "Byte Length",
+      "type": "integer"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "evidence_id": {
+      "format": "uuid",
+      "title": "Evidence Id",
+      "type": "string"
+    },
+    "filename": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Filename",
+      "type": "string"
+    },
+    "mime_type": {
+      "maxLength": 127,
+      "minLength": 1,
+      "title": "Mime Type",
+      "type": "string"
+    },
+    "object_version": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Object Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "pattern": "^1\\.[0-9]+$",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "sha512": {
+      "pattern": "^[a-f0-9]{128}$",
+      "title": "Sha512",
+      "type": "string"
+    },
+    "storage_uri": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Storage Uri",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "evidence_id",
+    "case_id",
+    "filename",
+    "byte_length",
+    "mime_type",
+    "sha256",
+    "sha512",
+    "storage_uri",
+    "object_version",
+    "created_at"
+  ],
+  "title": "EvidenceAsset",
+  "type": "object"
+}

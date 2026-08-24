@@ -1,0 +1,221 @@
+{
+  "$defs": {
+    "ForensicTestStatus": {
+      "enum": [
+        "EXECUTED",
+        "NOT_APPLICABLE",
+        "UNSUPPORTED_INPUT",
+        "FAILED",
+        "PROVIDER_UNAVAILABLE",
+        "SKIPPED_BY_PRIVACY_POLICY",
+        "REQUIRES_MANUAL_REVIEW"
+      ],
+      "title": "ForensicTestStatus",
+      "type": "string"
+    },
+    "ReportArtifact": {
+      "additionalProperties": true,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "format": {
+          "pattern": "^(json|html|markdown)$",
+          "title": "Format",
+          "type": "string"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "storage_uri": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Storage Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "format",
+        "storage_uri",
+        "sha256",
+        "byte_length"
+      ],
+      "title": "ReportArtifact",
+      "type": "object"
+    },
+    "ReportEvidenceReference": {
+      "additionalProperties": true,
+      "properties": {
+        "evidence_id": {
+          "format": "uuid",
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "sha512": {
+          "pattern": "^[a-f0-9]{128}$",
+          "title": "Sha512",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "evidence_id",
+        "sha256",
+        "sha512"
+      ],
+      "title": "ReportEvidenceReference",
+      "type": "object"
+    },
+    "TestCoverageEntry": {
+      "additionalProperties": true,
+      "properties": {
+        "schema_version": {
+          "pattern": "^1\\.[0-9]+$",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ForensicTestStatus"
+        },
+        "test_name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Test Name",
+          "type": "string"
+        },
+        "test_result_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Test Result Id"
+        }
+      },
+      "required": [
+        "schema_version",
+        "test_name",
+        "status"
+      ],
+      "title": "TestCoverageEntry",
+      "type": "object"
+    }
+  },
+  "additionalProperties": true,
+  "properties": {
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/ReportArtifact"
+      },
+      "minItems": 1,
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "detector_result_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "title": "Detector Result Ids",
+      "type": "array"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/ReportEvidenceReference"
+      },
+      "minItems": 1,
+      "title": "Evidence",
+      "type": "array"
+    },
+    "forensic_test_result_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "title": "Forensic Test Result Ids",
+      "type": "array"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "generator_name": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Generator Name",
+      "type": "string"
+    },
+    "generator_repository_commit": {
+      "pattern": "^[a-f0-9]{40}$",
+      "title": "Generator Repository Commit",
+      "type": "string"
+    },
+    "generator_version": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Generator Version",
+      "type": "string"
+    },
+    "report_id": {
+      "format": "uuid",
+      "title": "Report Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "pattern": "^1\\.[0-9]+$",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "test_coverage": {
+      "items": {
+        "$ref": "#/$defs/TestCoverageEntry"
+      },
+      "title": "Test Coverage",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "report_id",
+    "case_id",
+    "generated_at",
+    "generator_name",
+    "generator_version",
+    "generator_repository_commit",
+    "evidence",
+    "artifacts"
+  ],
+  "title": "ReportManifest",
+  "type": "object"
+}

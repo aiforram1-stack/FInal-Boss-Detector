@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "result_id": "c54576af-fdca-4e0f-8b55-f7d15d9c0e8b",
+  "run_id": "a6a175f1-0c90-42eb-80b0-0d07a669de31",
+  "case_id": "655f09d1-c85a-4098-8a96-cd638b83a44d",
+  "evidence_id": "b2ff9a84-a026-45d2-862f-a743c2059c48",
+  "detector": {
+    "schema_version": "1.0",
+    "detector_name": "synthetic-example-detector",
+    "detector_version": "1.0.0",
+    "repository_url": "https://example.invalid/synthetic-detector",
+    "repository_commit": "cccccccccccccccccccccccccccccccccccccccc",
+    "container_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "model_revision": "synthetic-revision-1",
+    "checkpoint_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  },
+  "status": "SUCCEEDED",
+  "input_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "raw_outputs": {
+    "logit": 1.7432
+  },
+  "raw_score": 1.7432,
+  "calibrated_score": null,
+  "calibration": null,
+  "preprocessing": {
+    "decoder": "synthetic-test-decoder",
+    "input_size": 384
+  },
+  "runtime_ms": 842,
+  "warnings": [
+    "Synthetic example only. Raw score is uncalibrated and is not a probability."
+  ],
+  "artifacts": [],
+  "started_at": "2026-08-24T10:00:00Z",
+  "completed_at": "2026-08-24T10:00:00.842000Z"
+}

@@ -1,0 +1,72 @@
+{
+  "$defs": {
+    "CaseStatus": {
+      "enum": [
+        "CREATED",
+        "UPLOADING",
+        "SEALED",
+        "SUBMITTED",
+        "RUNNING",
+        "ANALYZED",
+        "REVIEWED",
+        "FAILED"
+      ],
+      "title": "CaseStatus",
+      "type": "string"
+    },
+    "PrivacyMode": {
+      "enum": [
+        "STANDARD",
+        "RESTRICTED"
+      ],
+      "title": "PrivacyMode",
+      "type": "string"
+    }
+  },
+  "additionalProperties": true,
+  "properties": {
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "claim": {
+      "anyOf": [
+        {
+          "maxLength": 4000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Claim"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "privacy_mode": {
+      "$ref": "#/$defs/PrivacyMode",
+      "default": "RESTRICTED"
+    },
+    "schema_version": {
+      "pattern": "^1\\.[0-9]+$",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/CaseStatus"
+    }
+  },
+  "required": [
+    "schema_version",
+    "case_id",
+    "created_at",
+    "status"
+  ],
+  "title": "Case",
+  "type": "object"
+}

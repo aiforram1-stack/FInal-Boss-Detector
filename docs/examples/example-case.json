@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "case_id": "655f09d1-c85a-4098-8a96-cd638b83a44d",
+  "created_at": "2026-08-24T10:00:00Z",
+  "status": "SEALED",
+  "claim": "Synthetic, non-case example used to verify contract compatibility.",
+  "privacy_mode": "RESTRICTED"
+}

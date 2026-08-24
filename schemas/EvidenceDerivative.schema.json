@@ -1,0 +1,113 @@
+{
+  "$defs": {
+    "JsonValue": {}
+  },
+  "additionalProperties": true,
+  "properties": {
+    "byte_length": {
+      "minimum": 0,
+      "title": "Byte Length",
+      "type": "integer"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "derivative_id": {
+      "format": "uuid",
+      "title": "Derivative Id",
+      "type": "string"
+    },
+    "exact_parameters": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Exact Parameters",
+      "type": "object"
+    },
+    "filename": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Filename",
+      "type": "string"
+    },
+    "lossy": {
+      "title": "Lossy",
+      "type": "boolean"
+    },
+    "mime_type": {
+      "maxLength": 127,
+      "minLength": 1,
+      "title": "Mime Type",
+      "type": "string"
+    },
+    "output_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Output Sha256",
+      "type": "string"
+    },
+    "output_sha512": {
+      "pattern": "^[a-f0-9]{128}$",
+      "title": "Output Sha512",
+      "type": "string"
+    },
+    "parent_evidence_id": {
+      "format": "uuid",
+      "title": "Parent Evidence Id",
+      "type": "string"
+    },
+    "parent_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Parent Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "pattern": "^1\\.[0-9]+$",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "storage_uri": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Storage Uri",
+      "type": "string"
+    },
+    "tool_version": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Tool Version",
+      "type": "string"
+    },
+    "transformation_tool": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Transformation Tool",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "derivative_id",
+    "case_id",
+    "parent_evidence_id",
+    "parent_sha256",
+    "filename",
+    "byte_length",
+    "mime_type",
+    "output_sha256",
+    "output_sha512",
+    "storage_uri",
+    "transformation_tool",
+    "tool_version",
+    "lossy",
+    "created_at"
+  ],
+  "title": "EvidenceDerivative",
+  "type": "object"
+}

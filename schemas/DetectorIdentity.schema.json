@@ -1,0 +1,62 @@
+{
+  "additionalProperties": true,
+  "properties": {
+    "checkpoint_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Checkpoint Sha256",
+      "type": "string"
+    },
+    "container_digest": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "title": "Container Digest",
+      "type": "string"
+    },
+    "detector_name": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Detector Name",
+      "type": "string"
+    },
+    "detector_version": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Detector Version",
+      "type": "string"
+    },
+    "model_revision": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Model Revision",
+      "type": "string"
+    },
+    "repository_commit": {
+      "pattern": "^[a-f0-9]{40}$",
+      "title": "Repository Commit",
+      "type": "string"
+    },
+    "repository_url": {
+      "format": "uri",
+      "maxLength": 2083,
+      "minLength": 1,
+      "title": "Repository Url",
+      "type": "string"
+    },
+    "schema_version": {
+      "pattern": "^1\\.[0-9]+$",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "detector_name",
+    "detector_version",
+    "repository_url",
+    "repository_commit",
+    "container_digest",
+    "model_revision",
+    "checkpoint_sha256"
+  ],
+  "title": "DetectorIdentity",
+  "type": "object"
+}
