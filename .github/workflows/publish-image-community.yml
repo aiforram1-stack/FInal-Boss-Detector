@@ -129,7 +129,7 @@ jobs:
       - name: Create GitHub artifact attestation for the image digest
         id: github_attestation
         continue-on-error: true
-        uses: actions/attest@c32b4b8b198b65d0bd9d63490e847ff7b53989d4 # reviewed release v4.0.0
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # reviewed release v4.2.2
         with:
           subject-name: ${{ steps.identity.outputs.image_repository }}
           subject-digest: ${{ steps.digest.outputs.digest }}
