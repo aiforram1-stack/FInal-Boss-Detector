@@ -31,10 +31,10 @@ Before any endpoint creation or `/run` request:
    price change invalidates approval.
 
 The maximum approved Phase 6 spend is USD 2.00. Four paid submissions have
-been consumed. The user-approved five-submission ceiling leaves one slot, which
-cannot satisfy both the still-required bootstrap and final validation.
-Diagnostic retries remain zero. Another paid worker requires an explicit
-ceiling decision, refreshed budget and proposal, and exact cost approval.
+been consumed. The user-approved six-submission ceiling leaves exactly two
+slots for the still-required bootstrap and final validation. Diagnostic
+retries remain zero. Another paid worker requires the six-job budget repair to
+merge and publish, plus a refreshed budget, proposal, and exact cost approval.
 Premium GPUs, Pods, and network volumes require separate approval and are not
 part of this runbook.
 
@@ -46,15 +46,15 @@ supply-chain, or spend gate.
 ## Immutable release verification
 
 The last verified Phase 6 bootstrap image is the protected publication after
-five-job-cap repair PR #22:
+RunPod-safe error-envelope repair PR #23:
 
 ```text
-ghcr.io/aiforram1-stack/forensic-image-community@sha256:f9f7c71f7890b4e97d56d9c335777d243e869fba040997daaedca36f087f9441
+ghcr.io/aiforram1-stack/forensic-image-community@sha256:daeb01877efd34526b2bd841930f6b52e1c4ba781081a66ce0c7e294e1bf31f8
 ```
 
 It is Linux AMD64 and binds source commit
-`19f2c4325644c79fa44f7e3d9e3b636990035356`. Protected run
-[`32847128594`](https://github.com/aiforram1-stack/FInal-Boss-Detector/actions/runs/32847128594)
+`dfafb5bdae13f4d3238d22a3d747d33310b3d7d9`. Protected run
+[`32856228905`](https://github.com/aiforram1-stack/FInal-Boss-Detector/actions/runs/32856228905)
 passed SBOM, provenance, GitHub attestation, vulnerability, source-link,
 pull-by-digest, content, mock-smoke, and final fail-closed gates. The checkpoint
 is absent and real GPU inference is marked not run.
@@ -69,12 +69,12 @@ Real GPU inference must still be marked not run.
 From a trusted authenticated workstation:
 
 ```bash
-export IMAGE_DIGEST_REFERENCE='ghcr.io/aiforram1-stack/forensic-image-community@sha256:f9f7c71f7890b4e97d56d9c335777d243e869fba040997daaedca36f087f9441'
+export IMAGE_DIGEST_REFERENCE='ghcr.io/aiforram1-stack/forensic-image-community@sha256:daeb01877efd34526b2bd841930f6b52e1c4ba781081a66ce0c7e294e1bf31f8'
 export GITHUB_REPOSITORY='aiforram1-stack/FInal-Boss-Detector'
 make image-community-attestation-verify
 scripts/verify_published_image.sh \
   "${IMAGE_DIGEST_REFERENCE}" \
-  '19f2c4325644c79fa44f7e3d9e3b636990035356' \
+  'dfafb5bdae13f4d3238d22a3d747d33310b3d7d9' \
   'https://github.com/aiforram1-stack/FInal-Boss-Detector'
 ```
 

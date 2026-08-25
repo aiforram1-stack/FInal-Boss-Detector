@@ -13,12 +13,12 @@ produce structured evidence records.
   is the only active implementation phase. GitHub PRs #2, #4, #6, #8, and #10
   are merged into `main`. Release-verifier repair PR #16 and cache-layout
   repair PR #18, bootstrap-fitness repair PR #19, four-job-cap repair PR #20,
-  hidden-GPU deny repair PR #21, and five-job-cap repair PR #22 are also
-  merged. Protected `main`
+  hidden-GPU deny repair PR #21, five-job-cap repair PR #22, and RunPod-safe
+  error-envelope repair PR #23 are also merged. Protected `main`
   publication passed every release gate for source commit
-  `19f2c4325644c79fa44f7e3d9e3b636990035356` and immutable image
+  `dfafb5bdae13f4d3238d22a3d747d33310b3d7d9` and immutable image
   digest
-  `sha256:f9f7c71f7890b4e97d56d9c335777d243e869fba040997daaedca36f087f9441`.
+  `sha256:daeb01877efd34526b2bd841930f6b52e1c4ba781081a66ce0c7e294e1bf31f8`.
   The GitHub repository is public; the source-linked GHCR package remains private.
 - The renewed bootstrap job against that repaired digest was cancelled on
   2026-08-25 when one worker became unhealthy and RunPod introduced an
@@ -43,12 +43,11 @@ produce structured evidence records.
   bootstrap receipt, or inference result exists. The endpoint was restored to
   minimum zero/maximum zero with no workers or pending jobs, no Pod, and no
   volume. Do not promote the checkpoint manifest from this incomplete output.
-- Four paid submissions have been consumed. The user-approved five-submission
-  ceiling leaves one submission, which cannot satisfy both the still-required
-  bootstrap and final validation. Do not start another paid worker until the
-  RunPod-safe error-envelope repair is merged and republished, a refreshed
-  proposal and budget exist, the user explicitly decides the paid-submission
-  ceiling, and the exact proposal receives
+- Four paid submissions have been consumed. The user-approved six-submission
+  ceiling leaves exactly two submissions for the still-required bootstrap and
+  final validation, with no retry allowance. Do not start another paid worker
+  until the six-job budget control is merged and republished, a refreshed
+  proposal and budget exist, and the exact proposal receives
   `APPROVE PHASE 6 SERVERLESS COST`. The USD 2.00 total spend cap and all
   worker, identity, and retry safety stops remain unchanged.
 - Phase 6 repository work may keep status/runbook documentation current, repair

@@ -23,21 +23,20 @@ Current status (2026-08-25):
   merge commit `4062b946a29288330242d108dbbed9ded4d9d736` passed every gate for
   immutable Linux AMD64 digest
   `sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437`.
-- [ ] Phase 6 preparation PR #10 and repair PRs #18, #19, #20, and #21 are merged
-  and tracked by issue #9. Protected publication for PR #20 passed every gate
-  at source commit `f827629b60ccd6de884edd0064095c756b9fc228` and digest
-  `sha256:eb2c9c9144ea46ed9c654fe2f0247b34e6fb0217d63b0e3b4deba09b6d79d722`.
+- [ ] Phase 6 preparation PR #10 and repair PRs #18 through #23 are merged and
+  tracked by issue #9. Protected publication for PR #23 passed every gate at
+  source commit `dfafb5bdae13f4d3238d22a3d747d33310b3d7d9` and digest
+  `sha256:daeb01877efd34526b2bd841930f6b52e1c4ba781081a66ce0c7e294e1bf31f8`.
   The queue endpoint and private-registry credential exist, but the endpoint is
-  safety-locked at minimum zero/maximum zero with no workers or jobs. Two
-  bootstrap attempts were cancelled before inference; no observational
-  bootstrap receipt or real GPU validation exists. A third approved bootstrap
-  was cancelled before handler execution when RunPod assigned a hidden
-  scheduler-known Blackwell MIG type omitted from the current catalog response.
-  Three submissions are consumed. The user explicitly approved a five-job
-  ceiling on 2026-08-25, leaving exactly two submissions for bootstrap and
-  final validation with no retry allowance. Another paid worker requires the
-  breaking budget repair to be merged and republished and a newly approved
-  exact proposal.
+  safety-locked at minimum zero/maximum zero with no workers or jobs. Four paid
+  bootstrap submissions are consumed; none produced an acceptable bootstrap
+  receipt or real GPU validation. The fourth exposed RunPod SDK 1.7.13's
+  reserved top-level `error` field, which PR #23 repaired with a strict
+  `worker_error` envelope. The user explicitly approved a six-job ceiling on
+  2026-08-25, leaving exactly two submissions for bootstrap and final
+  validation with no retry allowance. Another paid worker requires the
+  breaking six-job budget repair to be merged and republished and a newly
+  approved exact proposal.
 - [ ] Phase 7 and later are not authorized.
 
 ## Mission and first vertical slice
@@ -454,13 +453,16 @@ The endpoint was immediately restored to minimum zero/maximum zero and reads
 confirmed zero workers, zero queued/running jobs, zero Pods, and zero volumes.
 Itemized billing still reports USD 0.0084969667, subject to provider lag.
 
-Four submissions are now consumed. The approved five-submission ceiling leaves
-one, which is insufficient for both a replacement bootstrap and final GPU
-validation. Repository work is limited to the RunPod-safe error-envelope
-repair, tests, documentation, and protected publication. Another paid job
-requires a new ceiling decision, refreshed budget and proposal, and exact cost
-approval; it is not an automatic retry. The account worker quota remains
-unexposed by current read-only surfaces.
+RunPod-safe error-envelope repair PR #23 then merged, and protected publication
+passed every release gate for source commit
+`dfafb5bdae13f4d3238d22a3d747d33310b3d7d9` and immutable digest
+`sha256:daeb01877efd34526b2bd841930f6b52e1c4ba781081a66ce0c7e294e1bf31f8`.
+Four submissions are consumed. The user approved a six-submission ceiling,
+leaving exactly two jobs for replacement bootstrap and final GPU validation
+with no retry allowance. Another paid job requires this breaking budget repair
+to merge and publish, plus a refreshed proposal, budget, and exact cost
+approval. The account worker quota remains unexposed by current read-only
+surfaces.
 
 Deliverables:
 
