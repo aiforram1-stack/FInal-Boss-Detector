@@ -41,6 +41,19 @@ def cached_snapshot(tmp_path: Path) -> tuple[Path, Path, bytes]:
     return root, snapshot, content
 
 
+def materialized_cached_snapshot(tmp_path: Path) -> tuple[Path, Path, bytes]:
+    root = tmp_path / "hub"
+    model_root = root / "models--OwensLab--commfor-model-384"
+    snapshot = model_root / "snapshots" / REVISION
+    refs = model_root / "refs"
+    snapshot.mkdir(parents=True)
+    refs.mkdir()
+    content = safetensors_bytes()
+    (snapshot / FILENAME).write_bytes(content)
+    (refs / "main").write_text(REVISION, encoding="utf-8")
+    return root, snapshot, content
+
+
 def test_resolves_exact_cached_snapshot_and_observes_checkpoint(tmp_path: Path) -> None:
     root, snapshot, content = cached_snapshot(tmp_path)
     resolved = RunPodModelCacheResolver(root).resolve(
@@ -56,6 +69,26 @@ def test_resolves_exact_cached_snapshot_and_observes_checkpoint(tmp_path: Path) 
     assert resolved.tensor_count == 1
     assert resolved.hash_verification_ms >= 0
     assert resolved.checkpoint_path.parent.name == "blobs"
+    assert resolved.cache_layout == "HUGGINGFACE_BLOB_SYMLINK"
+
+
+def test_resolves_runpod_materialized_snapshot_and_observes_checkpoint(
+    tmp_path: Path,
+) -> None:
+    root, snapshot, content = materialized_cached_snapshot(tmp_path)
+    resolved = RunPodModelCacheResolver(root).resolve(
+        repository=REPOSITORY,
+        revision=REVISION,
+        filename=FILENAME,
+        expected_byte_length=len(content),
+        expected_sha256=hashlib.sha256(content).hexdigest(),
+    )
+    assert resolved.snapshot_path == snapshot.resolve()
+    assert resolved.logical_checkpoint_path == snapshot / FILENAME
+    assert resolved.checkpoint_path == snapshot / FILENAME
+    assert resolved.cache_layout == "RUNPOD_MATERIALIZED_SNAPSHOT"
+    assert resolved.byte_length == len(content)
+    assert resolved.tensor_count == 1
 
 
 @pytest.mark.parametrize("field", ["sha256", "length"])

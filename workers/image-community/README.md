@@ -71,6 +71,10 @@ The Dockerfile exposes two digest-pinned Linux AMD64 targets:
   verified-checkpoint mode, reads only the standard RunPod model cache, and
   cannot pass readiness until the endpoint supplies CUDA, the exact cached
   snapshot, immutable container digest, source commit, and release identity.
+  The cache resolver supports both a canonical Hugging Face blob-backed
+  snapshot symlink and RunPod's regular-file materialization directly inside
+  the exact pinned snapshot; both layouts are hash-, length-, format-, and
+  path-verified before loading.
   Phase 6 sets `IMAGE_COMMUNITY_PHASE6_ONLY_MODE=true` so this validation
   endpoint rejects ordinary evidence jobs.
 

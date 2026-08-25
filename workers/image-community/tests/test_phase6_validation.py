@@ -256,6 +256,7 @@ def test_checkpoint_bootstrap_is_observational_and_sanitized(tmp_path: Path) -> 
     assert result.receipt.status == "OBSERVED_BOOTSTRAP_HASH"
     assert result.receipt.payload["checkpoint_sha256"] == pinned_manifest.model.checkpoint_sha256
     assert result.receipt.payload["basic_model_load_status"] == "PASSED"
+    assert result.receipt.payload["checkpoint_cache_layout"] == "HUGGINGFACE_BLOB_SYMLINK"
     assert result.receipt.payload["runpod_job_id"] == "bootstrap-job-1"
     assert (
         result.receipt.payload["phase6_runtime_fitness_checks"][  # type: ignore[index]
