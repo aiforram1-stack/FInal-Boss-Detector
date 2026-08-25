@@ -30,11 +30,13 @@ Before any endpoint creation or `/run` request:
    proposal. Any material configuration, credential ID, catalog membership, or
    price change invalidates approval.
 
-The maximum approved Phase 6 spend is USD 2.00. Three paid submissions have
-been consumed. On 2026-08-25 the user explicitly approved a five-submission
-ceiling, leaving exactly two submissions for the still-required bootstrap and
-final validation. Diagnostic retries remain zero. Premium GPUs, Pods, and
-network volumes require separate approval and are not part of this runbook.
+The maximum approved Phase 6 spend is USD 2.00. Four paid submissions have
+been consumed. The user-approved five-submission ceiling leaves one slot, which
+cannot satisfy both the still-required bootstrap and final validation.
+Diagnostic retries remain zero. Another paid worker requires an explicit
+ceiling decision, refreshed budget and proposal, and exact cost approval.
+Premium GPUs, Pods, and network volumes require separate approval and are not
+part of this runbook.
 
 The cancelled bootstraps, unexpected second worker, and disallowed hidden-GPU
 assignment remain mandatory stop events. Raising a numerical ceiling does not
@@ -44,15 +46,15 @@ supply-chain, or spend gate.
 ## Immutable release verification
 
 The last verified Phase 6 bootstrap image is the protected publication after
-hidden-GPU deny repair PR #21:
+five-job-cap repair PR #22:
 
 ```text
-ghcr.io/aiforram1-stack/forensic-image-community@sha256:c2fdf5625301683beb18c71e04685a205fb2e7e34911e6efac177f452e7a0117
+ghcr.io/aiforram1-stack/forensic-image-community@sha256:f9f7c71f7890b4e97d56d9c335777d243e869fba040997daaedca36f087f9441
 ```
 
-It is Linux AMD64, 6,629,491,774 bytes, and binds source commit
-`18f499d79aed272064a0653f1d615cc5816ab6e0`. Protected run
-[`32840660804`](https://github.com/aiforram1-stack/FInal-Boss-Detector/actions/runs/32840660804)
+It is Linux AMD64 and binds source commit
+`19f2c4325644c79fa44f7e3d9e3b636990035356`. Protected run
+[`32847128594`](https://github.com/aiforram1-stack/FInal-Boss-Detector/actions/runs/32847128594)
 passed SBOM, provenance, GitHub attestation, vulnerability, source-link,
 pull-by-digest, content, mock-smoke, and final fail-closed gates. The checkpoint
 is absent and real GPU inference is marked not run.
@@ -67,12 +69,12 @@ Real GPU inference must still be marked not run.
 From a trusted authenticated workstation:
 
 ```bash
-export IMAGE_DIGEST_REFERENCE='ghcr.io/aiforram1-stack/forensic-image-community@sha256:c2fdf5625301683beb18c71e04685a205fb2e7e34911e6efac177f452e7a0117'
+export IMAGE_DIGEST_REFERENCE='ghcr.io/aiforram1-stack/forensic-image-community@sha256:f9f7c71f7890b4e97d56d9c335777d243e869fba040997daaedca36f087f9441'
 export GITHUB_REPOSITORY='aiforram1-stack/FInal-Boss-Detector'
 make image-community-attestation-verify
 scripts/verify_published_image.sh \
   "${IMAGE_DIGEST_REFERENCE}" \
-  '18f499d79aed272064a0653f1d615cc5816ab6e0' \
+  '19f2c4325644c79fa44f7e3d9e3b636990035356' \
   'https://github.com/aiforram1-stack/FInal-Boss-Detector'
 ```
 
@@ -84,7 +86,7 @@ The final 2026-08-25 safety audit found:
 
 - balance: USD 9.9915030333, for an observed USD 0.0084969667 Phase 6 balance
   delta from the USD 10.00 starting balance;
-- itemized Serverless billing reports USD 0.0084969667 after the three consumed
+- itemized Serverless billing reports USD 0.0084969667 after the four consumed
   submissions, subject to provider reporting lag;
 - one retained queue endpoint, safety-locked at minimum zero/maximum zero;
 - zero endpoint workers and zero queued/running jobs;
@@ -239,10 +241,10 @@ cannot enter the validation-only path. Never record a full environment dump.
 The selected `AMPERE_24` pool was USD 0.69/hour, or approximately USD
 0.0001916667/second, at the consumed proposal. The Serverless catalog reported
 RTX A5000 and RTX 3090, while the scheduler additionally assigned the denied
-Blackwell MIG type. A replacement budget uses breaking schema version 1.2, a
-three-submission baseline, two planned jobs, zero retries, and the
-user-approved five-submission ceiling. Refresh price and membership before
-preparing its exact approval hashes.
+Blackwell MIG type. A replacement budget must use four consumed submissions,
+zero retries, and a new user-approved ceiling high enough for both the
+replacement bootstrap and final validation. Refresh price and membership
+before preparing its exact approval hashes.
 
 The consumed proposal assumed 600 seconds expected cold start per job, 180 seconds
 bootstrap execution, 360 seconds validation execution, and five seconds idle
@@ -286,11 +288,14 @@ After review and merge, protected publication must create and verify a new
 immutable image digest whose manifest contains the observed checkpoint hash
 while the checkpoint bytes remain absent.
 
-Current status: all three submitted bootstrap jobs were cancelled before
-handler execution, so this job remains incomplete and the manifest must not be
-promoted to `OBSERVED_BOOTSTRAP_HASH`. Resume only after the five-job budget
-control is merged and republished and a fresh proposal receives the exact
-cost-approval phrase.
+Current status: submission four reached handler execution on one approved RTX
+A5000 and the exact protected image, but pinned RunPod SDK 1.7.13 removed the
+worker's reserved top-level `error` field and retained only `schema_version`.
+The result is not a bootstrap receipt and the manifest must not be promoted to
+`OBSERVED_BOOTSTRAP_HASH`. Resume only after the RunPod-safe structured error
+envelope is merged and republished, the user decides a ceiling that preserves
+separate bootstrap and final-validation slots, and a fresh proposal receives
+the exact cost-approval phrase.
 
 ## Job 2: complete GPU validation
 
@@ -328,9 +333,10 @@ At completion or failure:
 6. leave the endpoint present but unable to start a worker unless the user asks
    for deletion.
 
-The 2026-08-25 failure cleanup satisfies this lock: minimum and maximum workers
-are zero, the queue and in-progress count are zero, no workers are listed, and
-no Pod or network volume exists. The endpoint remains present for diagnosis.
+The latest 2026-08-25 failure cleanup satisfies this lock: minimum and maximum
+workers are zero, the queue and in-progress count are zero, no workers are
+listed, and no Pod or network volume exists. The endpoint remains present for
+diagnosis.
 
 Only sanitized, small, versioned validation summaries may enter Git. Endpoint
 credentials, API keys, registry identifiers, signed URLs, full logs, model

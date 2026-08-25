@@ -440,11 +440,26 @@ Hidden-GPU deny repair PR #21 merged, and protected publication passed every
 release gate for source commit `18f499d79aed272064a0653f1d615cc5816ab6e0`
 and immutable digest
 `sha256:c2fdf5625301683beb18c71e04685a205fb2e7e34911e6efac177f452e7a0117`.
-Three submissions are consumed. On 2026-08-25 the user explicitly approved a
-five-submission ceiling, leaving exactly two submissions for bootstrap and
-final validation with no retry allowance. Another paid execution requires this
-breaking budget schema to be merged and republished, a refreshed proposal and
-budget, and the exact cost-approval phrase. The account worker quota remains
+Five-job-cap repair PR #22 then merged, and protected publication passed every
+release gate for source commit `19f2c4325644c79fa44f7e3d9e3b636990035356`
+and immutable digest
+`sha256:f9f7c71f7890b4e97d56d9c335777d243e869fba040997daaedca36f087f9441`.
+The exact proposal and budget received cost approval. Paid submission four ran
+on one approved RTX A5000 with one GPU, the exact image digest, and no platform
+retry. The handler failed closed during the controlled bootstrap, but pinned
+RunPod SDK 1.7.13 treats a top-level `error` key as reserved, removed the
+structured error from the output, and left only `schema_version`. The result is
+not a valid bootstrap receipt and no checkpoint hash may be inferred from it.
+The endpoint was immediately restored to minimum zero/maximum zero and reads
+confirmed zero workers, zero queued/running jobs, zero Pods, and zero volumes.
+Itemized billing still reports USD 0.0084969667, subject to provider lag.
+
+Four submissions are now consumed. The approved five-submission ceiling leaves
+one, which is insufficient for both a replacement bootstrap and final GPU
+validation. Repository work is limited to the RunPod-safe error-envelope
+repair, tests, documentation, and protected publication. Another paid job
+requires a new ceiling decision, refreshed budget and proposal, and exact cost
+approval; it is not an automatic retry. The account worker quota remains
 unexposed by current read-only surfaces.
 
 Deliverables:

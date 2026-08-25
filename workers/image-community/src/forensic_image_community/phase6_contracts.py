@@ -11,6 +11,8 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator, model_validator
 
+from forensic_image_community.errors import WorkerErrorCode
+
 SHA256_PATTERN = r"^[a-f0-9]{64}$"
 COMMIT_PATTERN = r"^[a-f0-9]{40}$"
 DIGEST_PATTERN = r"^sha256:[a-f0-9]{64}$"
@@ -26,6 +28,26 @@ class Phase6Record(BaseModel):
     )
 
     schema_version: Literal["1.0"]
+
+
+class SanitizedWorkerError(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+        str_strip_whitespace=True,
+        allow_inf_nan=False,
+    )
+
+    code: WorkerErrorCode
+    message: str = Field(min_length=1, max_length=1000)
+    retryable: bool
+
+
+class RunpodWorkerErrorResponse(Phase6Record):
+    """Structured failure that avoids RunPod SDK's reserved top-level `error` key."""
+
+    status: Literal["WORKER_ERROR"] = "WORKER_ERROR"
+    worker_error: SanitizedWorkerError
 
 
 class CheckpointBootstrapRequest(Phase6Record):

@@ -370,8 +370,9 @@ def test_json_schemas_are_generated_and_committed() -> None:
         "GpuValidationRequest.schema.json",
         "GpuValidationResponse.schema.json",
         "Phase6CostBudget.schema.json",
+        "RunpodWorkerErrorResponse.schema.json",
     }
-    assert len(generated) == 20
+    assert len(generated) == 21
     assert phase6_schemas <= generated.keys()
     for filename, expected in generated.items():
         assert (SCHEMA_DIR / filename).read_text(encoding="utf-8") == expected

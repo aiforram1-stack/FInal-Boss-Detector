@@ -15,10 +15,10 @@ until an exact configuration and cost proposal receives the exact approval
 phrase.
 
 Pull requests for Phases 2 through 6 preparation and repair PRs #16, #18, #19,
-#20, and #21 are merged. Protected publication accepted source commit
-`18f499d79aed272064a0653f1d615cc5816ab6e0` as private
+#20, #21, and #22 are merged. Protected publication accepted source commit
+`19f2c4325644c79fa44f7e3d9e3b636990035356` as private
 Linux AMD64 image
-`ghcr.io/aiforram1-stack/forensic-image-community@sha256:c2fdf5625301683beb18c71e04685a205fb2e7e34911e6efac177f452e7a0117`.
+`ghcr.io/aiforram1-stack/forensic-image-community@sha256:f9f7c71f7890b4e97d56d9c335777d243e869fba040997daaedca36f087f9441`.
 The GitHub repository is public, the GHCR package remains private and
 source-linked, and every release gate passed. The checkpoint remains absent
 from the image and CUDA validation has not completed.
@@ -49,6 +49,18 @@ observed the disallowed identity while the job remained `IN_QUEUE`, cancelled
 it, and restored maximum workers to zero before handler execution. No
 checkpoint, CUDA, model-load, inference, or platform-retry result exists from
 that submission.
+
+The user then approved a five-submission ceiling, and PR #22 published the
+corresponding budget controls. Submission four used one approved RTX A5000,
+one GPU, the exact protected image digest, and zero retries. Handler execution
+ended after 4.465 seconds, but the returned object contained only
+`schema_version`. Source inspection of pinned RunPod SDK 1.7.13 established
+that it removes the reserved top-level `error` key from any handler dictionary
+before reporting output. The worker therefore failed closed but its structured
+failure code was not retained. This is not a checkpoint receipt, and no
+checkpoint hash, model-load result, or inference result may be inferred. The
+endpoint was restored to minimum zero/maximum zero with no workers or jobs, no
+Pod, and no volume.
 
 Current official RunPod documentation describes asynchronous queue operations
 (`/run`, `/status`, `/cancel`, `/retry`, `/purge-queue`, `/health`), scale-to-zero
@@ -85,9 +97,13 @@ The budget record separately binds prior spend, the number of already submitted
 jobs, expected and worst-case cold-start seconds, and the remaining submission
 count. The hidden-GPU cancellation consumed submission three without handler
 execution. On 2026-08-25 the user explicitly raised the total ceiling to five.
-Breaking budget schema 1.2 therefore binds three consumed submissions, exactly
-two planned jobs, zero diagnostic retries, and five submissions total. A fresh
-exact cost proposal remains required before another paid worker starts.
+Breaking budget schema 1.2 bound three consumed submissions, exactly two
+planned jobs, zero diagnostic retries, and five submissions total. Submission
+four consumed the bootstrap slot without producing an acceptable receipt. One
+slot remains, which cannot complete both bootstrap and final validation. A new
+ceiling decision, refreshed budget and proposal, and exact cost approval are
+required before another paid worker starts; the remaining slot is not an
+automatic retry authorization.
 
 The consumed continuation proposal used a 600-second expected cold start and a
 conservative 1,200-second worst case, 180 seconds for bootstrap, and 360 seconds
@@ -153,6 +169,13 @@ identity, sanitized payloads, and canonical SHA-256 integrity. Full logs,
 secrets, signed URLs, endpoint credentials, cache paths, checkpoint bytes, and
 private evidence are prohibited.
 
+RunPod SDK 1.7.13 reserves the top-level `error` key and removes it from handler
+output. Worker failures must therefore use the strict versioned
+`RunpodWorkerErrorResponse` envelope with a `worker_error` field. The local
+queue controller treats that envelope as a terminal worker failure even when
+the provider labels the job `COMPLETED`; it never accepts it as bootstrap or
+validation evidence.
+
 ### Pure local control logic
 
 Repository code builds and validates endpoint proposals, budget records,
@@ -183,15 +206,19 @@ enter repository code or shell history.
   system start events without application output. Retained endpoint logs later
   isolated the failure to the pre-queue GPU fitness stage, motivating the
   bootstrap-only deferred-fitness repair without weakening verified validation.
-- All three paid bootstrap submissions and their approvals are consumed for
+- Four paid bootstrap submissions and their approvals are consumed for
   execution purposes. The third was cancelled before handler execution when
   the scheduler assigned the known-denied Blackwell MIG type even though it was
-  absent from the current catalog response. The proposal schema now requires
-  that scheduler-observed type to remain explicitly excluded.
-- The retained endpoint must remain maximum zero until a refreshed proposal and
-  budget receive the exact approval phrase. The user authorized a
-  five-submission total ceiling: three are consumed, exactly two remain, and no
-  retry is allowed. This cap is not permission to bypass repeated-worker,
+  absent from the current catalog response. The fourth used an approved A5000
+  but exposed the reserved-error-field incompatibility before any receipt was
+  accepted. The proposal schema requires the scheduler-observed MIG type to
+  remain explicitly excluded.
+- The retained endpoint must remain maximum zero until the error-envelope
+  repair is merged and published and a refreshed proposal and budget receive
+  the exact approval phrase. The user authorized a five-submission total
+  ceiling: four are consumed, one remains, and no retry is allowed. That one
+  slot cannot satisfy both bootstrap and final validation. This cap is not
+  permission to bypass repeated-worker,
   unexpected-second-worker, GPU-identity, or spend stop conditions.
 - Bootstrap requires a manifest update and second protected image publication
   before final validation, adding review latency but binding validation to the

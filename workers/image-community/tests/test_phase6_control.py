@@ -20,6 +20,7 @@ from forensic_image_community.phase6_control import (
     Phase6CostBudget,
     Phase6QueueController,
     QueueJobResult,
+    WorkerReportedFailure,
     assert_final_endpoint_lock,
     assert_sanitized_result,
     build_async_job_payload,
@@ -555,3 +556,38 @@ def test_completed_job_requires_the_expected_versioned_output_contract() -> None
             deadline_seconds=30,
             expected_operation="checkpoint_bootstrap",
         )
+
+
+def test_completed_job_surfaces_runpod_safe_worker_failure() -> None:
+    transport = FakeTransport(
+        iter(
+            (
+                {
+                    "id": "job-1",
+                    "status": "COMPLETED",
+                    "output": {
+                        "schema_version": "1.0",
+                        "status": "WORKER_ERROR",
+                        "worker_error": {
+                            "code": "CUDA_UNAVAILABLE",
+                            "message": "Bootstrap runtime fitness checks failed closed.",
+                            "retryable": True,
+                        },
+                    },
+                },
+            )
+        )
+    )
+    controller = Phase6QueueController(
+        transport=transport,
+        monotonic=lambda: 0.0,
+        wait=lambda _: None,
+    )
+    with pytest.raises(WorkerReportedFailure) as raised:
+        controller.poll_until_terminal(
+            "job-1",
+            deadline_seconds=30,
+            expected_operation="checkpoint_bootstrap",
+        )
+    assert raised.value.response.worker_error.code == "CUDA_UNAVAILABLE"
+    assert raised.value.response.worker_error.retryable is True

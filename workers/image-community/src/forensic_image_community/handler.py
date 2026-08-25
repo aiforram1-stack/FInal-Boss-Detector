@@ -22,6 +22,8 @@ from forensic_image_community.job_service import ImageCommunityJobService
 from forensic_image_community.phase6_contracts import (
     CheckpointBootstrapRequest,
     GpuValidationRequest,
+    RunpodWorkerErrorResponse,
+    SanitizedWorkerError,
 )
 from forensic_image_community.phase6_validation import Phase6ValidationService
 
@@ -92,6 +94,26 @@ def _safe_runpod_job_id(event: dict[str, Any]) -> str:
     return value
 
 
+def _runpod_safe_worker_error(error: WorkerError) -> dict[str, object]:
+    """Preserve a structured failure outside RunPod SDK's reserved `error` field."""
+
+    details = error.external_dict()["error"]
+    return RunpodWorkerErrorResponse(
+        schema_version="1.0",
+        worker_error=SanitizedWorkerError.model_validate(details),
+    ).model_dump(mode="json")
+
+
+def _normalize_runpod_output(response: dict[str, object]) -> dict[str, object]:
+    raw_error = response.get("error")
+    if raw_error is None:
+        return response
+    return RunpodWorkerErrorResponse(
+        schema_version="1.0",
+        worker_error=SanitizedWorkerError.model_validate(raw_error),
+    ).model_dump(mode="json")
+
+
 def _phase6_handle(event: dict[str, Any], service: Phase6ValidationService) -> dict[str, object]:
     raw_input = event.get("input")
     if not isinstance(raw_input, dict):
@@ -148,20 +170,24 @@ def runpod_handler(event: dict[str, Any]) -> dict[str, object]:
             )
         if _default_handler is None:
             _default_handler = build_ready_handler(settings)
-        return _default_handler.handle(event)
+        return _normalize_runpod_output(_default_handler.handle(event))
     except WorkerError as exc:
-        return exc.external_dict()
+        return _runpod_safe_worker_error(exc)
     except ValidationError:
-        return WorkerError(
-            WorkerErrorCode.INVALID_JOB,
-            "Job input did not satisfy the Phase 6 contract.",
-        ).external_dict()
+        return _runpod_safe_worker_error(
+            WorkerError(
+                WorkerErrorCode.INVALID_JOB,
+                "Job input did not satisfy the Phase 6 contract.",
+            )
+        )
     except Exception as exc:
-        return WorkerError(
-            WorkerErrorCode.INTERNAL_ERROR,
-            "Worker encountered an internal error.",
-            internal_detail=type(exc).__name__,
-        ).external_dict()
+        return _runpod_safe_worker_error(
+            WorkerError(
+                WorkerErrorCode.INTERNAL_ERROR,
+                "Worker encountered an internal error.",
+                internal_detail=type(exc).__name__,
+            )
+        )
 
 
 def _read_local_event(path: Path) -> dict[str, object]:

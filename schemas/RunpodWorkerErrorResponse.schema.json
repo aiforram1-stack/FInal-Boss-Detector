@@ -1,0 +1,79 @@
+{
+  "$defs": {
+    "SanitizedWorkerError": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/WorkerErrorCode"
+        },
+        "message": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "retryable": {
+          "title": "Retryable",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "retryable"
+      ],
+      "title": "SanitizedWorkerError",
+      "type": "object"
+    },
+    "WorkerErrorCode": {
+      "enum": [
+        "INVALID_JOB",
+        "UNSUPPORTED_MIME_TYPE",
+        "INPUT_TOO_LARGE",
+        "INPUT_FETCH_FAILED",
+        "INPUT_REDIRECT_REJECTED",
+        "INPUT_HOST_REJECTED",
+        "INPUT_HASH_MISMATCH",
+        "INPUT_LENGTH_MISMATCH",
+        "IMAGE_DECODE_FAILED",
+        "IMAGE_DIMENSIONS_EXCEEDED",
+        "PREPROCESSING_FAILED",
+        "MODEL_MANIFEST_INVALID",
+        "CHECKPOINT_UNAVAILABLE",
+        "CHECKPOINT_HASH_MISMATCH",
+        "CUDA_UNAVAILABLE",
+        "MODEL_LOAD_FAILED",
+        "INFERENCE_FAILED",
+        "OUTPUT_CONTRACT_INVALID",
+        "WORKER_NOT_READY",
+        "INTERNAL_ERROR"
+      ],
+      "title": "WorkerErrorCode",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Structured failure that avoids RunPod SDK's reserved top-level `error` key.",
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "const": "WORKER_ERROR",
+      "default": "WORKER_ERROR",
+      "title": "Status",
+      "type": "string"
+    },
+    "worker_error": {
+      "$ref": "#/$defs/SanitizedWorkerError"
+    }
+  },
+  "required": [
+    "schema_version",
+    "worker_error"
+  ],
+  "title": "RunpodWorkerErrorResponse",
+  "type": "object"
+}

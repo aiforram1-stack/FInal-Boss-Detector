@@ -25,6 +25,7 @@ from forensic_image_community.phase6_contracts import (
     CheckpointBootstrapResponse,
     GpuValidationRequest,
     GpuValidationResponse,
+    RunpodWorkerErrorResponse,
 )
 from forensic_image_community.phase6_control import (
     EndpointHealth,
@@ -52,6 +53,7 @@ MODELS: tuple[type[BaseModel], ...] = (
     CheckpointBootstrapResponse,
     GpuValidationRequest,
     GpuValidationResponse,
+    RunpodWorkerErrorResponse,
     EndpointHealth,
     EndpointProposal,
     Phase6CostBudget,

@@ -28,6 +28,7 @@ from forensic_image_community.phase6_contracts import (
     CheckpointBootstrapResponse,
     GpuValidationRequest,
     GpuValidationResponse,
+    RunpodWorkerErrorResponse,
 )
 
 APPROVAL_PHRASE = "APPROVE PHASE 6 SERVERLESS COST"
@@ -395,6 +396,14 @@ class ClientDeadlineExceeded(RuntimeError):
         self.job_id = job_id
 
 
+class WorkerReportedFailure(RuntimeError):
+    def __init__(self, response: RunpodWorkerErrorResponse) -> None:
+        super().__init__(
+            f"Phase 6 worker failed closed with code {response.worker_error.code.value}"
+        )
+        self.response = response
+
+
 def canonical_record_sha256(record: BaseModel) -> str:
     body = json.dumps(
         record.model_dump(mode="json"),
@@ -493,6 +502,8 @@ def validate_completed_output(
     if output is None:
         raise ValueError("completed RunPod job omitted its output")
     assert_sanitized_result(output)
+    if isinstance(output, dict) and "worker_error" in output:
+        raise WorkerReportedFailure(RunpodWorkerErrorResponse.model_validate(output))
     if expected_operation == "checkpoint_bootstrap":
         CheckpointBootstrapResponse.model_validate(output)
         return

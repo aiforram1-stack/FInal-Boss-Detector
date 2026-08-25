@@ -3,12 +3,15 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
+from forensic_image_community.errors import WorkerErrorCode
 from forensic_image_community.phase6_contracts import (
     ArtifactEnvelope,
     CheckpointBootstrapRequest,
     CheckpointBootstrapResponse,
     GpuValidationResponse,
     ReleaseIdentity,
+    RunpodWorkerErrorResponse,
+    SanitizedWorkerError,
     build_artifact_envelope,
 )
 from pydantic import ValidationError
@@ -143,6 +146,22 @@ def test_phase6_json_schemas_are_strict_and_versioned() -> None:
     assert schema["additionalProperties"] is False
     assert "schema_version" in schema["properties"]
     assert "artifact_sha256" in str(schema)
+
+
+def test_runpod_worker_error_round_trip_avoids_reserved_error_field() -> None:
+    response = RunpodWorkerErrorResponse(
+        schema_version="1.0",
+        worker_error=SanitizedWorkerError(
+            code=WorkerErrorCode.CUDA_UNAVAILABLE,
+            message="Bootstrap runtime fitness checks failed closed.",
+            retryable=True,
+        ),
+    )
+    serialized = response.model_dump(mode="json")
+    assert serialized["status"] == "WORKER_ERROR"
+    assert "error" not in serialized
+    assert serialized["worker_error"]["code"] == "CUDA_UNAVAILABLE"  # type: ignore[index]
+    assert RunpodWorkerErrorResponse.model_validate_json(response.model_dump_json()) == response
 
 
 def test_bootstrap_requires_basic_model_load() -> None:
