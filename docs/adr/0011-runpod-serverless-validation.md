@@ -14,11 +14,11 @@ queue-based RunPod Serverless endpoint, but no billable operation is allowed
 until an exact configuration and cost proposal receives the exact approval
 phrase.
 
-Pull requests for Phases 2 through 6 preparation and repair PRs #16, #18, #19,
-#20, #21, and #22 are merged. Protected publication accepted source commit
-`19f2c4325644c79fa44f7e3d9e3b636990035356` as private
+Pull requests for Phases 2 through 6 preparation and repair PRs #16 and #18
+through #23 are merged. Protected publication accepted source commit
+`dfafb5bdae13f4d3238d22a3d747d33310b3d7d9` as private
 Linux AMD64 image
-`ghcr.io/aiforram1-stack/forensic-image-community@sha256:f9f7c71f7890b4e97d56d9c335777d243e869fba040997daaedca36f087f9441`.
+`ghcr.io/aiforram1-stack/forensic-image-community@sha256:daeb01877efd34526b2bd841930f6b52e1c4ba781081a66ce0c7e294e1bf31f8`.
 The GitHub repository is public, the GHCR package remains private and
 source-linked, and every release gate passed. The checkpoint remains absent
 from the image and CUDA validation has not completed.
@@ -62,6 +62,10 @@ checkpoint hash, model-load result, or inference result may be inferred. The
 endpoint was restored to minimum zero/maximum zero with no workers or jobs, no
 Pod, and no volume.
 
+RunPod-safe error-envelope repair PR #23 replaced the reserved top-level field
+with a strict `worker_error` envelope. Its protected publication passed every
+release gate. No paid worker has run against that repaired image.
+
 Current official RunPod documentation describes asynchronous queue operations
 (`/run`, `/status`, `/cancel`, `/retry`, `/purge-queue`, `/health`), scale-to-zero
 worker limits, five-second idle timeout, queue-delay scaling, ordinary
@@ -99,11 +103,13 @@ count. The hidden-GPU cancellation consumed submission three without handler
 execution. On 2026-08-25 the user explicitly raised the total ceiling to five.
 Breaking budget schema 1.2 bound three consumed submissions, exactly two
 planned jobs, zero diagnostic retries, and five submissions total. Submission
-four consumed the bootstrap slot without producing an acceptable receipt. One
-slot remains, which cannot complete both bootstrap and final validation. A new
-ceiling decision, refreshed budget and proposal, and exact cost approval are
-required before another paid worker starts; the remaining slot is not an
-automatic retry authorization.
+four consumed the bootstrap slot without producing an acceptable receipt. The
+user then explicitly raised the total ceiling to six. Breaking budget schema
+1.3 binds four consumed submissions, exactly two planned jobs, zero diagnostic
+retries, and six submissions total. Those slots are only for replacement
+bootstrap and final validation. A refreshed budget and proposal plus exact
+cost approval are required before another paid worker starts; neither slot is
+an automatic retry authorization.
 
 The consumed continuation proposal used a 600-second expected cold start and a
 conservative 1,200-second worst case, 180 seconds for bootstrap, and 360 seconds
@@ -125,7 +131,7 @@ is one during approved
 execution, one GPU is used per worker, the idle timeout is five seconds, and no
 network volume or data-centre restriction is used by default. Maximum workers
 becomes zero after validation. Total spend is capped at USD 2.00 and the current
-paid ceiling is five: three consumed and exactly two remaining, with no retries.
+paid ceiling is six: four consumed and exactly two remaining, with no retries.
 No Pod fallback is permitted without separate approval.
 
 ### One cached model, resolved fail closed
@@ -213,11 +219,11 @@ enter repository code or shell history.
   but exposed the reserved-error-field incompatibility before any receipt was
   accepted. The proposal schema requires the scheduler-observed MIG type to
   remain explicitly excluded.
-- The retained endpoint must remain maximum zero until the error-envelope
+- The retained endpoint must remain maximum zero until the six-job budget
   repair is merged and published and a refreshed proposal and budget receive
-  the exact approval phrase. The user authorized a five-submission total
-  ceiling: four are consumed, one remains, and no retry is allowed. That one
-  slot cannot satisfy both bootstrap and final validation. This cap is not
+  the exact approval phrase. The user authorized a six-submission total
+  ceiling: four are consumed, exactly two remain for bootstrap and final
+  validation, and no retry is allowed. This cap is not
   permission to bypass repeated-worker,
   unexpected-second-worker, GPU-identity, or spend stop conditions.
 - Bootstrap requires a manifest update and second protected image publication
