@@ -471,5 +471,7 @@ def test_phase6_only_endpoint_rejects_ordinary_detector_jobs(
     response = handler_module.runpod_handler(
         {"input": {"schema_version": "1.0", "operation": "ordinary_detector_job"}}
     )
-    assert response["error"]["code"] == "INVALID_JOB"  # type: ignore[index]
-    assert "Phase 6" in str(response["error"])
+    assert response["status"] == "WORKER_ERROR"
+    assert "error" not in response
+    assert response["worker_error"]["code"] == "INVALID_JOB"  # type: ignore[index]
+    assert "Phase 6" in str(response["worker_error"])

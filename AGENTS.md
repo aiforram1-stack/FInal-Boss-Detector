@@ -13,11 +13,12 @@ produce structured evidence records.
   is the only active implementation phase. GitHub PRs #2, #4, #6, #8, and #10
   are merged into `main`. Release-verifier repair PR #16 and cache-layout
   repair PR #18, bootstrap-fitness repair PR #19, four-job-cap repair PR #20,
-  and hidden-GPU deny repair PR #21 are also merged. Protected `main`
+  hidden-GPU deny repair PR #21, and five-job-cap repair PR #22 are also
+  merged. Protected `main`
   publication passed every release gate for source commit
-  `18f499d79aed272064a0653f1d615cc5816ab6e0` and immutable image
+  `19f2c4325644c79fa44f7e3d9e3b636990035356` and immutable image
   digest
-  `sha256:c2fdf5625301683beb18c71e04685a205fb2e7e34911e6efac177f452e7a0117`.
+  `sha256:f9f7c71f7890b4e97d56d9c335777d243e869fba040997daaedca36f087f9441`.
   The GitHub repository is public; the source-linked GHCR package remains private.
 - The renewed bootstrap job against that repaired digest was cancelled on
   2026-08-25 when one worker became unhealthy and RunPod introduced an
@@ -35,11 +36,19 @@ produce structured evidence records.
   RTX A5000 and RTX 3090. The endpoint was immediately restored to minimum
   zero/maximum zero with no workers or jobs. No checkpoint hash, CUDA fitness,
   model load, or inference result was produced.
-- Three paid submissions have been consumed. On 2026-08-25 the user explicitly
-  approved a five-submission ceiling, leaving exactly two submissions for the
-  still-required bootstrap and final validation and no retry allowance. Do not
-  start another paid worker until this breaking budget repair is merged and
-  republished and a refreshed exact proposal receives
+- A fourth paid bootstrap submission ran on one approved RTX A5000 with the
+  exact protected image, one GPU, and zero retries. The worker failed closed,
+  but RunPod SDK 1.7.13 consumed the structured top-level `error` field and the
+  provider retained only `schema_version`; no checkpoint hash, accepted
+  bootstrap receipt, or inference result exists. The endpoint was restored to
+  minimum zero/maximum zero with no workers or pending jobs, no Pod, and no
+  volume. Do not promote the checkpoint manifest from this incomplete output.
+- Four paid submissions have been consumed. The user-approved five-submission
+  ceiling leaves one submission, which cannot satisfy both the still-required
+  bootstrap and final validation. Do not start another paid worker until the
+  RunPod-safe error-envelope repair is merged and republished, a refreshed
+  proposal and budget exist, the user explicitly decides the paid-submission
+  ceiling, and the exact proposal receives
   `APPROVE PHASE 6 SERVERLESS COST`. The USD 2.00 total spend cap and all
   worker, identity, and retry safety stops remain unchanged.
 - Phase 6 repository work may keep status/runbook documentation current, repair
