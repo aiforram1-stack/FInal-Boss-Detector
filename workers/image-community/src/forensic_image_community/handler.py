@@ -115,7 +115,14 @@ def _phase6_handle(event: dict[str, Any], service: Phase6ValidationService) -> d
 
 def _initialize_phase6_worker(settings: ImageCommunitySettings) -> Phase6ValidationService:
     service = build_phase6_validation_service(settings)
-    service.assert_startup_ready()
+    if settings.checkpoint_bootstrap_mode:
+        if not settings.phase6_only_mode:
+            raise WorkerError(
+                WorkerErrorCode.WORKER_NOT_READY,
+                "Phase 6 bootstrap startup requires validation-only mode.",
+            )
+    else:
+        service.assert_startup_ready()
     service.record_worker_initialization_ms(
         max(0, round((time.perf_counter_ns() - WORKER_PROCESS_STARTED_NS) / 1_000_000))
     )

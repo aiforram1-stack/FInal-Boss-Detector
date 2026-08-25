@@ -393,10 +393,15 @@ two despite configured maximum one. The job remained queued, so no checkpoint
 receipt, CUDA fitness, model load or inference result was produced. The job was
 cancelled immediately and the endpoint restored to minimum zero/maximum zero;
 subsequent reads confirmed zero workers and zero queued/running jobs. No Pod or
-network volume exists. Live logs established the pre-handler restart loop but
-the workers terminated before their temporary detailed logs could be retained
-through the available API. RunPod's retained endpoint log is required to
-identify the exact startup exception.
+network volume exists. Live worker logs established the restart loop. RunPod's
+retained endpoint log then confirmed that the image entrypoint and repaired
+cache resolver succeeded, but the pre-queue GPU fitness probe failed before the
+RunPod request loop could accept the bootstrap job. The generic startup
+exception did not preserve the fitness error code. The reviewable repair
+therefore defers full GPU fitness only for bootstrap mode into the already
+controlled bootstrap request, where failure is returned as a structured worker
+error; verified validation continues to require full fitness before the request
+loop starts.
 
 The GitHub repository is public while the source-linked GHCR package remains
 private. RunPod MCP and `runpodctl` are authenticated. The balance delta records

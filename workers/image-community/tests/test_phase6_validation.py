@@ -151,6 +151,24 @@ class FakeFitness:
         )
 
 
+class FailingFitness:
+    def check(self) -> FitnessResult:
+        return FitnessResult(
+            ready=False,
+            mode="real_gpu",
+            checks={
+                "configuration_valid": True,
+                "manifest_valid": True,
+                "contracts_import": True,
+                "temporary_directory_writable": True,
+                "backend_probe": False,
+                "mock_disabled_in_production": True,
+            },
+            error_code=WorkerErrorCode.MODEL_LOAD_FAILED.value,
+            message="Synthetic model load failure.",
+        )
+
+
 def production_settings(
     tmp_path: Path,
     *,
@@ -281,6 +299,83 @@ def test_phase6_startup_fails_closed_until_validation_only_mode_is_enabled(
     validator.record_worker_initialization_ms(12)
     assert checks["exactly_one_gpu_visible"] is True
     assert checks["checkpoint_hash_requirement_satisfied"] is True
+
+
+def test_startup_failure_exposes_only_the_safe_fitness_error_code(tmp_path: Path) -> None:
+    validator, _, _ = service(tmp_path, bootstrap=False)
+    validator.settings = validator.settings.model_copy(update={"phase6_only_mode": True})
+    validator.fitness = FailingFitness()  # type: ignore[assignment]
+
+    with pytest.raises(WorkerError) as raised:
+        validator.assert_startup_ready()
+
+    assert raised.value.code is WorkerErrorCode.WORKER_NOT_READY
+    assert raised.value.internal_detail == WorkerErrorCode.MODEL_LOAD_FAILED.value
+    assert str(raised.value) == "Phase 6 startup fitness checks failed (MODEL_LOAD_FAILED)."
+
+
+def test_bootstrap_returns_the_allow_listed_fitness_error_code(tmp_path: Path) -> None:
+    validator, pinned_manifest, _ = service(tmp_path, bootstrap=True)
+    validator.fitness = FailingFitness()  # type: ignore[assignment]
+    request = CheckpointBootstrapRequest(
+        schema_version="1.0",
+        operation="checkpoint_bootstrap",
+        detector_id="community-forensics-384",
+        expected_model_repository=pinned_manifest.model.repository,
+        expected_model_revision=pinned_manifest.model.revision,
+        expected_checkpoint_filename=pinned_manifest.model.filename,
+        fixture_id="phase6-generated-fixture",
+    )
+
+    with pytest.raises(WorkerError) as raised:
+        validator.checkpoint_bootstrap(request, runpod_job_id="bootstrap-failure-1")
+
+    assert raised.value.code is WorkerErrorCode.MODEL_LOAD_FAILED
+    assert raised.value.internal_detail == WorkerErrorCode.MODEL_LOAD_FAILED.value
+    assert str(raised.value) == "Bootstrap runtime fitness checks failed (MODEL_LOAD_FAILED)."
+
+
+def test_bootstrap_initialization_defers_gpu_fitness_to_the_controlled_job(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    validator, _, _ = service(tmp_path, bootstrap=True)
+    disabled = production_settings(tmp_path, bootstrap=True)
+    configured = disabled.model_copy(update={"phase6_only_mode": True})
+
+    def unexpected_startup_probe() -> dict[str, bool]:
+        raise AssertionError("bootstrap initialization must not run GPU fitness before the job")
+
+    monkeypatch.setattr(validator, "assert_startup_ready", unexpected_startup_probe)
+    monkeypatch.setattr(handler_module, "build_phase6_validation_service", lambda _: validator)
+
+    with pytest.raises(WorkerError) as rejected:
+        handler_module._initialize_phase6_worker(disabled)
+    assert rejected.value.code is WorkerErrorCode.WORKER_NOT_READY
+
+    assert handler_module._initialize_phase6_worker(configured) is validator
+
+
+def test_verified_initialization_still_requires_startup_gpu_fitness(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    validator, _, _ = service(tmp_path, bootstrap=False)
+    configured = production_settings(tmp_path, bootstrap=False).model_copy(
+        update={"phase6_only_mode": True}
+    )
+    startup_calls = 0
+
+    def record_startup_probe() -> dict[str, bool]:
+        nonlocal startup_calls
+        startup_calls += 1
+        return {"verified_startup_probe": True}
+
+    monkeypatch.setattr(validator, "assert_startup_ready", record_startup_probe)
+    monkeypatch.setattr(handler_module, "build_phase6_validation_service", lambda _: validator)
+
+    assert handler_module._initialize_phase6_worker(configured) is validator
+    assert startup_calls == 1
 
 
 def test_complete_gpu_validation_bundle_runs_all_checks_once(tmp_path: Path) -> None:

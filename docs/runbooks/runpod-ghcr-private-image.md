@@ -141,9 +141,14 @@ never left `IN_QUEUE`; the controller cancelled it and restored maximum zero.
 No bootstrap receipt, checkpoint observation, CUDA fitness, model load or
 inference result exists. Live logs showed repeated system start events without
 application output. Worker logs disappeared when the workers terminated;
-RunPod's retained endpoint log must be inspected for the exact startup
-exception. This is the runbook's repeated-worker/unexpected-second-worker stop
-condition. Do not unlock the endpoint under either prior approval.
+RunPod's retained endpoint log subsequently showed that the image entrypoint and
+repaired cache resolver succeeded, followed by a pre-queue GPU fitness failure.
+The generic exception omitted the underlying fitness error code. Bootstrap mode
+therefore defers full GPU fitness into the controlled bootstrap request, where a
+failure is returned as a structured worker error; verified validation keeps the
+pre-queue fitness gate. This is the runbook's
+repeated-worker/unexpected-second-worker stop condition. Do not unlock the
+endpoint under either prior approval.
 
 RunPod's supported cached-model control is `runpodctl` 2.4.0 or newer using
 `serverless create --model-reference`. The argument is the full Hugging Face URL
@@ -252,11 +257,11 @@ After review and merge, protected publication must create and verify a new
 immutable image digest whose manifest contains the observed checkpoint hash
 while the checkpoint bytes remain absent.
 
-Current status: both submitted bootstrap jobs were cancelled before execution,
-so this job remains incomplete and the manifest must not be promoted to
-`OBSERVED_BOOTSTRAP_HASH`. Resume only after retained endpoint logs identify the
-startup failure, any repair is reviewed and republished, and a fresh proposal
-receives the exact cost-approval phrase.
+Current status: both submitted bootstrap jobs were cancelled before handler
+execution, so this job remains incomplete and the manifest must not be promoted to
+`OBSERVED_BOOTSTRAP_HASH`. Resume only after the retained-log diagnosis, the
+reviewable repair is republished, and a fresh proposal receives the exact
+cost-approval phrase.
 
 ## Job 2: complete GPU validation
 

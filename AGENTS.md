@@ -21,9 +21,12 @@ produce structured evidence records.
   2026-08-25 when one worker became unhealthy and RunPod introduced an
   unexpected second worker. No bootstrap receipt, CUDA fitness result, model
   load, or inference result was produced. The queue endpoint is retained at
-  minimum zero/maximum zero with no workers or jobs. Diagnose through retained
-  endpoint logs and a reviewable repair; do not start another paid worker until
-  a refreshed proposal receives the exact approval phrase.
+  minimum zero/maximum zero with no workers or jobs. Retained endpoint logs
+  confirmed that the cache resolver and Python entrypoint succeeded, then the
+  pre-queue GPU fitness probe failed and exited the worker. The reviewable
+  repair defers bootstrap fitness into the controlled bootstrap request while
+  keeping verified validation fail-closed at startup. Do not start another paid
+  worker until a refreshed proposal receives the exact approval phrase.
 - Phase 6 repository work may keep status/runbook documentation current, repair
   fail-closed proposal controls, and prepare a reviewable pull request.
   Do not weaken or bypass any failed SBOM, provenance, package-link, GitHub

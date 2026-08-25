@@ -32,6 +32,15 @@ zero/maximum zero with no workers or jobs; no Pod or network volume exists. The
 observed balance delta is approximately USD 0.0085, below the USD 2.00 cap.
 The account worker quota remains unexposed by available control surfaces.
 
+The retained endpoint log later proved that the image entrypoint and repaired
+cache resolver completed before the pre-queue GPU fitness probe failed. Because
+that generic startup exception discarded the specific fitness error code,
+bootstrap mode now starts the RunPod request loop after cache validation and
+runs full fitness inside the one controlled bootstrap request. A failed probe is
+therefore returned as a structured error without creating a platform restart
+loop. Verified validation still requires the full fitness gate before starting
+its request loop.
+
 Current official RunPod documentation describes asynchronous queue operations
 (`/run`, `/status`, `/cancel`, `/retry`, `/purge-queue`, `/health`), scale-to-zero
 worker limits, five-second idle timeout, queue-delay scaling, ordinary
@@ -146,9 +155,9 @@ enter repository code or shell history.
   an unexpected second replacement worker. The job remained queued and was
   cancelled; no bootstrap receipt, checkpoint observation, CUDA fitness, model
   load or inference result was produced. Available live logs showed repeated
-  system start events without application output. Retained endpoint logs must
-  identify the exact startup exception before a reviewable repair and another
-  immutable publication can be proposed.
+  system start events without application output. Retained endpoint logs later
+  isolated the failure to the pre-queue GPU fitness stage, motivating the
+  bootstrap-only deferred-fitness repair without weakening verified validation.
 - Both previous approvals are consumed for execution purposes. The retained
   endpoint must remain maximum zero until a refreshed proposal and budget receive
   the exact approval phrase. The three-paid-job ceiling is a cap, not permission

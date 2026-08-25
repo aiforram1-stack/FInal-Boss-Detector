@@ -49,8 +49,12 @@ repeated container-start loop and RunPod introduced an unexpected replacement
 worker; the job remained queued and was cancelled under the Phase 6 safety
 policy. No checkpoint bytes were observed by a completed job, CUDA fitness was
 not established, and no model load or inference result was returned. The
-endpoint is locked at zero pending retained-log diagnosis, reviewable repair if
-needed, a new immutable publication and fresh exact cost approval.
+retained endpoint log later confirmed that the image entrypoint and repaired
+cache resolver succeeded, but the pre-queue GPU fitness probe failed before the
+bootstrap request could be accepted. The endpoint remains locked at zero. The
+reviewable repair defers bootstrap-mode fitness into that one controlled request
+so any failure is structured, while verified validation still fails closed at
+startup. A new immutable publication and fresh exact cost approval are required.
 
 ## Inputs and preprocessing
 
