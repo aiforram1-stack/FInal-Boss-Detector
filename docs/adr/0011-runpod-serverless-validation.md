@@ -77,10 +77,14 @@ at three. No Pod fallback is permitted without separate approval.
 
 The worker accepts a configurable RunPod Hugging Face cache root and resolves
 only the exact `OwensLab/commfor-model-384` snapshot revision and
-`model.safetensors`. Snapshot and reference paths cannot escape the model cache;
-the checkpoint must resolve to that model's blob store. Unexpected additional
-weight files, inconsistent refs, malformed bounded safetensors metadata, byte
-length mismatches, and SHA-256 mismatches fail closed. Runtime downloads remain
+`model.safetensors`. Snapshot and reference paths cannot escape the model cache.
+Canonical Hugging Face snapshot symlinks must resolve into that model's blob
+store. RunPod's host cache may instead materialize the checkpoint as a regular
+file directly inside the exact snapshot; that representation is accepted only
+without a symlink or nested path and still receives the full length, SHA-256,
+and bounded safetensors checks. Unexpected additional weight files,
+inconsistent refs, malformed bounded safetensors metadata, byte-length
+mismatches, and SHA-256 mismatches fail closed. Runtime downloads remain
 disabled.
 
 The RunPod model reference is
@@ -123,6 +127,12 @@ enter repository code or shell history.
 
 - The preparation branch is fully testable on macOS without CUDA, Docker, a
   checkpoint, model download, or RunPod resource.
+- The first approved bootstrap worker found that the cached checkpoint was not
+  backed by the model-local blob path required by the pre-repair resolver and
+  failed closed before CUDA or model loading. The endpoint was locked at zero
+  while bounded support for RunPod's documented snapshot-local representation,
+  a CPU regression fixture, and a replacement image were prepared. The next
+  bootstrap receipt must identify the observed layout.
 - The first RunPod mutation must wait for private-registry readiness planning,
   current pricing, and exact user approval. Because no registry credential
   exists and policy also gates credential creation, the stored credential ID

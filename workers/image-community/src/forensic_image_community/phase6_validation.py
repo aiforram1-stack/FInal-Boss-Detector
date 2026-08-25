@@ -285,6 +285,7 @@ class Phase6ValidationService:
                     "checkpoint_byte_length": self.checkpoint.byte_length,
                     "checkpoint_sha256": self.checkpoint.sha256,
                     "checkpoint_format": self.checkpoint.checkpoint_format,
+                    "checkpoint_cache_layout": self.checkpoint.cache_layout,
                     "safetensors_tensor_count": self.checkpoint.tensor_count,
                     "checkpoint_hash_status": "OBSERVED_BOOTSTRAP_HASH",
                     "basic_model_load_status": load_status,

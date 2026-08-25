@@ -10,6 +10,7 @@ import struct
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from forensic_image_community.errors import WorkerError, WorkerErrorCode
 
@@ -52,6 +53,10 @@ class CachedCheckpoint:
     checkpoint_format: str
     tensor_count: int
     hash_verification_ms: int
+    cache_layout: Literal[
+        "HUGGINGFACE_BLOB_SYMLINK",
+        "RUNPOD_MATERIALIZED_SNAPSHOT",
+    ] = "HUGGINGFACE_BLOB_SYMLINK"
 
 
 def _within(path: Path, parent: Path) -> bool:
@@ -313,29 +318,42 @@ class RunPodModelCacheResolver:
                 "Expected cached checkpoint is unavailable.",
                 internal_detail=type(exc).__name__,
             ) from exc
-        blobs_root = resolved_model_root / "blobs"
-        try:
-            resolved_blobs_root = blobs_root.resolve(strict=True)
-        except OSError as exc:
-            raise WorkerError(
-                WorkerErrorCode.CHECKPOINT_UNAVAILABLE,
-                "Cached model blob directory is unavailable.",
-                internal_detail=type(exc).__name__,
-            ) from exc
-        if (
-            not _within(checkpoint, resolved_blobs_root)
-            or not _within(resolved_blobs_root, resolved_model_root)
-            or not checkpoint.is_file()
-        ):
-            raise WorkerError(
-                WorkerErrorCode.CHECKPOINT_UNAVAILABLE,
-                "Expected cached checkpoint is not backed by the pinned model blob cache.",
-            )
-        if checkpoint.is_symlink():
-            raise WorkerError(
-                WorkerErrorCode.CHECKPOINT_UNAVAILABLE,
-                "Resolved cached checkpoint target cannot be a symbolic link.",
-            )
+        if logical_checkpoint.is_symlink():
+            blobs_root = resolved_model_root / "blobs"
+            try:
+                resolved_blobs_root = blobs_root.resolve(strict=True)
+            except OSError as exc:
+                raise WorkerError(
+                    WorkerErrorCode.CHECKPOINT_UNAVAILABLE,
+                    "Cached model blob directory is unavailable.",
+                    internal_detail=type(exc).__name__,
+                ) from exc
+            if (
+                not _within(checkpoint, resolved_blobs_root)
+                or not _within(resolved_blobs_root, resolved_model_root)
+                or not checkpoint.is_file()
+                or checkpoint.is_symlink()
+            ):
+                raise WorkerError(
+                    WorkerErrorCode.CHECKPOINT_UNAVAILABLE,
+                    "Expected cached checkpoint is not backed by the pinned model blob cache.",
+                )
+            cache_layout: Literal[
+                "HUGGINGFACE_BLOB_SYMLINK",
+                "RUNPOD_MATERIALIZED_SNAPSHOT",
+            ] = "HUGGINGFACE_BLOB_SYMLINK"
+        else:
+            if (
+                checkpoint != logical_checkpoint
+                or checkpoint.parent != resolved_snapshot
+                or not checkpoint.is_file()
+                or checkpoint.is_symlink()
+            ):
+                raise WorkerError(
+                    WorkerErrorCode.CHECKPOINT_UNAVAILABLE,
+                    "Expected cached checkpoint is not a safe materialized snapshot file.",
+                )
+            cache_layout = "RUNPOD_MATERIALIZED_SNAPSHOT"
         hash_started = time.perf_counter_ns()
         actual_sha256 = _sha256(checkpoint)
         hash_verification_ms = max(
@@ -371,4 +389,5 @@ class RunPodModelCacheResolver:
             checkpoint_format="safetensors",
             tensor_count=tensor_count,
             hash_verification_ms=hash_verification_ms,
+            cache_layout=cache_layout,
         )

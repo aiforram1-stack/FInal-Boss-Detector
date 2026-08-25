@@ -103,10 +103,22 @@ worker reads the standard cache root:
 ```
 
 It resolves only `models--OwensLab--commfor-model-384/snapshots/<revision>`,
-requires the exact revision, permits only the expected checkpoint, requires its
-resolved bytes to remain inside that model's blob store, bounds and parses the
-safetensors header, and calculates byte length and SHA-256. Handler execution
-never downloads a model. No network volume is attached.
+requires the exact revision, and permits only the expected checkpoint. Two
+cache representations are accepted: the canonical Hugging Face snapshot
+symlink must resolve inside that model's `blobs` directory, or RunPod may
+materialize the checkpoint as a regular file directly inside the exact pinned
+snapshot. A materialized file cannot be a symlink or nested path. Both layouts
+receive the same bounded safetensors inspection, byte-length check, and full
+SHA-256 calculation. Handler execution never downloads a model. No network
+volume is attached.
+
+The first approved bootstrap attempt on 2026-08-25 found that the checkpoint
+was not backed by the model-local blob path required by the pre-repair resolver;
+it did not establish the exact alternate layout. The worker failed before CUDA
+or model loading, the job was cancelled, maximum workers was set to zero, and
+no automatic retry was submitted. A replacement image must pass the CPU
+materialized-cache fixture before the endpoint is unlocked again, and the next
+receipt must record the observed layout.
 
 RunPod's supported cached-model control is `runpodctl` 2.4.0 or newer using
 `serverless create --model-reference`. The argument is the full Hugging Face URL

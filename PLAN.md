@@ -373,22 +373,28 @@ must be merged and published from protected `main`. PRs #2, #4, #6, #8, and
 approval, bootstrap, manifest update, republishing, GPU validation, billing,
 and the final safety lock.
 
-Preparation audit status (2026-08-25): the connected RunPod control plane
-reports no endpoint, worker, queued/running job, Pod, network volume, registry
-credential, recent Serverless charge, or billable storage. Current spend is
-zero. `AMPERE_24` is the only selected pool and is currently USD 0.69/hour;
-its observed members must be partitioned into approved L4/A5000/RTX 3090 types
-and an excluded 24 GB Blackwell MIG type. The account's worker quota is not
-exposed by the connected v2 control surface or visible account settings and
-remains a pre-approval check. No endpoint or paid job has been created.
+Execution status (2026-08-25): the user approved the canonically hashed USD
+1.20 conservative / USD 2.00 hard-cap proposal. One queue endpoint was created
+with `AMPERE_24`, one GPU, minimum zero, maximum one, and the 24 GB Blackwell
+MIG type excluded. The private GHCR credential and pinned RunPod model reference
+were attached. The first bootstrap job was cancelled and the endpoint locked at
+minimum zero/maximum zero when worker startup found that the cached checkpoint
+was not backed by the model-local blob path required by the pre-repair resolver.
+No checkpoint hash, CUDA fitness, model load, or inference result was produced.
+No Pod or network volume exists. The replacement image adds bounded support for
+RunPod's documented snapshot-local representation, must pass a CPU fixture, and
+must complete protected publication before bootstrap resumes. The next receipt
+must record the observed cache layout.
 
-Protected release gates are complete. The GitHub repository is public, while
-the GHCR package remains private, source-linked to this repository, grants it
-Actions Admin access, and inherits repository access. Cloud execution is now
-blocked only by the absent RunPod private-GHCR credential, unauthenticated local
-`runpodctl`, the account worker quota not being exposed by current read-only
-surfaces, and the mandatory exact cost-approval phrase. No endpoint or paid job
-has been created.
+Protected release gates are complete for pre-repair source commit
+`6e969525bbf7bd09e3af5788ba74fee92e40ddc9` and immutable digest
+`sha256:2f91298f6f61f59beac07c0e0f7f5bd852c0ea6c4f37073b917a82601b39796a`.
+The GitHub repository is public while the source-linked GHCR package remains
+private. RunPod MCP and `runpodctl` are authenticated, the private GHCR
+credential exists, and the endpoint is present but safety-locked at zero. Cloud
+execution is blocked on review, merge, and protected publication of the cache
+layout repair; the account worker quota remains unexposed by current read-only
+surfaces.
 
 Deliverables:
 

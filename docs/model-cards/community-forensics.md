@@ -34,6 +34,15 @@ Phase 6 preparation adds no weight download or CUDA claim. Bootstrap mode is
 observational. Normal validation fails closed until the observed hash status is
 checked into the manifest and a new immutable container digest is published.
 
+The first approved Serverless bootstrap attempt on 2026-08-25 failed closed
+before CUDA or model loading because the cached checkpoint was not backed by
+the model-local blob path required by the pre-repair resolver. The endpoint was
+immediately locked at zero workers. The repair adds bounded support for
+RunPod's documented snapshot-local regular-file representation while retaining
+exact snapshot containment, single-checkpoint, byte-length, SHA-256, and
+bounded safetensors verification. The next receipt must identify the observed
+layout rather than infer it from the original failure.
+
 ## Inputs and preprocessing
 
 The worker accepts JPEG, PNG, and WebP after independent byte-signature and
