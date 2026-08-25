@@ -15,10 +15,10 @@ until an exact configuration and cost proposal receives the exact approval
 phrase.
 
 Pull requests for Phases 2 through 6 preparation and repair PRs #16 and #18
-through #23 are merged. Protected publication accepted source commit
-`dfafb5bdae13f4d3238d22a3d747d33310b3d7d9` as private
+through #24 are merged. Protected publication accepted source commit
+`e5f3005e4b7953921b93cab409cf1bb6db8a044d` as private
 Linux AMD64 image
-`ghcr.io/aiforram1-stack/forensic-image-community@sha256:daeb01877efd34526b2bd841930f6b52e1c4ba781081a66ce0c7e294e1bf31f8`.
+`ghcr.io/aiforram1-stack/forensic-image-community@sha256:1a61513d131f2589f25b8841b218dffb9d354206888511913079345385c0c04a`.
 The GitHub repository is public, the GHCR package remains private and
 source-linked, and every release gate passed. The checkpoint remains absent
 from the image and CUDA validation has not completed.
@@ -64,7 +64,12 @@ Pod, and no volume.
 
 RunPod-safe error-envelope repair PR #23 replaced the reserved top-level field
 with a strict `worker_error` envelope. Its protected publication passed every
-release gate. No paid worker has run against that repaired image.
+release gate. Six-job-cap PR #24 then merged and published. Submission five was
+cancelled before handler execution when RunPod reported two initializing A5000
+workers despite configured maximum one. Both used the exact PR #24 image and
+one GPU; no checkpoint, fitness, model-load, inference, or retry result exists.
+The user then explicitly approved a seven-submission ceiling and tolerating at
+most two provider-observed workers while configured maximum remains one.
 
 Current official RunPod documentation describes asynchronous queue operations
 (`/run`, `/status`, `/cancel`, `/retry`, `/purge-queue`, `/health`), scale-to-zero
@@ -111,6 +116,12 @@ bootstrap and final validation. A refreshed budget and proposal plus exact
 cost approval are required before another paid worker starts; neither slot is
 an automatic retry authorization.
 
+Submission five consumed one of those slots without reaching handler
+execution. Breaking endpoint proposal schema 1.2 now binds configured maximum
+one and provider-observed ceiling two. Breaking budget schema 1.4 binds five
+consumed submissions, exactly two planned jobs, zero retries, seven total, and
+prices both remaining jobs at the two-worker observation ceiling.
+
 The consumed continuation proposal used a 600-second expected cold start and a
 conservative 1,200-second worst case, 180 seconds for bootstrap, and 360 seconds
 for validation. At the audited `AMPERE_24` rate of USD 0.69/hour, remaining
@@ -126,12 +137,14 @@ historical scheduler observations must be completely partitioned into the
 approved L4/A5000/RTX 3090 set and an explicit exclusion set before a job is
 submitted. The scheduler-observed Blackwell MIG type is a mandatory exclusion.
 The minimum host CUDA version
-is 12.4 without an upper restriction. Minimum workers is zero, maximum workers
-is one during approved
-execution, one GPU is used per worker, the idle timeout is five seconds, and no
+is 12.4 without an upper restriction. Minimum workers is zero, configured
+maximum workers is one during approved execution, and at most two
+provider-observed workers are tolerated under the user's explicit approval. A
+third observed worker is a mandatory cancellation. One GPU is used per worker,
+the idle timeout is five seconds, and no
 network volume or data-centre restriction is used by default. Maximum workers
 becomes zero after validation. Total spend is capped at USD 2.00 and the current
-paid ceiling is six: four consumed and exactly two remaining, with no retries.
+paid ceiling is seven: five consumed and exactly two remaining, with no retries.
 No Pod fallback is permitted without separate approval.
 
 ### One cached model, resolved fail closed
@@ -212,20 +225,24 @@ enter repository code or shell history.
   system start events without application output. Retained endpoint logs later
   isolated the failure to the pre-queue GPU fitness stage, motivating the
   bootstrap-only deferred-fitness repair without weakening verified validation.
-- Four paid bootstrap submissions and their approvals are consumed for
+- Five paid bootstrap submissions and their approvals are consumed for
   execution purposes. The third was cancelled before handler execution when
   the scheduler assigned the known-denied Blackwell MIG type even though it was
   absent from the current catalog response. The fourth used an approved A5000
   but exposed the reserved-error-field incompatibility before any receipt was
-  accepted. The proposal schema requires the scheduler-observed MIG type to
-  remain explicitly excluded.
-- The retained endpoint must remain maximum zero until the six-job budget
-  repair is merged and published and a refreshed proposal and budget receive
-  the exact approval phrase. The user authorized a six-submission total
-  ceiling: four are consumed, exactly two remain for bootstrap and final
-  validation, and no retry is allowed. This cap is not
-  permission to bypass repeated-worker,
-  unexpected-second-worker, GPU-identity, or spend stop conditions.
+  accepted. The fifth reproduced provider-side duplicate initialization with
+  two exact-image A5000 workers and was cancelled before handler execution. The
+  proposal schema requires the scheduler-observed MIG type to remain explicitly
+  excluded.
+- The retained endpoint must remain maximum zero until the seven-job and
+  transient-second-worker repair is merged and published and a refreshed
+  proposal and budget receive the exact approval phrase. The user authorized a
+  seven-submission total ceiling: five are consumed, exactly two remain for
+  bootstrap and final validation, and no retry is allowed. At most two
+  provider-observed workers are explicitly tolerated while configured maximum
+  remains one. This cap is not
+  permission to bypass repeated-restart, third-worker, GPU-identity, or spend
+  stop conditions.
 - Bootstrap requires a manifest update and second protected image publication
   before final validation, adding review latency but binding validation to the
   observed checkpoint.

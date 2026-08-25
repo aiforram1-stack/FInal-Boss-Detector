@@ -13,12 +13,13 @@ produce structured evidence records.
   is the only active implementation phase. GitHub PRs #2, #4, #6, #8, and #10
   are merged into `main`. Release-verifier repair PR #16 and cache-layout
   repair PR #18, bootstrap-fitness repair PR #19, four-job-cap repair PR #20,
-  hidden-GPU deny repair PR #21, five-job-cap repair PR #22, and RunPod-safe
-  error-envelope repair PR #23 are also merged. Protected `main`
+  hidden-GPU deny repair PR #21, five-job-cap repair PR #22, RunPod-safe
+  error-envelope repair PR #23, and six-job-cap repair PR #24 are also merged.
+  Protected `main`
   publication passed every release gate for source commit
-  `dfafb5bdae13f4d3238d22a3d747d33310b3d7d9` and immutable image
+  `e5f3005e4b7953921b93cab409cf1bb6db8a044d` and immutable image
   digest
-  `sha256:daeb01877efd34526b2bd841930f6b52e1c4ba781081a66ce0c7e294e1bf31f8`.
+  `sha256:1a61513d131f2589f25b8841b218dffb9d354206888511913079345385c0c04a`.
   The GitHub repository is public; the source-linked GHCR package remains private.
 - The renewed bootstrap job against that repaired digest was cancelled on
   2026-08-25 when one worker became unhealthy and RunPod introduced an
@@ -43,10 +44,17 @@ produce structured evidence records.
   bootstrap receipt, or inference result exists. The endpoint was restored to
   minimum zero/maximum zero with no workers or pending jobs, no Pod, and no
   volume. Do not promote the checkpoint manifest from this incomplete output.
-- Four paid submissions have been consumed. The user-approved six-submission
+- A fifth paid bootstrap submission was cancelled before handler execution
+  when RunPod again reported two initializing A5000 workers despite configured
+  maximum one. Both used the exact protected digest and one GPU. No checkpoint,
+  fitness, model-load, or inference result exists. The endpoint is minimum
+  zero/maximum zero with no workers or jobs.
+- Five paid submissions have been consumed. The user-approved seven-submission
   ceiling leaves exactly two submissions for the still-required bootstrap and
-  final validation, with no retry allowance. Do not start another paid worker
-  until the six-job budget control is merged and republished, a refreshed
+  final validation, with no retry allowance. The user also explicitly approved
+  tolerating at most two provider-observed workers while the configured endpoint
+  maximum remains one. Do not start another paid worker until the seven-job and
+  transient-second-worker controls are merged and republished, a refreshed
   proposal and budget exist, and the exact proposal receives
   `APPROVE PHASE 6 SERVERLESS COST`. The USD 2.00 total spend cap and all
   worker, identity, and retry safety stops remain unchanged.
@@ -60,10 +68,12 @@ produce structured evidence records.
   `APPROVE PHASE 6 SERVERLESS COST` for the reported configuration.
 - Local development remains CPU-only on macOS. Required tests use the mock
   backend, generated fixtures, fake HTTP transports, no checkpoint and no CUDA.
-- Phase 6 must use one queue endpoint, minimum workers zero, maximum workers at
-  most one during approved validation and zero at completion, one GPU per
-  worker, no network volume, no Pod, no private evidence, and no more than
-  $2.00 total approved spend. Do not connect the main API or begin Phase 7.
+- Phase 6 must use one queue endpoint, minimum workers zero, configured maximum
+  workers at most one during approved validation and zero at completion. The
+  explicitly approved provider-observation ceiling is two workers; a third
+  worker is a mandatory cancellation. Use one GPU per worker, no network
+  volume, no Pod, no private evidence, and no more than $2.00 total approved
+  spend. Do not connect the main API or begin Phase 7.
 - Changing repository visibility or GHCR package access/linkage requires an
   explicit user confirmation immediately before the settings change.
 

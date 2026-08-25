@@ -23,20 +23,21 @@ Current status (2026-08-25):
   merge commit `4062b946a29288330242d108dbbed9ded4d9d736` passed every gate for
   immutable Linux AMD64 digest
   `sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437`.
-- [ ] Phase 6 preparation PR #10 and repair PRs #18 through #23 are merged and
-  tracked by issue #9. Protected publication for PR #23 passed every gate at
-  source commit `dfafb5bdae13f4d3238d22a3d747d33310b3d7d9` and digest
-  `sha256:daeb01877efd34526b2bd841930f6b52e1c4ba781081a66ce0c7e294e1bf31f8`.
+- [ ] Phase 6 preparation PR #10 and repair PRs #18 through #24 are merged and
+  tracked by issue #9. Protected publication for PR #24 passed every gate at
+  source commit `e5f3005e4b7953921b93cab409cf1bb6db8a044d` and digest
+  `sha256:1a61513d131f2589f25b8841b218dffb9d354206888511913079345385c0c04a`.
   The queue endpoint and private-registry credential exist, but the endpoint is
-  safety-locked at minimum zero/maximum zero with no workers or jobs. Four paid
+  safety-locked at minimum zero/maximum zero with no workers or jobs. Five paid
   bootstrap submissions are consumed; none produced an acceptable bootstrap
-  receipt or real GPU validation. The fourth exposed RunPod SDK 1.7.13's
-  reserved top-level `error` field, which PR #23 repaired with a strict
-  `worker_error` envelope. The user explicitly approved a six-job ceiling on
-  2026-08-25, leaving exactly two submissions for bootstrap and final
+  receipt or real GPU validation. Submission five was cancelled before handler
+  execution when RunPod reported two initializing A5000 workers despite
+  configured maximum one. The user then explicitly approved a seven-job ceiling
+  and tolerating at most two provider-observed workers while configured maximum
+  remains one. Exactly two submissions remain for bootstrap and final
   validation with no retry allowance. Another paid worker requires the
-  breaking six-job budget repair to be merged and republished and a newly
-  approved exact proposal.
+  breaking budget/tolerance repair to merge and publish and a newly approved
+  exact proposal.
 - [ ] Phase 7 and later are not authorized.
 
 ## Mission and first vertical slice
@@ -457,12 +458,21 @@ RunPod-safe error-envelope repair PR #23 then merged, and protected publication
 passed every release gate for source commit
 `dfafb5bdae13f4d3238d22a3d747d33310b3d7d9` and immutable digest
 `sha256:daeb01877efd34526b2bd841930f6b52e1c4ba781081a66ce0c7e294e1bf31f8`.
-Four submissions are consumed. The user approved a six-submission ceiling,
-leaving exactly two jobs for replacement bootstrap and final GPU validation
-with no retry allowance. Another paid job requires this breaking budget repair
-to merge and publish, plus a refreshed proposal, budget, and exact cost
-approval. The account worker quota remains unexposed by current read-only
-surfaces.
+Six-job-cap repair PR #24 then merged, and protected publication passed every
+release gate for source commit `e5f3005e4b7953921b93cab409cf1bb6db8a044d`
+and immutable digest
+`sha256:1a61513d131f2589f25b8841b218dffb9d354206888511913079345385c0c04a`.
+Paid submission five was cancelled before handler execution when RunPod again
+reported two initializing A5000 workers despite configured maximum one. Both
+workers used the exact image and one GPU; no checkpoint, CUDA fitness, model
+load, inference, or retry result exists. The endpoint returned to minimum
+zero/maximum zero with no workers, jobs, Pods, or volumes. The user then
+approved a seven-submission ceiling and an observation ceiling of two workers
+while keeping configured maximum one. Exactly two jobs remain for bootstrap and
+final GPU validation with no retries. Another paid job requires this breaking
+budget/tolerance repair to merge and publish, plus a refreshed proposal, budget,
+and exact cost approval. The account worker quota remains unexposed by current
+read-only surfaces.
 
 Deliverables:
 
@@ -491,8 +501,9 @@ Acceptance:
   SBOM, provenance, private-package state, and GitHub attestation are verified;
 - the user approves the reported configuration by sending exactly
   `APPROVE PHASE 6 SERVERLESS COST` before any endpoint or paid job exists;
-- total Phase 6 RunPod spend is at most $2.00, one GPU is used per worker,
-  maximum workers never exceeds one, and no Pod or network volume is created;
+- total Phase 6 RunPod spend is at most $2.00, one GPU is used per worker, the
+  configured maximum never exceeds one, provider observations never exceed the
+  explicitly approved ceiling of two, and no Pod or network volume is created;
 - RunPod model caching resolves the pinned repository and revision, the
   checkpoint filename/length/SHA-256 are observed, and final validation runs
   offline against the republished manifest;

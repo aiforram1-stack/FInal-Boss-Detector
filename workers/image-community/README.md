@@ -84,8 +84,8 @@ use the repository root so `.dockerignore` protects the real context and only
 shared contracts plus worker source are copied.
 
 Phase 6 runtime status (2026-08-25): the cache-layout, bootstrap-fitness,
-four-job-cap, hidden-GPU deny, and RunPod-safe error-envelope repairs and their
-protected publications passed every release gate.
+four-job-cap, hidden-GPU deny, RunPod-safe error-envelope, and six-job-cap
+repairs and their protected publications passed every release gate.
 The third approved bootstrap was nevertheless cancelled before handler
 execution because RunPod assigned the scheduler-known 24 GB Blackwell MIG type
 even though the approval-time `AMPERE_24` catalog response listed only RTX A5000
@@ -95,10 +95,14 @@ schema 1.1 requires that scheduler-observed denied type to remain explicitly
 excluded even when the current catalog omits it. A fourth submission used an
 approved A5000 but produced no receipt because RunPod SDK 1.7.13 removed the
 reserved top-level `error` field; the worker now emits `worker_error` instead.
-Four paid submissions have been consumed. The user explicitly authorized a
-six-submission ceiling, leaving exactly two jobs for bootstrap and final
-validation with no retry. Budget schema 1.3 binds that ceiling. Do not resume a
-paid worker until the budget repair is republished and a refreshed exact
+Submission five was cancelled before handler execution when RunPod reported two
+initializing A5000 workers despite configured maximum one. Both used the exact
+protected image and one GPU; neither produced a receipt. Five paid submissions
+have been consumed. The user explicitly authorized a seven-submission ceiling
+and at most two provider-observed workers while configured maximum remains one,
+leaving exactly two jobs for bootstrap and final validation with no retry.
+Endpoint proposal schema 1.2 and budget schema 1.4 bind those limits. Do not
+resume a paid worker until the repair is republished and a refreshed exact
 proposal is approved. The USD 2.00 hard stop is unchanged.
 
 The pull-request workflow builds and mock-smokes both targets without publishing.

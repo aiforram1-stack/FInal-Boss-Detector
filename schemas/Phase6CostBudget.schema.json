@@ -136,9 +136,15 @@
       "title": "Maximum Job Execution Seconds",
       "type": "integer"
     },
+    "maximum_observed_workers_per_job": {
+      "const": 2,
+      "default": 2,
+      "title": "Maximum Observed Workers Per Job",
+      "type": "integer"
+    },
     "maximum_paid_jobs": {
-      "const": 6,
-      "default": 6,
+      "const": 7,
+      "default": 7,
       "title": "Maximum Paid Jobs",
       "type": "integer"
     },
@@ -149,8 +155,8 @@
       "type": "boolean"
     },
     "paid_jobs_already_submitted": {
-      "const": 4,
-      "default": 4,
+      "const": 5,
+      "default": 5,
       "title": "Paid Jobs Already Submitted",
       "type": "integer"
     },
@@ -161,7 +167,7 @@
       "type": "integer"
     },
     "schema_version": {
-      "const": "1.3",
+      "const": "1.4",
       "title": "Schema Version",
       "type": "string"
     },
