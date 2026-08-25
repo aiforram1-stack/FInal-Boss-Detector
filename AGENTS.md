@@ -12,10 +12,10 @@ produce structured evidence records.
 - Phase 6, first real Community Forensics GPU validation on RunPod Serverless,
   is the only active implementation phase. GitHub PRs #2, #4, #6, #8, and #10
   are merged into `main`. Release-verifier repair PR #16 and cache-layout
-  repair PR #18 are also merged. Protected `main` publication passed every
-  release gate for repair source commit
-  `847cad109e9d794e2060a3e116cb343a1de4daa3` and immutable image digest
-  `sha256:8d6eb3b7b57f8cecc778d859ca62b3cfbd2fc3492f15f547f6890c30948f87c5`.
+  repair PR #18 and bootstrap-fitness repair PR #19 are also merged. Protected
+  `main` publication passed every release gate for repair source commit
+  `425271597fce2d69f59f9e34ea0d9e6b257113e5` and immutable image digest
+  `sha256:816dbb030fdc32dc3f3dcd3855a7f617a2f49ce3145ea543e35777d3b514e833`.
   The GitHub repository is public; the source-linked GHCR package remains private.
 - The renewed bootstrap job against that repaired digest was cancelled on
   2026-08-25 when one worker became unhealthy and RunPod introduced an
@@ -27,6 +27,11 @@ produce structured evidence records.
   repair defers bootstrap fitness into the controlled bootstrap request while
   keeping verified validation fail-closed at startup. Do not start another paid
   worker until a refreshed proposal receives the exact approval phrase.
+- Two paid submissions have been consumed. The user explicitly approved a
+  four-submission total ceiling on 2026-08-25. Exactly two paid submissions
+  remain: one bootstrap and one final validation, with zero diagnostic retries.
+  The USD 2.00 total-spend cap and all repeated-worker safety stops remain
+  unchanged.
 - Phase 6 repository work may keep status/runbook documentation current, repair
   fail-closed proposal controls, and prepare a reviewable pull request.
   Do not weaken or bypass any failed SBOM, provenance, package-link, GitHub

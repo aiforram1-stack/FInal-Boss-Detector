@@ -72,8 +72,10 @@ def proposal(**overrides: object) -> EndpointProposal:
 
 def budget(**overrides: object) -> Phase6CostBudget:
     values: dict[str, object] = {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "starting_balance_usd": Decimal("10"),
+        "incurred_phase6_spend_usd": Decimal("0.01"),
+        "paid_jobs_already_submitted": 2,
         "gpu_rate_per_hour_usd": Decimal("0.72"),
         "gpu_rate_per_second_usd": Decimal("0.0002"),
         "expected_cold_start_seconds_per_job": 120,
@@ -173,7 +175,11 @@ def test_endpoint_proposal_is_queue_only_digest_pinned_and_lockable() -> None:
 
 
 def test_cost_budget_rejects_more_than_two_dollars_or_insufficient_balance() -> None:
-    assert budget().maximum_paid_jobs == 3
+    configured = budget()
+    assert configured.paid_jobs_already_submitted == 2
+    assert configured.planned_paid_jobs == 2
+    assert configured.diagnostic_retries == 0
+    assert configured.maximum_paid_jobs == 4
     legacy_values = budget().model_dump(mode="json")
     legacy_values.pop("worst_case_cold_start_seconds_per_job")
     legacy_values["estimated_worst_case_cost_usd"] = "1.50"
@@ -189,8 +195,19 @@ def test_cost_budget_rejects_more_than_two_dollars_or_insufficient_balance() -> 
         budget(gpu_rate_per_hour_usd=Decimal("0.69"))
     with pytest.raises(ValidationError, match="normal estimate understates"):
         budget(estimated_normal_cost_usd=Decimal("0.01"))
+    with pytest.raises(ValidationError, match="normal estimate understates"):
+        budget(
+            incurred_phase6_spend_usd=Decimal("0.50"),
+            estimated_normal_cost_usd=Decimal("0.40"),
+        )
     with pytest.raises(ValidationError, match="cannot be shorter"):
         budget(worst_case_cold_start_seconds_per_job=119)
+    with pytest.raises(ValidationError):
+        budget(paid_jobs_already_submitted=1)
+    with pytest.raises(ValidationError):
+        budget(diagnostic_retries=1)
+    with pytest.raises(ValidationError):
+        budget(schema_version="1.0")
 
 
 def test_async_payload_uses_run_policy_not_runsync() -> None:
@@ -275,7 +292,7 @@ def test_submit_and_poll_parses_current_runpod_states() -> None:
         proposal=configured,
         budget=limits,
         approval=approval(configured, limits),
-        paid_jobs_already_submitted=0,
+        paid_jobs_already_submitted=2,
     )
     assert receipt.id == "job-1"
     result = controller.poll_until_terminal(
@@ -317,7 +334,7 @@ def test_deadline_cancels_and_job_cap_or_wrong_approval_blocks_submission() -> N
             proposal=configured,
             budget=limits,
             approval=approval(configured, limits),
-            paid_jobs_already_submitted=3,
+            paid_jobs_already_submitted=4,
         )
     changed = configured.model_copy(update={"disk_gb": 21})
     with pytest.raises(PermissionError, match="does not match"):
@@ -326,7 +343,7 @@ def test_deadline_cancels_and_job_cap_or_wrong_approval_blocks_submission() -> N
             proposal=changed,
             budget=limits,
             approval=approval(configured, limits),
-            paid_jobs_already_submitted=0,
+            paid_jobs_already_submitted=2,
         )
     gpu_proposal = proposal(
         operation="gpu_validation",
@@ -344,8 +361,26 @@ def test_deadline_cancels_and_job_cap_or_wrong_approval_blocks_submission() -> N
             proposal=gpu_proposal,
             budget=limits,
             approval=approval(gpu_proposal, limits),
-            paid_jobs_already_submitted=0,
+            paid_jobs_already_submitted=2,
         )
+
+    with pytest.raises(PermissionError, match="lower than"):
+        controller.submit_approved(
+            request=bootstrap_request(),
+            proposal=configured,
+            budget=limits,
+            approval=approval(configured, limits),
+            paid_jobs_already_submitted=1,
+        )
+
+    fourth = controller.submit_approved(
+        request=bootstrap_request(),
+        proposal=configured,
+        budget=limits,
+        approval=approval(configured, limits),
+        paid_jobs_already_submitted=3,
+    )
+    assert fourth.status == "IN_QUEUE"
 
 
 def test_health_lock_and_result_sanitization_fail_closed() -> None:
@@ -378,7 +413,7 @@ def test_health_lock_and_result_sanitization_fail_closed() -> None:
         assert_sanitized_result({"download": "https://example.test/object?signature=value"})
 
 
-def test_retry_is_explicit_single_transient_only_and_queue_cleanup_is_sanitized() -> None:
+def test_continuation_budget_forbids_retries_and_queue_cleanup_is_sanitized() -> None:
     transport = FakeTransport(iter(()))
     configured = proposal()
     limits = budget()
@@ -388,38 +423,17 @@ def test_retry_is_explicit_single_transient_only_and_queue_cleanup_is_sanitized(
         wait=lambda _: None,
     )
     previous = QueueJobResult(id="job-1", status="TIMED_OUT")
-    retried = controller.retry_approved_transient_failure(
-        previous=previous,
-        failure_reason="WORKER_STARTUP_INTERRUPTED",
-        proposal=configured,
-        budget=limits,
-        approval=approval(configured, limits),
-        paid_jobs_already_submitted=2,
-        diagnostic_retries_already_submitted=0,
-    )
-    assert retried.status == "IN_QUEUE"
-    assert transport.retried == ["job-1"]
-    with pytest.raises(PermissionError, match="has been used"):
+    with pytest.raises(PermissionError, match="permits no retries"):
         controller.retry_approved_transient_failure(
             previous=previous,
-            failure_reason="CAPACITY_INTERRUPTION",
+            failure_reason="WORKER_STARTUP_INTERRUPTED",
             proposal=configured,
             budget=limits,
             approval=approval(configured, limits),
             paid_jobs_already_submitted=2,
-            diagnostic_retries_already_submitted=1,
-        )
-    no_retry_limits = budget(diagnostic_retries=0)
-    with pytest.raises(PermissionError, match="does not permit"):
-        controller.retry_approved_transient_failure(
-            previous=previous,
-            failure_reason="CAPACITY_INTERRUPTION",
-            proposal=configured,
-            budget=no_retry_limits,
-            approval=approval(configured, no_retry_limits),
-            paid_jobs_already_submitted=2,
             diagnostic_retries_already_submitted=0,
         )
+    assert transport.retried == []
     assert controller.purge_pending_queue() == {"removed": 0, "status": "completed"}
     assert controller.endpoint_health().quiescent
 

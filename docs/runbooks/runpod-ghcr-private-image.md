@@ -30,46 +30,49 @@ Before any endpoint creation or `/run` request:
    proposal. Any material configuration, credential ID, catalog membership, or
    price change invalidates approval.
 
-The maximum approved Phase 6 spend is USD 2.00. At most three paid jobs are
-allowed: the planned bootstrap and validation jobs plus one explicitly recorded
-transient diagnostic retry. Premium GPUs, Pods, and network volumes require
-separate approval and are not part of this runbook.
+The maximum approved Phase 6 spend is USD 2.00. Two paid submissions have been
+consumed. On 2026-08-25 the user explicitly authorized a four-submission total
+ceiling so the required bootstrap and final validation can still run. Exactly
+two submissions remain, diagnostic retries are zero, and a fifth submission is
+prohibited. Premium GPUs, Pods, and network volumes require separate approval
+and are not part of this runbook.
 
-The refreshed post-repair budget deliberately set diagnostic retries to zero.
-Its cancelled bootstrap and unexpected second worker trigger mandatory stop;
-the theoretical three-job ceiling is not permission to submit another job.
+The cancelled bootstrap and unexpected second worker remain mandatory stop
+events. Raising the numerical ceiling does not reuse either prior cost approval
+or bypass any restart, worker-count, identity, supply-chain, or spend gate.
 
 ## Immutable release verification
 
-The current Phase 6 bootstrap image is the protected publication of cache-layout
-repair PR #18:
+The last verified Phase 6 bootstrap image before the continuation-budget change
+is the protected publication of bootstrap-fitness repair PR #19:
 
 ```text
-ghcr.io/aiforram1-stack/forensic-image-community@sha256:8d6eb3b7b57f8cecc778d859ca62b3cfbd2fc3492f15f547f6890c30948f87c5
+ghcr.io/aiforram1-stack/forensic-image-community@sha256:816dbb030fdc32dc3f3dcd3855a7f617a2f49ce3145ea543e35777d3b514e833
 ```
 
-It is Linux AMD64, 6,629,477,656 bytes, and binds source commit
-`847cad109e9d794e2060a3e116cb343a1de4daa3`. Protected run
-[`32823075408`](https://github.com/aiforram1-stack/FInal-Boss-Detector/actions/runs/32823075408)
+It is Linux AMD64, 6,629,481,513 bytes, and binds source commit
+`425271597fce2d69f59f9e34ea0d9e6b257113e5`. Protected run
+[`32832599354`](https://github.com/aiforram1-stack/FInal-Boss-Detector/actions/runs/32832599354)
 passed SBOM, provenance, GitHub attestation, vulnerability, source-link,
 pull-by-digest, content, mock-smoke, and final fail-closed gates. The checkpoint
 is absent and real GPU inference is marked not run.
 
-Download the protected publication artifact, validate its checksum, and verify
-that `container-release.json` matches the intended source commit, Linux AMD64
-platform, checkpoint-absent state, OCI revision label, SBOM, provenance,
-artifact attestation, and mock smoke result. Real GPU inference must still be
-marked not run.
+After the continuation-budget pull request merges, use its newer protected
+publication and digest in the exact proposal. Download that publication
+artifact, validate its checksum, and verify that `container-release.json`
+matches the intended source commit, Linux AMD64 platform, checkpoint-absent
+state, OCI revision label, SBOM, provenance, artifact attestation, and mock
+smoke result. Real GPU inference must still be marked not run.
 
 From a trusted authenticated workstation:
 
 ```bash
-export IMAGE_DIGEST_REFERENCE='ghcr.io/aiforram1-stack/forensic-image-community@sha256:8d6eb3b7b57f8cecc778d859ca62b3cfbd2fc3492f15f547f6890c30948f87c5'
+export IMAGE_DIGEST_REFERENCE='ghcr.io/aiforram1-stack/forensic-image-community@sha256:816dbb030fdc32dc3f3dcd3855a7f617a2f49ce3145ea543e35777d3b514e833'
 export GITHUB_REPOSITORY='aiforram1-stack/FInal-Boss-Detector'
 make image-community-attestation-verify
 scripts/verify_published_image.sh \
   "${IMAGE_DIGEST_REFERENCE}" \
-  '847cad109e9d794e2060a3e116cb343a1de4daa3' \
+  '425271597fce2d69f59f9e34ea0d9e6b257113e5' \
   'https://github.com/aiforram1-stack/FInal-Boss-Detector'
 ```
 
@@ -81,8 +84,8 @@ The final 2026-08-25 safety audit found:
 
 - balance: USD 9.9915030333, for an observed USD 0.0084969667 Phase 6 balance
   delta from the USD 10.00 starting balance;
-- itemized Serverless billing still lagged the balance and reported USD
-  0.003202941734343767 at the final read;
+- itemized Serverless billing reports USD 0.0084969667 across the two consumed
+  submissions;
 - one retained queue endpoint, safety-locked at minimum zero/maximum zero;
 - zero endpoint workers and zero queued/running jobs;
 - zero Pods and zero network volumes;
@@ -175,8 +178,8 @@ file for identifiers returned by RunPod.
 - endpoint type: queue;
 - REST v2 GPU pool: `AMPERE_24`, one GPU per worker;
 - approved pool members: L4, RTX A5000, and RTX 3090 only;
-- exclude every other observed member (currently the 24 GB Blackwell MIG SKU)
-  with `set-endpoint-gpus` before submitting a job;
+- exclude every other observed member with `set-endpoint-gpus` before submitting
+  a job; the latest catalog reported only RTX A5000 and RTX 3090;
 - minimum host CUDA version: 12.4; do not narrow the allowed-version list;
 - minimum workers: zero;
 - maximum workers: one during approved jobs, zero at final lock;
@@ -212,22 +215,23 @@ cannot enter the validation-only path. Never record a full environment dump.
 ## Audited cost proposal
 
 The selected `AMPERE_24` pool is USD 0.69/hour, or approximately USD
-0.0001916667/second. The observed members are RTX A5000 (high availability), L4
-(low), RTX 3090 (low), and a 24 GB Blackwell MIG type (high). Only the first
-three are approved; the Blackwell MIG type is excluded before any job.
+0.0001916667/second. The latest Serverless catalog reported RTX A5000 (high
+availability) and RTX 3090 (low), both approved. Refresh immediately before
+approval and fully partition any changed membership into approved and excluded
+IDs.
 
 Cost assumptions are 600 seconds expected cold start per job, 180 seconds
 bootstrap execution, 360 seconds validation execution, and five seconds idle
 per job. That yields approximately USD 0.1505 for bootstrap, USD 0.1850 for
-validation, and USD 0.3355 compute normally. A conservative worst case uses
-1,200 seconds cold start plus the 600-second execution limit and five-second
-idle charge for each of the two planned jobs plus one diagnostic retry:
-approximately USD 1.04 compute. At the documented approximately USD
-0.10/GB/month rate, allocate USD
-0.01 for the 10 GB ephemeral disk's five-minute billing intervals; the normal
-rounded estimate is USD 0.35. Reserve USD 1.20 overall; the hard stop remains
-USD 2.00. RunPod host caching uses the public model without billing worker time
-for the model download and requires no network volume. See RunPod's current
+validation, and USD 0.3355 remaining compute normally. A conservative worst
+case uses 1,200 seconds cold start plus the 600-second execution limit and five
+seconds idle for each of the two remaining jobs: approximately USD 0.6919
+remaining compute. Add USD 0.0084969667 already incurred and USD 0.01 reserved
+for the 10 GB ephemeral disk's five-minute billing intervals. Total Phase 6 is
+therefore approximately USD 0.3540 normally and USD 0.7104 worst case. The hard
+stop remains USD 2.00. No retry is budgeted. RunPod host caching uses the public
+model without billing worker time for the model download and requires no
+network volume. See RunPod's current
 [Serverless pricing](https://docs.runpod.io/serverless/pricing) and
 [cached-model](https://docs.runpod.io/serverless/endpoints/model-caching)
 documentation.
@@ -258,10 +262,10 @@ immutable image digest whose manifest contains the observed checkpoint hash
 while the checkpoint bytes remain absent.
 
 Current status: both submitted bootstrap jobs were cancelled before handler
-execution, so this job remains incomplete and the manifest must not be promoted to
-`OBSERVED_BOOTSTRAP_HASH`. Resume only after the retained-log diagnosis, the
-reviewable repair is republished, and a fresh proposal receives the exact
-cost-approval phrase.
+execution, so this job remains incomplete and the manifest must not be promoted
+to `OBSERVED_BOOTSTRAP_HASH`. The retained-log repair is merged and verified.
+Resume only after the continuation-budget control is republished and a fresh
+proposal receives the exact cost-approval phrase.
 
 ## Job 2: complete GPU validation
 
@@ -278,9 +282,9 @@ rejection without changing bytes, mock-mode rejection, timings, and VRAM
 telemetry. A raw logit is uncalibrated supporting evidence, never a probability
 or verdict.
 
-Do not automatically retry checkpoint, revision, preprocessing, parity, input,
-mock-mode, VRAM, or CUDA incompatibility failures. One transient retry is
-possible only within the approved job and cost caps.
+Do not automatically retry any failure. The continuation budget permits zero
+diagnostic retries; a failed bootstrap or final-validation submission returns
+the endpoint to maximum zero and requires a new explicit decision.
 
 ## Billing and final lock
 
