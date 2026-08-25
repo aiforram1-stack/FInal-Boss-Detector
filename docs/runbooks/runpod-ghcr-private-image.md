@@ -31,11 +31,10 @@ Before any endpoint creation or `/run` request:
    price change invalidates approval.
 
 The maximum approved Phase 6 spend is USD 2.00. Three paid submissions have
-been consumed under the user-authorized four-submission ceiling. One submission
-remains, diagnostic retries are zero, and that slot cannot complete both the
-still-required bootstrap and final validation. A fifth submission is prohibited
-unless the user explicitly changes the ceiling. Premium GPUs, Pods, and network
-volumes require separate approval and are not part of this runbook.
+been consumed. On 2026-08-25 the user explicitly approved a five-submission
+ceiling, leaving exactly two submissions for the still-required bootstrap and
+final validation. Diagnostic retries remain zero. Premium GPUs, Pods, and
+network volumes require separate approval and are not part of this runbook.
 
 The cancelled bootstraps, unexpected second worker, and disallowed hidden-GPU
 assignment remain mandatory stop events. Raising a numerical ceiling does not
@@ -45,15 +44,15 @@ supply-chain, or spend gate.
 ## Immutable release verification
 
 The last verified Phase 6 bootstrap image is the protected publication after
-four-job-cap repair PR #20:
+hidden-GPU deny repair PR #21:
 
 ```text
-ghcr.io/aiforram1-stack/forensic-image-community@sha256:eb2c9c9144ea46ed9c654fe2f0247b34e6fb0217d63b0e3b4deba09b6d79d722
+ghcr.io/aiforram1-stack/forensic-image-community@sha256:c2fdf5625301683beb18c71e04685a205fb2e7e34911e6efac177f452e7a0117
 ```
 
-It is Linux AMD64, 6,629,482,996 bytes, and binds source commit
-`f827629b60ccd6de884edd0064095c756b9fc228`. Protected run
-[`32835827117`](https://github.com/aiforram1-stack/FInal-Boss-Detector/actions/runs/32835827117)
+It is Linux AMD64, 6,629,491,774 bytes, and binds source commit
+`18f499d79aed272064a0653f1d615cc5816ab6e0`. Protected run
+[`32840660804`](https://github.com/aiforram1-stack/FInal-Boss-Detector/actions/runs/32840660804)
 passed SBOM, provenance, GitHub attestation, vulnerability, source-link,
 pull-by-digest, content, mock-smoke, and final fail-closed gates. The checkpoint
 is absent and real GPU inference is marked not run.
@@ -68,12 +67,12 @@ Real GPU inference must still be marked not run.
 From a trusted authenticated workstation:
 
 ```bash
-export IMAGE_DIGEST_REFERENCE='ghcr.io/aiforram1-stack/forensic-image-community@sha256:eb2c9c9144ea46ed9c654fe2f0247b34e6fb0217d63b0e3b4deba09b6d79d722'
+export IMAGE_DIGEST_REFERENCE='ghcr.io/aiforram1-stack/forensic-image-community@sha256:c2fdf5625301683beb18c71e04685a205fb2e7e34911e6efac177f452e7a0117'
 export GITHUB_REPOSITORY='aiforram1-stack/FInal-Boss-Detector'
 make image-community-attestation-verify
 scripts/verify_published_image.sh \
   "${IMAGE_DIGEST_REFERENCE}" \
-  'f827629b60ccd6de884edd0064095c756b9fc228' \
+  '18f499d79aed272064a0653f1d615cc5816ab6e0' \
   'https://github.com/aiforram1-stack/FInal-Boss-Detector'
 ```
 
@@ -166,6 +165,10 @@ retry occurred. A current catalog response is therefore not a complete
 scheduler allowlist: future proposals must union catalog membership with all
 prior scheduler observations and keep this MIG type explicitly excluded.
 
+Hidden-GPU deny repair PR #21 makes that scheduler-observed MIG identity a
+mandatory exclusion even when RunPod omits it from the catalog. Its protected
+publication is the release identified above.
+
 RunPod's supported cached-model control is `runpodctl` 2.4.0 or newer using
 `serverless create --model-reference`. The argument is the full Hugging Face URL
 with a `:ref`; Phase 6 must use the immutable value:
@@ -236,9 +239,10 @@ cannot enter the validation-only path. Never record a full environment dump.
 The selected `AMPERE_24` pool was USD 0.69/hour, or approximately USD
 0.0001916667/second, at the consumed proposal. The Serverless catalog reported
 RTX A5000 and RTX 3090, while the scheduler additionally assigned the denied
-Blackwell MIG type. A replacement budget and proposal cannot be prepared until
-the user decides whether to change the four-submission ceiling. Refresh price
-and membership after that decision.
+Blackwell MIG type. A replacement budget uses breaking schema version 1.2, a
+three-submission baseline, two planned jobs, zero retries, and the
+user-approved five-submission ceiling. Refresh price and membership before
+preparing its exact approval hashes.
 
 The consumed proposal assumed 600 seconds expected cold start per job, 180 seconds
 bootstrap execution, 360 seconds validation execution, and five seconds idle
@@ -284,9 +288,9 @@ while the checkpoint bytes remain absent.
 
 Current status: all three submitted bootstrap jobs were cancelled before
 handler execution, so this job remains incomplete and the manifest must not be
-promoted to `OBSERVED_BOOTSTRAP_HASH`. Resume only after the hidden-GPU deny
-control is republished, the user explicitly resolves the insufficient remaining
-job ceiling, and a fresh proposal receives the exact cost-approval phrase.
+promoted to `OBSERVED_BOOTSTRAP_HASH`. Resume only after the five-job budget
+control is merged and republished and a fresh proposal receives the exact
+cost-approval phrase.
 
 ## Job 2: complete GPU validation
 

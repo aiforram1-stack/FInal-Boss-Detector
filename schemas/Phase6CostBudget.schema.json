@@ -137,8 +137,8 @@
       "type": "integer"
     },
     "maximum_paid_jobs": {
-      "const": 4,
-      "default": 4,
+      "const": 5,
+      "default": 5,
       "title": "Maximum Paid Jobs",
       "type": "integer"
     },
@@ -149,8 +149,8 @@
       "type": "boolean"
     },
     "paid_jobs_already_submitted": {
-      "const": 2,
-      "default": 2,
+      "const": 3,
+      "default": 3,
       "title": "Paid Jobs Already Submitted",
       "type": "integer"
     },
@@ -161,7 +161,7 @@
       "type": "integer"
     },
     "schema_version": {
-      "const": "1.1",
+      "const": "1.2",
       "title": "Schema Version",
       "type": "string"
     },

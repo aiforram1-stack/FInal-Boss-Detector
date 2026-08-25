@@ -230,11 +230,11 @@ class EndpointProposal(Phase6ControlRecord):
 
 
 class Phase6CostBudget(Phase6ControlRecord):
-    # This breaking continuation budget intentionally invalidates consumed 1.0 approvals.
-    schema_version: Literal["1.1"]  # type: ignore[assignment]
+    # This breaking continuation budget invalidates every consumed four-job approval.
+    schema_version: Literal["1.2"]  # type: ignore[assignment]
     starting_balance_usd: Decimal = Field(ge=0)
     incurred_phase6_spend_usd: Decimal = Field(ge=0)
-    paid_jobs_already_submitted: Literal[2] = 2
+    paid_jobs_already_submitted: Literal[3] = 3
     gpu_pool_id: Literal["AMPERE_24"] = "AMPERE_24"
     gpu_rate_per_hour_usd: Decimal = Field(gt=0)
     gpu_rate_per_second_usd: Decimal = Field(gt=0)
@@ -248,7 +248,7 @@ class Phase6CostBudget(Phase6ControlRecord):
     estimated_container_disk_cost_usd: Decimal = Field(ge=0)
     planned_paid_jobs: Literal[2] = 2
     diagnostic_retries: Literal[0] = 0
-    maximum_paid_jobs: Literal[4] = 4
+    maximum_paid_jobs: Literal[5] = 5
     estimated_normal_cost_usd: Decimal = Field(ge=0)
     estimated_worst_case_cost_usd: Decimal = Field(ge=0)
     hard_maximum_spend_usd: Decimal = Field(default=Decimal("2.00"), gt=0, le=Decimal("2.00"))

@@ -23,7 +23,7 @@ Current status (2026-08-25):
   merge commit `4062b946a29288330242d108dbbed9ded4d9d736` passed every gate for
   immutable Linux AMD64 digest
   `sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437`.
-- [ ] Phase 6 preparation PR #10 and repair PRs #18, #19, and #20 are merged
+- [ ] Phase 6 preparation PR #10 and repair PRs #18, #19, #20, and #21 are merged
   and tracked by issue #9. Protected publication for PR #20 passed every gate
   at source commit `f827629b60ccd6de884edd0064095c756b9fc228` and digest
   `sha256:eb2c9c9144ea46ed9c654fe2f0247b34e6fb0217d63b0e3b4deba09b6d79d722`.
@@ -33,10 +33,11 @@ Current status (2026-08-25):
   bootstrap receipt or real GPU validation exists. A third approved bootstrap
   was cancelled before handler execution when RunPod assigned a hidden
   scheduler-known Blackwell MIG type omitted from the current catalog response.
-  Three of the four authorized submissions are consumed, one remains, and no
-  retry is allowed. Because bootstrap and final validation still require two
-  jobs, another paid worker requires the hidden-GPU deny repair, a new ceiling
-  decision, and a newly approved exact proposal.
+  Three submissions are consumed. The user explicitly approved a five-job
+  ceiling on 2026-08-25, leaving exactly two submissions for bootstrap and
+  final validation with no retry allowance. Another paid worker requires the
+  breaking budget repair to be merged and republished and a newly approved
+  exact proposal.
 - [ ] Phase 7 and later are not authorized.
 
 ## Mission and first vertical slice
@@ -435,14 +436,16 @@ observation, CUDA fitness, model load, or inference occurred. Itemized billing
 still reports USD 0.0084969667 total Phase 6 spend, safely below the USD 2.00
 cap, subject to provider reporting lag.
 
-Three of four authorized submissions are now consumed. The one remaining slot
-cannot complete both the bootstrap and final validation and cannot be treated
-as a retry allowance. A breaking proposal-schema repair therefore keeps every
-scheduler-observed denied type explicitly excluded even when the current
-catalog omits it. Another paid execution requires protected publication of that
-repair, an explicit paid-ceiling decision, a refreshed proposal/budget, and the
-exact cost-approval phrase. The account worker quota remains unexposed by
-current read-only surfaces.
+Hidden-GPU deny repair PR #21 merged, and protected publication passed every
+release gate for source commit `18f499d79aed272064a0653f1d615cc5816ab6e0`
+and immutable digest
+`sha256:c2fdf5625301683beb18c71e04685a205fb2e7e34911e6efac177f452e7a0117`.
+Three submissions are consumed. On 2026-08-25 the user explicitly approved a
+five-submission ceiling, leaving exactly two submissions for bootstrap and
+final validation with no retry allowance. Another paid execution requires this
+breaking budget schema to be merged and republished, a refreshed proposal and
+budget, and the exact cost-approval phrase. The account worker quota remains
+unexposed by current read-only surfaces.
 
 Deliverables:
 
