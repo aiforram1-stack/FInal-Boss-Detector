@@ -132,7 +132,10 @@ enter repository code or shell history.
   failed closed before CUDA or model loading. The endpoint was locked at zero
   while bounded support for RunPod's documented snapshot-local representation,
   a CPU regression fixture, and a replacement image were prepared. The next
-  bootstrap receipt must identify the observed layout.
+  bootstrap receipt must identify the observed layout. The controlled no-job
+  startup diagnostic is conservatively counted as the one allowed diagnostic
+  attempt, so the replacement digest and remaining budget require a refreshed
+  proposal and exact cost approval before another worker starts.
 - The first RunPod mutation must wait for private-registry readiness planning,
   current pricing, and exact user approval. Because no registry credential
   exists and policy also gates credential creation, the stored credential ID

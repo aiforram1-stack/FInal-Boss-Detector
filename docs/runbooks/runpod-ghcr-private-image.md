@@ -118,7 +118,10 @@ it did not establish the exact alternate layout. The worker failed before CUDA
 or model loading, the job was cancelled, maximum workers was set to zero, and
 no automatic retry was submitted. A replacement image must pass the CPU
 materialized-cache fixture before the endpoint is unlocked again, and the next
-receipt must record the observed layout.
+receipt must record the observed layout. Treat the controlled no-job startup as
+the one allowed diagnostic attempt: bind the replacement digest and remaining
+budget into a refreshed proposal and obtain the exact cost-approval phrase
+again before starting another worker.
 
 RunPod's supported cached-model control is `runpodctl` 2.4.0 or newer using
 `serverless create --model-reference`. The argument is the full Hugging Face URL

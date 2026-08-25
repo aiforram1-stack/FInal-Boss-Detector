@@ -393,8 +393,11 @@ The GitHub repository is public while the source-linked GHCR package remains
 private. RunPod MCP and `runpodctl` are authenticated, the private GHCR
 credential exists, and the endpoint is present but safety-locked at zero. Cloud
 execution is blocked on review, merge, and protected publication of the cache
-layout repair; the account worker quota remains unexposed by current read-only
-surfaces.
+layout repair. The controlled no-job startup diagnostic is treated as the one
+allowed diagnostic attempt, so a refreshed proposal binding the replacement
+digest and remaining budget must receive the exact cost-approval phrase before
+the endpoint is unlocked. The account worker quota remains unexposed by current
+read-only surfaces.
 
 Deliverables:
 
