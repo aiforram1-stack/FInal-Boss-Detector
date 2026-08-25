@@ -43,6 +43,15 @@ exact snapshot containment, single-checkpoint, byte-length, SHA-256, and
 bounded safetensors verification. The next receipt must identify the observed
 layout rather than infer it from the original failure.
 
+Protected publication of that repair passed every release gate, but the
+renewed bootstrap attempt did not produce a receipt. One worker entered a
+repeated container-start loop and RunPod introduced an unexpected replacement
+worker; the job remained queued and was cancelled under the Phase 6 safety
+policy. No checkpoint bytes were observed by a completed job, CUDA fitness was
+not established, and no model load or inference result was returned. The
+endpoint is locked at zero pending retained-log diagnosis, reviewable repair if
+needed, a new immutable publication and fresh exact cost approval.
+
 ## Inputs and preprocessing
 
 The worker accepts JPEG, PNG, and WebP after independent byte-signature and

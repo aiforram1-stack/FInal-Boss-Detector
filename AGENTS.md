@@ -11,12 +11,19 @@ produce structured evidence records.
 - Read `PLAN.md` before starting work.
 - Phase 6, first real Community Forensics GPU validation on RunPod Serverless,
   is the only active implementation phase. GitHub PRs #2, #4, #6, #8, and #10
-  are merged into `main`. Release-verifier repair PR #16 is also merged. Its
-  protected `main` publication passed every release gate for source commit
-  `4062b946a29288330242d108dbbed9ded4d9d736` and immutable image digest
-  `sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437`.
-  The GitHub repository is public; the source-linked GHCR package remains
-  private.
+  are merged into `main`. Release-verifier repair PR #16 and cache-layout
+  repair PR #18 are also merged. Protected `main` publication passed every
+  release gate for repair source commit
+  `847cad109e9d794e2060a3e116cb343a1de4daa3` and immutable image digest
+  `sha256:8d6eb3b7b57f8cecc778d859ca62b3cfbd2fc3492f15f547f6890c30948f87c5`.
+  The GitHub repository is public; the source-linked GHCR package remains private.
+- The renewed bootstrap job against that repaired digest was cancelled on
+  2026-08-25 when one worker became unhealthy and RunPod introduced an
+  unexpected second worker. No bootstrap receipt, CUDA fitness result, model
+  load, or inference result was produced. The queue endpoint is retained at
+  minimum zero/maximum zero with no workers or jobs. Diagnose through retained
+  endpoint logs and a reviewable repair; do not start another paid worker until
+  a refreshed proposal receives the exact approval phrase.
 - Phase 6 repository work may keep status/runbook documentation current, repair
   fail-closed proposal controls, and prepare a reviewable pull request.
   Do not weaken or bypass any failed SBOM, provenance, package-link, GitHub
