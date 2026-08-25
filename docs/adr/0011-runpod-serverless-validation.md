@@ -15,10 +15,10 @@ until an exact configuration and cost proposal receives the exact approval
 phrase.
 
 Pull requests for Phases 2 through 6 preparation and repair PRs #16, #18, #19,
-and #20 are merged. Protected publication accepted source commit
-`f827629b60ccd6de884edd0064095c756b9fc228` as private
+#20, and #21 are merged. Protected publication accepted source commit
+`18f499d79aed272064a0653f1d615cc5816ab6e0` as private
 Linux AMD64 image
-`ghcr.io/aiforram1-stack/forensic-image-community@sha256:eb2c9c9144ea46ed9c654fe2f0247b34e6fb0217d63b0e3b4deba09b6d79d722`.
+`ghcr.io/aiforram1-stack/forensic-image-community@sha256:c2fdf5625301683beb18c71e04685a205fb2e7e34911e6efac177f452e7a0117`.
 The GitHub repository is public, the GHCR package remains private and
 source-linked, and every release gate passed. The checkpoint remains absent
 from the image and CUDA validation has not completed.
@@ -83,11 +83,11 @@ timeout, scaling, and cost estimate are canonically hashed. Only the exact phras
 
 The budget record separately binds prior spend, the number of already submitted
 jobs, expected and worst-case cold-start seconds, and the remaining submission
-count. On 2026-08-25 the user explicitly raised the total ceiling from three to
-four. The hidden-GPU cancellation consumed submission three without handler
-execution. One slot remains, zero diagnostic retries are authorized, and that
-single slot cannot complete both the still-required bootstrap and final
-validation. A new ceiling decision is required before another cost proposal.
+count. The hidden-GPU cancellation consumed submission three without handler
+execution. On 2026-08-25 the user explicitly raised the total ceiling to five.
+Breaking budget schema 1.2 therefore binds three consumed submissions, exactly
+two planned jobs, zero diagnostic retries, and five submissions total. A fresh
+exact cost proposal remains required before another paid worker starts.
 
 The consumed continuation proposal used a 600-second expected cold start and a
 conservative 1,200-second worst case, 180 seconds for bootstrap, and 360 seconds
@@ -96,8 +96,8 @@ normal compute is approximately USD 0.3355. Two worst-case starts plus both
 600-second execution ceilings and idle charges are approximately USD 0.6919.
 Including incurred spend and USD 0.01 reserved for ephemeral container disk,
 the total Phase 6 estimates were approximately USD 0.3540 normally and USD
-0.7104 worst case. A replacement budget must be recalculated after an explicit
-ceiling decision. The hard USD 2.00 stop remains unchanged.
+0.7104 worst case. A replacement budget must be recalculated immediately before
+the new exact proposal. The hard USD 2.00 stop remains unchanged.
 
 The endpoint is queue based and selects `AMPERE_24`. Its current catalog and
 historical scheduler observations must be completely partitioned into the
@@ -109,10 +109,8 @@ is one during approved
 execution, one GPU is used per worker, the idle timeout is five seconds, and no
 network volume or data-centre restriction is used by default. Maximum workers
 becomes zero after validation. Total spend is capped at USD 2.00 and the current
-paid ceiling is four: three consumed and one remaining, with no retries. That
-remaining slot is insufficient for both required jobs; a fifth submission is
-prohibited unless the user explicitly changes the ceiling. No Pod fallback is
-permitted without separate approval.
+paid ceiling is five: three consumed and exactly two remaining, with no retries.
+No Pod fallback is permitted without separate approval.
 
 ### One cached model, resolved fail closed
 
@@ -190,12 +188,11 @@ enter repository code or shell history.
   the scheduler assigned the known-denied Blackwell MIG type even though it was
   absent from the current catalog response. The proposal schema now requires
   that scheduler-observed type to remain explicitly excluded.
-- The retained
-  endpoint must remain maximum zero until a refreshed proposal and budget receive
-  the exact approval phrase. The user authorized a four-submission total ceiling:
-  three are consumed, only one remains, no retry is allowed, and a fifth
-  submission is prohibited without a new explicit ceiling decision. This cap is not permission to
-  bypass repeated-worker or unexpected-second-worker stop conditions.
+- The retained endpoint must remain maximum zero until a refreshed proposal and
+  budget receive the exact approval phrase. The user authorized a
+  five-submission total ceiling: three are consumed, exactly two remain, and no
+  retry is allowed. This cap is not permission to bypass repeated-worker,
+  unexpected-second-worker, GPU-identity, or spend stop conditions.
 - Bootstrap requires a manifest update and second protected image publication
   before final validation, adding review latency but binding validation to the
   observed checkpoint.

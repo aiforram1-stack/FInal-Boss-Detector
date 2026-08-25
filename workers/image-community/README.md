@@ -83,8 +83,9 @@ same contracts and job service, and contain no stored media fixture. Builds must
 use the repository root so `.dockerignore` protects the real context and only
 shared contracts plus worker source are copied.
 
-Phase 6 runtime status (2026-08-25): the cache-layout, bootstrap-fitness, and
-four-job-cap repairs and their protected publications passed every release gate.
+Phase 6 runtime status (2026-08-25): the cache-layout, bootstrap-fitness,
+four-job-cap, and hidden-GPU deny repairs and their protected publications
+passed every release gate.
 The third approved bootstrap was nevertheless cancelled before handler
 execution because RunPod assigned the scheduler-known 24 GB Blackwell MIG type
 even though the approval-time `AMPERE_24` catalog response listed only RTX A5000
@@ -92,11 +93,11 @@ and RTX 3090. No receipt, checkpoint hash, CUDA fitness, model load, or inferenc
 result exists, and the endpoint is locked at minimum zero/maximum zero. Proposal
 schema 1.1 requires that scheduler-observed denied type to remain explicitly
 excluded even when the current catalog omits it. Three paid submissions have
-been consumed; only one of the authorized four remains, no retry is permitted,
-and that single slot is insufficient for both bootstrap and final validation.
-Do not resume a paid worker until the repair is republished, the user explicitly
-decides the paid ceiling, and a refreshed exact proposal is approved. The USD
-2.00 hard stop is unchanged.
+been consumed. The user explicitly authorized a five-submission ceiling,
+leaving exactly two jobs for bootstrap and final validation with no retry.
+Budget schema 1.2 binds that ceiling. Do not resume a paid worker until the
+budget repair is republished and a refreshed exact proposal is approved. The
+USD 2.00 hard stop is unchanged.
 
 The pull-request workflow builds and mock-smokes both targets without publishing.
 The protected main/manual workflow pushes only `sha-<full-commit>` to private
