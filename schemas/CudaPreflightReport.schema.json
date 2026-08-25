@@ -1,0 +1,498 @@
+{
+  "$defs": {
+    "CudaDiagnosis": {
+      "enum": [
+        "CUDA_AVAILABLE",
+        "GPU_HIDDEN_BY_ENVIRONMENT",
+        "COMPUTE_CAPABILITY_NOT_MOUNTED",
+        "CUDA_DEVICE_NODES_MISSING",
+        "LIBCUDA_NOT_LOADABLE",
+        "CUDA_COMPAT_LIBRARY_CONFLICT",
+        "PYTORCH_CPU_BUILD",
+        "CUDA_RUNTIME_INITIALIZATION_FAILED",
+        "UNKNOWN"
+      ],
+      "title": "CudaDiagnosis",
+      "type": "string"
+    },
+    "DeviceNodeRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "character_device": {
+          "title": "Character Device",
+          "type": "boolean"
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "pattern": "^[0-7]{4}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mode"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "present": {
+          "title": "Present",
+          "type": "boolean"
+        },
+        "readable": {
+          "title": "Readable",
+          "type": "boolean"
+        },
+        "writable": {
+          "title": "Writable",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "path",
+        "present",
+        "character_device",
+        "readable",
+        "writable"
+      ],
+      "title": "DeviceNodeRecord",
+      "type": "object"
+    },
+    "LibraryDiagnostics": {
+      "additionalProperties": false,
+      "properties": {
+        "compat_libraries_precede_host_driver": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Compat Libraries Precede Host Driver"
+        },
+        "cuda_compat_entries": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Cuda Compat Entries",
+          "type": "array"
+        },
+        "cuda_compat_exists": {
+          "title": "Cuda Compat Exists",
+          "type": "boolean"
+        },
+        "find_library_result": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Find Library Result"
+        },
+        "ldconfig_entries": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Ldconfig Entries",
+          "type": "array"
+        },
+        "ldconfig_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ldconfig Error"
+        },
+        "libcuda_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Libcuda Error"
+        },
+        "libcuda_loadable": {
+          "title": "Libcuda Loadable",
+          "type": "boolean"
+        },
+        "resolved_libcuda_location": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resolved Libcuda Location"
+        }
+      },
+      "required": [
+        "libcuda_loadable",
+        "cuda_compat_exists"
+      ],
+      "title": "LibraryDiagnostics",
+      "type": "object"
+    },
+    "SanitizedEnvironmentValue": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "unset",
+            "empty",
+            "disabled",
+            "all",
+            "ordinal_list",
+            "gpu_uuid_list",
+            "mig_uuid_list",
+            "capability_list",
+            "path_list",
+            "other_redacted"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "state"
+      ],
+      "title": "SanitizedEnvironmentValue",
+      "type": "object"
+    },
+    "TorchChildCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "cuda_available": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cuda Available"
+        },
+        "device_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Device Count"
+        },
+        "exception_message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exception Message"
+        },
+        "exception_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exception Type"
+        },
+        "mode": {
+          "enum": [
+            "runtime",
+            "current_device",
+            "device_properties",
+            "nvml"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "operation_succeeded": {
+          "default": false,
+          "title": "Operation Succeeded",
+          "type": "boolean"
+        },
+        "process_return_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Process Return Code"
+        },
+        "python_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Python Version"
+        },
+        "pytorch_cpu_only": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pytorch Cpu Only"
+        },
+        "stderr": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stderr"
+        },
+        "timed_out": {
+          "default": false,
+          "title": "Timed Out",
+          "type": "boolean"
+        },
+        "torch_cuda_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Torch Cuda Version"
+        },
+        "torch_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Torch Version"
+        },
+        "torchvision_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Torchvision Version"
+        },
+        "traceback": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Traceback"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "TorchChildCheck",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "child_checks": {
+      "items": {
+        "$ref": "#/$defs/TorchChildCheck"
+      },
+      "title": "Child Checks",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "cuda_home": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Cuda Home"
+    },
+    "cuda_visible_devices_disables_access": {
+      "title": "Cuda Visible Devices Disables Access",
+      "type": "boolean"
+    },
+    "device_nodes": {
+      "items": {
+        "$ref": "#/$defs/DeviceNodeRecord"
+      },
+      "title": "Device Nodes",
+      "type": "array"
+    },
+    "driver_capabilities_include_compute": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Driver Capabilities Include Compute"
+    },
+    "environment": {
+      "additionalProperties": {
+        "$ref": "#/$defs/SanitizedEnvironmentValue"
+      },
+      "title": "Environment",
+      "type": "object"
+    },
+    "libraries": {
+      "$ref": "#/$defs/LibraryDiagnostics"
+    },
+    "nvidia_visible_devices_disables_access": {
+      "title": "Nvidia Visible Devices Disables Access",
+      "type": "boolean"
+    },
+    "nvml_runtime_disagree": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Nvml Runtime Disagree"
+    },
+    "primary_diagnosis": {
+      "$ref": "#/$defs/CudaDiagnosis"
+    },
+    "python_version": {
+      "title": "Python Version",
+      "type": "string"
+    },
+    "required_device_nodes_present": {
+      "title": "Required Device Nodes Present",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "PASSED",
+        "FAILED"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "warnings": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "created_at",
+    "status",
+    "primary_diagnosis",
+    "python_version",
+    "environment",
+    "device_nodes",
+    "required_device_nodes_present",
+    "cuda_visible_devices_disables_access",
+    "nvidia_visible_devices_disables_access",
+    "libraries",
+    "child_checks"
+  ],
+  "title": "CudaPreflightReport",
+  "type": "object"
+}

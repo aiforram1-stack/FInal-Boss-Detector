@@ -32,6 +32,22 @@ through `MemoryInputFetcher`.
 `make image-community-gpu-test` is future scaffolding. It requires the explicit
 `RUN_GPU_TESTS=1` gate and still skips without CUDA and the verified checkpoint.
 
+The production image also contains a model-free CUDA diagnostic. It imports
+PyTorch only in separate bounded child processes and never resolves or loads a
+checkpoint:
+
+```bash
+python -m forensic_image_community.cuda_preflight \
+  --output /tmp/cuda-preflight.json
+```
+
+The command writes a strict `CudaPreflightReport` schema-version `1.0` record,
+prints the same sanitized JSON, and exits nonzero unless the primary diagnosis
+is `CUDA_AVAILABLE`. It records sanitized GPU visibility and library ordering,
+device-node permissions, `libcuda.so.1` resolution, and independent CUDA
+runtime/NVML initialization results. Output is create-only: an existing path is
+never overwritten.
+
 ## Design
 
 - `input_fetcher.py`: injectable memory and constrained HTTPS retrieval;
@@ -47,6 +63,7 @@ through `MemoryInputFetcher`.
 - `job_service.py`: framework-independent orchestration and cleanup;
 - `result_builder.py`: shared result construction and complete identity;
 - `fitness.py`: structured mock/real readiness;
+- `cuda_preflight.py`: model-free, child-process-isolated CUDA diagnostics;
 - `handler.py`: thin event validation and structured success/failure mapping.
 
 The real backend records a raw pre-sigmoid logit. It never labels that value a
