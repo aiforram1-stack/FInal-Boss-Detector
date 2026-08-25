@@ -365,6 +365,7 @@ def test_json_schemas_are_generated_and_committed() -> None:
         "ArtifactEnvelope.schema.json",
         "CheckpointBootstrapRequest.schema.json",
         "CheckpointBootstrapResponse.schema.json",
+        "CudaPreflightReport.schema.json",
         "EndpointHealth.schema.json",
         "EndpointProposal.schema.json",
         "GpuValidationRequest.schema.json",
@@ -372,7 +373,7 @@ def test_json_schemas_are_generated_and_committed() -> None:
         "Phase6CostBudget.schema.json",
         "RunpodWorkerErrorResponse.schema.json",
     }
-    assert len(generated) == 21
+    assert len(generated) == 22
     assert phase6_schemas <= generated.keys()
     for filename, expected in generated.items():
         assert (SCHEMA_DIR / filename).read_text(encoding="utf-8") == expected

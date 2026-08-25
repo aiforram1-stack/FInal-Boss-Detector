@@ -19,6 +19,7 @@ from forensic_contracts import (
     StructuralAnalysisRun,
     StructuralReport,
 )
+from forensic_image_community.cuda_preflight import CudaPreflightReport
 from forensic_image_community.phase6_contracts import (
     ArtifactEnvelope,
     CheckpointBootstrapRequest,
@@ -57,6 +58,7 @@ MODELS: tuple[type[BaseModel], ...] = (
     EndpointHealth,
     EndpointProposal,
     Phase6CostBudget,
+    CudaPreflightReport,
 )
 
 
