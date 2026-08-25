@@ -33,7 +33,7 @@ from pydantic import ValidationError
 
 def proposal(**overrides: object) -> EndpointProposal:
     values: dict[str, object] = {
-        "schema_version": "1.1",
+        "schema_version": "1.2",
         "name": "forensic-image-community-phase6",
         "image_digest_reference": f"ghcr.io/owner/worker@sha256:{'a' * 64}",
         "source_commit": "b" * 40,
@@ -74,10 +74,10 @@ def proposal(**overrides: object) -> EndpointProposal:
 
 def budget(**overrides: object) -> Phase6CostBudget:
     values: dict[str, object] = {
-        "schema_version": "1.3",
+        "schema_version": "1.4",
         "starting_balance_usd": Decimal("10"),
         "incurred_phase6_spend_usd": Decimal("0.01"),
-        "paid_jobs_already_submitted": 4,
+        "paid_jobs_already_submitted": 5,
         "gpu_rate_per_hour_usd": Decimal("0.72"),
         "gpu_rate_per_second_usd": Decimal("0.0002"),
         "expected_cold_start_seconds_per_job": 120,
@@ -141,6 +141,7 @@ def test_endpoint_proposal_is_queue_only_digest_pinned_and_lockable() -> None:
     configured = proposal()
     assert configured.workers_min == 0
     assert configured.workers_max == 1
+    assert configured.maximum_observed_workers == 2
     assert configured.network_volume_ids == ()
     assert configured.gpu_pool_ids == ("AMPERE_24",)
     assert configured.flashboot == "FLASHBOOT"
@@ -149,6 +150,8 @@ def test_endpoint_proposal_is_queue_only_digest_pinned_and_lockable() -> None:
         configured.runtime_environment.as_runpod_env()["IMAGE_COMMUNITY_PHASE6_ONLY_MODE"] == "true"
     )
     assert configured.locked().workers_max == 0
+    assert configured.locked().maximum_observed_workers == 0
+    assert EndpointProposal.model_validate(configured.locked().model_dump()) == configured.locked()
     assert "stored-credential-id" not in str(configured.redacted_dict())
     with pytest.raises(ValidationError):
         proposal(
@@ -173,7 +176,7 @@ def test_endpoint_proposal_is_queue_only_digest_pinned_and_lockable() -> None:
             excluded_gpu_type_ids=(),
         )
     legacy_values = proposal().model_dump(mode="json")
-    legacy_values["schema_version"] = "1.0"
+    legacy_values["schema_version"] = "1.1"
     with pytest.raises(ValidationError):
         EndpointProposal.model_validate(legacy_values)
     with pytest.raises(ValidationError):
@@ -192,14 +195,17 @@ def test_endpoint_proposal_is_queue_only_digest_pinned_and_lockable() -> None:
         )
     with pytest.raises(ValidationError):
         proposal(image_digest_reference="ghcr.io/owner/worker:latest")
+    with pytest.raises(ValidationError, match="observed worker ceiling"):
+        proposal(workers_max=0)
 
 
 def test_cost_budget_rejects_more_than_two_dollars_or_insufficient_balance() -> None:
     configured = budget()
-    assert configured.paid_jobs_already_submitted == 4
+    assert configured.paid_jobs_already_submitted == 5
     assert configured.planned_paid_jobs == 2
     assert configured.diagnostic_retries == 0
-    assert configured.maximum_paid_jobs == 6
+    assert configured.maximum_paid_jobs == 7
+    assert configured.maximum_observed_workers_per_job == 2
     legacy_values = budget().model_dump(mode="json")
     legacy_values.pop("worst_case_cold_start_seconds_per_job")
     legacy_values["estimated_worst_case_cost_usd"] = "1.50"
@@ -227,9 +233,11 @@ def test_cost_budget_rejects_more_than_two_dollars_or_insufficient_balance() -> 
     with pytest.raises(ValidationError):
         budget(diagnostic_retries=1)
     with pytest.raises(ValidationError):
-        budget(schema_version="1.2")
+        budget(schema_version="1.3")
     with pytest.raises(ValidationError):
-        budget(maximum_paid_jobs=5)
+        budget(maximum_paid_jobs=6)
+    with pytest.raises(ValidationError):
+        budget(maximum_observed_workers_per_job=1)
 
 
 def test_async_payload_uses_run_policy_not_runsync() -> None:
@@ -254,6 +262,18 @@ def test_worker_assignments_require_approved_gpu_digest_count_and_ceiling() -> N
     assert validate_endpoint_worker_assignments(configured, approved)[0].gpuTypeId == (
         "NVIDIA RTX A5000"
     )
+    duplicate = {
+        "items": [
+            approved_worker,
+            {**approved_worker, "id": "worker-2"},
+        ]
+    }
+    assert len(validate_endpoint_worker_assignments(configured, duplicate)) == 2
+    with pytest.raises(ValueError, match="worker count exceeds"):
+        validate_endpoint_worker_assignments(
+            configured,
+            {"items": [*duplicate["items"], {**approved_worker, "id": "worker-3"}]},
+        )
     denied = {
         "items": [
             {
@@ -361,7 +381,7 @@ def test_submit_and_poll_parses_current_runpod_states() -> None:
         proposal=configured,
         budget=limits,
         approval=approval(configured, limits),
-        paid_jobs_already_submitted=4,
+        paid_jobs_already_submitted=5,
     )
     assert receipt.id == "job-1"
     result = controller.poll_until_terminal(
@@ -403,7 +423,7 @@ def test_deadline_cancels_and_job_cap_or_wrong_approval_blocks_submission() -> N
             proposal=configured,
             budget=limits,
             approval=approval(configured, limits),
-            paid_jobs_already_submitted=6,
+            paid_jobs_already_submitted=7,
         )
     changed = configured.model_copy(update={"disk_gb": 21})
     with pytest.raises(PermissionError, match="does not match"):
@@ -412,7 +432,7 @@ def test_deadline_cancels_and_job_cap_or_wrong_approval_blocks_submission() -> N
             proposal=changed,
             budget=limits,
             approval=approval(configured, limits),
-            paid_jobs_already_submitted=4,
+            paid_jobs_already_submitted=5,
         )
     gpu_proposal = proposal(
         operation="gpu_validation",
@@ -430,7 +450,7 @@ def test_deadline_cancels_and_job_cap_or_wrong_approval_blocks_submission() -> N
             proposal=gpu_proposal,
             budget=limits,
             approval=approval(gpu_proposal, limits),
-            paid_jobs_already_submitted=4,
+            paid_jobs_already_submitted=5,
         )
 
     with pytest.raises(PermissionError, match="lower than"):
@@ -439,17 +459,17 @@ def test_deadline_cancels_and_job_cap_or_wrong_approval_blocks_submission() -> N
             proposal=configured,
             budget=limits,
             approval=approval(configured, limits),
-            paid_jobs_already_submitted=3,
+            paid_jobs_already_submitted=4,
         )
 
-    fifth = controller.submit_approved(
+    sixth = controller.submit_approved(
         request=bootstrap_request(),
         proposal=configured,
         budget=limits,
         approval=approval(configured, limits),
-        paid_jobs_already_submitted=4,
+        paid_jobs_already_submitted=5,
     )
-    assert fifth.status == "IN_QUEUE"
+    assert sixth.status == "IN_QUEUE"
 
 
 def test_health_lock_and_result_sanitization_fail_closed() -> None:
@@ -499,7 +519,7 @@ def test_continuation_budget_forbids_retries_and_queue_cleanup_is_sanitized() ->
             proposal=configured,
             budget=limits,
             approval=approval(configured, limits),
-            paid_jobs_already_submitted=4,
+            paid_jobs_already_submitted=5,
             diagnostic_retries_already_submitted=0,
         )
     assert transport.retried == []

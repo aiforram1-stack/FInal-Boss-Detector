@@ -30,31 +30,34 @@ Before any endpoint creation or `/run` request:
    proposal. Any material configuration, credential ID, catalog membership, or
    price change invalidates approval.
 
-The maximum approved Phase 6 spend is USD 2.00. Four paid submissions have
-been consumed. The user-approved six-submission ceiling leaves exactly two
+The maximum approved Phase 6 spend is USD 2.00. Five paid submissions have
+been consumed. The user-approved seven-submission ceiling leaves exactly two
 slots for the still-required bootstrap and final validation. Diagnostic
-retries remain zero. Another paid worker requires the six-job budget repair to
-merge and publish, plus a refreshed budget, proposal, and exact cost approval.
+retries remain zero. Another paid worker requires the seven-job and
+transient-second-worker repair to merge and publish, plus a refreshed budget,
+proposal, and exact cost approval.
 Premium GPUs, Pods, and network volumes require separate approval and are not
 part of this runbook.
 
-The cancelled bootstraps, unexpected second worker, and disallowed hidden-GPU
-assignment remain mandatory stop events. Raising a numerical ceiling does not
-reuse any prior cost approval or bypass a restart, worker-count, GPU-identity,
-supply-chain, or spend gate.
+Cancelled bootstraps and disallowed GPU assignments remain mandatory stop
+events. Configured maximum remains one, but the user explicitly approved at
+most two provider-observed workers after submission five reproduced RunPod's
+duplicate initialization. A third observed worker remains a mandatory stop.
+Raising a numerical ceiling does not reuse any prior cost approval or bypass a
+restart, GPU-identity, supply-chain, or spend gate.
 
 ## Immutable release verification
 
 The last verified Phase 6 bootstrap image is the protected publication after
-RunPod-safe error-envelope repair PR #23:
+six-job-cap repair PR #24:
 
 ```text
-ghcr.io/aiforram1-stack/forensic-image-community@sha256:daeb01877efd34526b2bd841930f6b52e1c4ba781081a66ce0c7e294e1bf31f8
+ghcr.io/aiforram1-stack/forensic-image-community@sha256:1a61513d131f2589f25b8841b218dffb9d354206888511913079345385c0c04a
 ```
 
 It is Linux AMD64 and binds source commit
-`dfafb5bdae13f4d3238d22a3d747d33310b3d7d9`. Protected run
-[`32856228905`](https://github.com/aiforram1-stack/FInal-Boss-Detector/actions/runs/32856228905)
+`e5f3005e4b7953921b93cab409cf1bb6db8a044d`. Protected run
+[`32860308685`](https://github.com/aiforram1-stack/FInal-Boss-Detector/actions/runs/32860308685)
 passed SBOM, provenance, GitHub attestation, vulnerability, source-link,
 pull-by-digest, content, mock-smoke, and final fail-closed gates. The checkpoint
 is absent and real GPU inference is marked not run.
@@ -69,12 +72,12 @@ Real GPU inference must still be marked not run.
 From a trusted authenticated workstation:
 
 ```bash
-export IMAGE_DIGEST_REFERENCE='ghcr.io/aiforram1-stack/forensic-image-community@sha256:daeb01877efd34526b2bd841930f6b52e1c4ba781081a66ce0c7e294e1bf31f8'
+export IMAGE_DIGEST_REFERENCE='ghcr.io/aiforram1-stack/forensic-image-community@sha256:1a61513d131f2589f25b8841b218dffb9d354206888511913079345385c0c04a'
 export GITHUB_REPOSITORY='aiforram1-stack/FInal-Boss-Detector'
 make image-community-attestation-verify
 scripts/verify_published_image.sh \
   "${IMAGE_DIGEST_REFERENCE}" \
-  'dfafb5bdae13f4d3238d22a3d747d33310b3d7d9' \
+  'e5f3005e4b7953921b93cab409cf1bb6db8a044d' \
   'https://github.com/aiforram1-stack/FInal-Boss-Detector'
 ```
 
@@ -202,7 +205,9 @@ file for identifiers returned by RunPod.
   RTX 3090;
 - minimum host CUDA version: 12.4; do not narrow the allowed-version list;
 - minimum workers: zero;
-- maximum workers: one during approved jobs, zero at final lock;
+- configured maximum workers: one during approved jobs, zero at final lock;
+- provider-observed worker ceiling: two during approved jobs, zero at final
+  lock; cancel immediately if a third appears;
 - idle timeout: five seconds;
 - scaler: `QUEUE_DELAY`, value four;
 - execution timeout: 600,000 ms;
@@ -291,11 +296,14 @@ while the checkpoint bytes remain absent.
 Current status: submission four reached handler execution on one approved RTX
 A5000 and the exact protected image, but pinned RunPod SDK 1.7.13 removed the
 worker's reserved top-level `error` field and retained only `schema_version`.
-The result is not a bootstrap receipt and the manifest must not be promoted to
-`OBSERVED_BOOTSTRAP_HASH`. Resume only after the RunPod-safe structured error
-envelope is merged and republished, the user decides a ceiling that preserves
-separate bootstrap and final-validation slots, and a fresh proposal receives
-the exact cost-approval phrase.
+Submission five used the repaired envelope image but was cancelled before
+handler execution when RunPod reported two initializing A5000 workers despite
+configured maximum one. Both workers used the exact digest and one GPU. The
+user subsequently approved a seven-submission ceiling and an observation
+ceiling of two workers while keeping configured maximum one. No result is a
+bootstrap receipt and the manifest must not be promoted to
+`OBSERVED_BOOTSTRAP_HASH`. Resume only after the breaking controls merge and
+publish and a fresh proposal receives the exact cost-approval phrase.
 
 ## Job 2: complete GPU validation
 

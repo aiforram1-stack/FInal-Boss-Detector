@@ -187,6 +187,15 @@
       "title": "Image Digest Reference",
       "type": "string"
     },
+    "maximum_observed_workers": {
+      "default": 2,
+      "enum": [
+        0,
+        2
+      ],
+      "title": "Maximum Observed Workers",
+      "type": "integer"
+    },
     "min_cuda_version": {
       "const": "12.4",
       "default": "12.4",
@@ -265,7 +274,7 @@
       "type": "integer"
     },
     "schema_version": {
-      "const": "1.1",
+      "const": "1.2",
       "title": "Schema Version",
       "type": "string"
     },

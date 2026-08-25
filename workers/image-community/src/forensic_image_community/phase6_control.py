@@ -122,8 +122,8 @@ class EndpointRuntimeEnvironment(BaseModel):
 
 
 class EndpointProposal(Phase6ControlRecord):
-    # This breaking scheduler-deny policy invalidates consumed 1.0 approvals.
-    schema_version: Literal["1.1"]  # type: ignore[assignment]
+    # This breaking scheduler-duplication policy invalidates consumed 1.1 approvals.
+    schema_version: Literal["1.2"]  # type: ignore[assignment]
     name: Literal["forensic-image-community-phase6"]
     endpoint_type: Literal["QUEUE"] = "QUEUE"
     image_digest_reference: str = Field(pattern=IMAGE_DIGEST_PATTERN)
@@ -140,6 +140,7 @@ class EndpointProposal(Phase6ControlRecord):
     min_cuda_version: Literal["12.4"] = "12.4"
     workers_min: Literal[0] = 0
     workers_max: Literal[0, 1] = 1
+    maximum_observed_workers: Literal[0, 2] = 2
     idle_timeout_seconds: Literal[5] = 5
     scaler_type: Literal["QUEUE_DELAY"] = "QUEUE_DELAY"
     scaler_value: Literal[4] = 4
@@ -208,10 +209,15 @@ class EndpointProposal(Phase6ControlRecord):
         expected_bootstrap = self.operation == "checkpoint_bootstrap"
         if runtime.checkpoint_bootstrap_mode is not expected_bootstrap:
             raise ValueError("runtime checkpoint mode must match the approved operation")
+        expected_observed_ceiling = 0 if self.workers_max == 0 else 2
+        if self.maximum_observed_workers != expected_observed_ceiling:
+            raise ValueError(
+                "observed worker ceiling must match the locked or approved endpoint state"
+            )
         return self
 
     def locked(self) -> Self:
-        return self.model_copy(update={"workers_max": 0})
+        return self.model_copy(update={"workers_max": 0, "maximum_observed_workers": 0})
 
     def redacted_dict(self) -> dict[str, JsonValue]:
         payload = self.model_dump(mode="json")
@@ -231,11 +237,11 @@ class EndpointProposal(Phase6ControlRecord):
 
 
 class Phase6CostBudget(Phase6ControlRecord):
-    # This breaking continuation budget invalidates every consumed five-job approval.
-    schema_version: Literal["1.3"]  # type: ignore[assignment]
+    # This breaking continuation budget invalidates every consumed six-job approval.
+    schema_version: Literal["1.4"]  # type: ignore[assignment]
     starting_balance_usd: Decimal = Field(ge=0)
     incurred_phase6_spend_usd: Decimal = Field(ge=0)
-    paid_jobs_already_submitted: Literal[4] = 4
+    paid_jobs_already_submitted: Literal[5] = 5
     gpu_pool_id: Literal["AMPERE_24"] = "AMPERE_24"
     gpu_rate_per_hour_usd: Decimal = Field(gt=0)
     gpu_rate_per_second_usd: Decimal = Field(gt=0)
@@ -246,10 +252,11 @@ class Phase6CostBudget(Phase6ControlRecord):
     idle_seconds_per_job: Literal[5] = 5
     maximum_job_execution_seconds: Literal[600] = 600
     model_cache_download_billed_to_worker: Literal[False] = False
+    maximum_observed_workers_per_job: Literal[2] = 2
     estimated_container_disk_cost_usd: Decimal = Field(ge=0)
     planned_paid_jobs: Literal[2] = 2
     diagnostic_retries: Literal[0] = 0
-    maximum_paid_jobs: Literal[6] = 6
+    maximum_paid_jobs: Literal[7] = 7
     estimated_normal_cost_usd: Decimal = Field(ge=0)
     estimated_worst_case_cost_usd: Decimal = Field(ge=0)
     hard_maximum_spend_usd: Decimal = Field(default=Decimal("2.00"), gt=0, le=Decimal("2.00"))
@@ -269,10 +276,13 @@ class Phase6CostBudget(Phase6ControlRecord):
         if self.worst_case_cold_start_seconds_per_job < self.expected_cold_start_seconds_per_job:
             raise ValueError("worst-case cold start cannot be shorter than expected")
         normal_billable_seconds = Decimal(
-            self.expected_cold_start_seconds_per_job * self.planned_paid_jobs
-            + self.expected_bootstrap_execution_seconds
-            + self.expected_validation_execution_seconds
-            + self.idle_seconds_per_job * self.planned_paid_jobs
+            (
+                self.expected_cold_start_seconds_per_job * self.planned_paid_jobs
+                + self.expected_bootstrap_execution_seconds
+                + self.expected_validation_execution_seconds
+                + self.idle_seconds_per_job * self.planned_paid_jobs
+            )
+            * self.maximum_observed_workers_per_job
         )
         minimum_normal_cost = (
             normal_billable_seconds * self.gpu_rate_per_second_usd
@@ -289,6 +299,7 @@ class Phase6CostBudget(Phase6ControlRecord):
                 + self.maximum_job_execution_seconds
                 + self.idle_seconds_per_job
             )
+            * self.maximum_observed_workers_per_job
         )
         minimum_worst_case_cost = (
             worst_billable_seconds * self.gpu_rate_per_second_usd
@@ -456,7 +467,7 @@ def validate_endpoint_worker_assignments(
     if not isinstance(payload, dict) or not isinstance(payload.get("items"), list):
         raise ValueError("RunPod worker-list response must contain an items array")
     assignments = tuple(EndpointWorkerAssignment.model_validate(item) for item in payload["items"])
-    if len(assignments) > proposal.workers_max:
+    if len(assignments) > proposal.maximum_observed_workers:
         raise ValueError("RunPod worker count exceeds the approved endpoint ceiling")
     for assignment in assignments:
         if assignment.gpuTypeId not in proposal.approved_gpu_type_ids:
