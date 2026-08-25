@@ -1,6 +1,6 @@
 # ADR 0011: Queue-only RunPod Serverless validation
 
-- Status: Accepted for Phase 6; cloud execution pending
+- Status: Accepted for Phase 6; execution safety-stopped
 - Date: 2026-08-24
 - Updated: 2026-08-25
 - Scope: first controlled Community Forensics GPU validation
@@ -14,18 +14,32 @@ queue-based RunPod Serverless endpoint, but no billable operation is allowed
 until an exact configuration and cost proposal receives the exact approval
 phrase.
 
-Pull requests for Phases 2 through 6 preparation and release-verifier repair PR
-#16 are merged. Protected publication accepted source commit
-`4062b946a29288330242d108dbbed9ded4d9d736` as private Linux AMD64 image
-`ghcr.io/aiforram1-stack/forensic-image-community@sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437`.
+Pull requests for Phases 2 through 6 preparation, release-verifier repair PR
+#16 and cache-layout repair PR #18 are merged. Protected publication accepted
+repair source commit `847cad109e9d794e2060a3e116cb343a1de4daa3` as private
+Linux AMD64 image
+`ghcr.io/aiforram1-stack/forensic-image-community@sha256:8d6eb3b7b57f8cecc778d859ca62b3cfbd2fc3492f15f547f6890c30948f87c5`.
 The GitHub repository is public, the GHCR package remains private and
-source-linked, and every release gate passed. The checkpoint remains absent and
-CUDA has not run.
+source-linked, and every release gate passed. The checkpoint remains absent
+from the image and CUDA validation has not completed.
 
-The read-only RunPod audit reports a USD 10.00 balance, USD 0 recent
-Serverless/storage spend, and zero endpoints, workers, jobs, Pods, volumes,
-templates, or registry credentials. The account worker quota is not exposed by
-the available control surfaces. No RunPod resource has been created.
+One queue endpoint and its private-registry credential now exist. The first
+bootstrap failed closed at cache-layout resolution. After repair, protected
+publication and renewed exact cost approval, a second bootstrap worker entered
+a repeated start loop and RunPod introduced an unexpected replacement worker.
+The queued job was cancelled immediately. The endpoint is retained at minimum
+zero/maximum zero with no workers or jobs; no Pod or network volume exists. The
+observed balance delta is approximately USD 0.0085, below the USD 2.00 cap.
+The account worker quota remains unexposed by available control surfaces.
+
+The retained endpoint log later proved that the image entrypoint and repaired
+cache resolver completed before the pre-queue GPU fitness probe failed. Because
+that generic startup exception discarded the specific fitness error code,
+bootstrap mode now starts the RunPod request loop after cache validation and
+runs full fitness inside the one controlled bootstrap request. A failed probe is
+therefore returned as a structured error without creating a platform restart
+loop. Verified validation still requires the full fitness gate before starting
+its request loop.
 
 Current official RunPod documentation describes asynchronous queue operations
 (`/run`, `/status`, `/cancel`, `/retry`, `/purge-queue`, `/health`), scale-to-zero
@@ -136,10 +150,18 @@ enter repository code or shell history.
   startup diagnostic is conservatively counted as the one allowed diagnostic
   attempt, so the replacement digest and remaining budget require a refreshed
   proposal and exact cost approval before another worker starts.
-- The first RunPod mutation must wait for private-registry readiness planning,
-  current pricing, and exact user approval. Because no registry credential
-  exists and policy also gates credential creation, the stored credential ID
-  must be bound into a refreshed proposal and approved before endpoint creation.
+- The refreshed proposal was approved and bound to the repaired publication,
+  but its worker entered a repeated start loop and RunPod temporarily reported
+  an unexpected second replacement worker. The job remained queued and was
+  cancelled; no bootstrap receipt, checkpoint observation, CUDA fitness, model
+  load or inference result was produced. Available live logs showed repeated
+  system start events without application output. Retained endpoint logs later
+  isolated the failure to the pre-queue GPU fitness stage, motivating the
+  bootstrap-only deferred-fitness repair without weakening verified validation.
+- Both previous approvals are consumed for execution purposes. The retained
+  endpoint must remain maximum zero until a refreshed proposal and budget receive
+  the exact approval phrase. The three-paid-job ceiling is a cap, not permission
+  to bypass the repeated-worker or unexpected-second-worker stop conditions.
 - Bootstrap requires a manifest update and second protected image publication
   before final validation, adding review latency but binding validation to the
   observed checkpoint.
@@ -154,6 +176,7 @@ enter repository code or shell history.
 - [RunPod operation reference](https://docs.runpod.io/serverless/endpoints/operation-reference)
 - [RunPod job states](https://docs.runpod.io/serverless/endpoints/job-states)
 - [RunPod endpoint settings](https://docs.runpod.io/serverless/endpoints/endpoint-configurations)
+- [RunPod Serverless logs](https://docs.runpod.io/serverless/development/logs)
 - [RunPod Hugging Face model caching](https://docs.runpod.io/serverless/development/huggingface-models)
 - [Community Forensics source](https://github.com/JeongsooP/Community-Forensics)
 - [Pinned Community Forensics model](https://huggingface.co/OwensLab/commfor-model-384/tree/6076002bf0d9dd37537f965ee2f06f826c333b61)

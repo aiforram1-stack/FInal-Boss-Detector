@@ -23,10 +23,13 @@ Current status (2026-08-25):
   merge commit `4062b946a29288330242d108dbbed9ded4d9d736` passed every gate for
   immutable Linux AMD64 digest
   `sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437`.
-- [ ] Phase 6 preparation was merged by GitHub PR #10 and is tracked by issue
-  #9. No real GPU validation has run. RunPod still has no endpoint, worker,
-  queued/running job, Pod, volume, template, or registry credential. Cloud
-  mutation remains behind the exact cost-approval phrase.
+- [ ] Phase 6 preparation PR #10 and cache-layout repair PR #18 are merged and
+  tracked by issue #9. The queue endpoint and private-registry credential now
+  exist, but the endpoint is safety-locked at minimum zero/maximum zero with no
+  workers or jobs. Two bootstrap attempts were cancelled before inference; no
+  observational bootstrap receipt or real GPU validation exists. Another paid
+  worker requires a diagnosed, reviewable repair, refreshed immutable release
+  evidence and a newly approved exact proposal.
 - [ ] Phase 7 and later are not authorized.
 
 ## Mission and first vertical slice
@@ -373,31 +376,42 @@ must be merged and published from protected `main`. PRs #2, #4, #6, #8, and
 approval, bootstrap, manifest update, republishing, GPU validation, billing,
 and the final safety lock.
 
-Execution status (2026-08-25): the user approved the canonically hashed USD
-1.20 conservative / USD 2.00 hard-cap proposal. One queue endpoint was created
-with `AMPERE_24`, one GPU, minimum zero, maximum one, and the 24 GB Blackwell
-MIG type excluded. The private GHCR credential and pinned RunPod model reference
-were attached. The first bootstrap job was cancelled and the endpoint locked at
-minimum zero/maximum zero when worker startup found that the cached checkpoint
-was not backed by the model-local blob path required by the pre-repair resolver.
-No checkpoint hash, CUDA fitness, model load, or inference result was produced.
-No Pod or network volume exists. The replacement image adds bounded support for
-RunPod's documented snapshot-local representation, must pass a CPU fixture, and
-must complete protected publication before bootstrap resumes. The next receipt
-must record the observed cache layout.
+Execution status (2026-08-25): the user approved both the initial and refreshed
+canonically hashed USD 1.20 conservative / USD 2.00 hard-cap proposals. One
+queue endpoint exists with `AMPERE_24`, one GPU, minimum zero, the 24 GB
+Blackwell MIG type excluded, the private GHCR credential and the pinned RunPod
+model reference. The first bootstrap was cancelled after the pre-repair cache
+resolver rejected the host layout. Cache-layout repair PR #18 then merged and
+protected publication passed every release gate for source commit
+`847cad109e9d794e2060a3e116cb343a1de4daa3` and immutable digest
+`sha256:8d6eb3b7b57f8cecc778d859ca62b3cfbd2fc3492f15f547f6890c30948f87c5`.
 
-Protected release gates are complete for pre-repair source commit
-`6e969525bbf7bd09e3af5788ba74fee92e40ddc9` and immutable digest
-`sha256:2f91298f6f61f59beac07c0e0f7f5bd852c0ea6c4f37073b917a82601b39796a`.
+The refreshed bootstrap against that repaired digest was also cancelled. One
+A5000 worker entered a repeated container-start loop, and RunPod introduced a
+replacement while retaining the unhealthy worker, making the observable total
+two despite configured maximum one. The job remained queued, so no checkpoint
+receipt, CUDA fitness, model load or inference result was produced. The job was
+cancelled immediately and the endpoint restored to minimum zero/maximum zero;
+subsequent reads confirmed zero workers and zero queued/running jobs. No Pod or
+network volume exists. Live worker logs established the restart loop. RunPod's
+retained endpoint log then confirmed that the image entrypoint and repaired
+cache resolver succeeded, but the pre-queue GPU fitness probe failed before the
+RunPod request loop could accept the bootstrap job. The generic startup
+exception did not preserve the fitness error code. The reviewable repair
+therefore defers full GPU fitness only for bootstrap mode into the already
+controlled bootstrap request, where failure is returned as a structured worker
+error; verified validation continues to require full fitness before the request
+loop starts.
+
 The GitHub repository is public while the source-linked GHCR package remains
-private. RunPod MCP and `runpodctl` are authenticated, the private GHCR
-credential exists, and the endpoint is present but safety-locked at zero. Cloud
-execution is blocked on review, merge, and protected publication of the cache
-layout repair. The controlled no-job startup diagnostic is treated as the one
-allowed diagnostic attempt, so a refreshed proposal binding the replacement
-digest and remaining budget must receive the exact cost-approval phrase before
-the endpoint is unlocked. The account worker quota remains unexposed by current
-read-only surfaces.
+private. RunPod MCP and `runpodctl` are authenticated. The balance delta records
+approximately USD 0.0085 total Phase 6 spend, safely below the USD 2.00 cap;
+RunPod's itemized Serverless billing was still lagging the balance at the final
+read. Issue #9 contains the sanitized incident. The endpoint remains present
+and safety-locked at zero. Another paid execution is blocked on diagnosis, a
+reviewable repair if needed, protected publication of a new immutable digest,
+a refreshed proposal/budget and the exact approval phrase. The account worker
+quota remains unexposed by current read-only surfaces.
 
 Deliverables:
 

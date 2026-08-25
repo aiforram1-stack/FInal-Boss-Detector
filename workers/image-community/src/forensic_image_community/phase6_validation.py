@@ -111,6 +111,13 @@ class Phase6ValidationService:
         self._startup_phase6_checks: dict[str, bool] | None = None
         self._worker_initialization_ms: int | None = None
 
+    @staticmethod
+    def _fitness_failure_code(readiness: FitnessResult) -> WorkerErrorCode:
+        try:
+            return WorkerErrorCode(readiness.error_code or WorkerErrorCode.WORKER_NOT_READY.value)
+        except ValueError:
+            return WorkerErrorCode.WORKER_NOT_READY
+
     def assert_startup_ready(self) -> dict[str, bool]:
         """Fail before the RunPod loop if this release cannot accept Phase 6 work."""
 
@@ -121,10 +128,11 @@ class Phase6ValidationService:
             )
         readiness = self.fitness.check()
         if not readiness.ready:
+            error_code = self._fitness_failure_code(readiness)
             raise WorkerError(
                 WorkerErrorCode.WORKER_NOT_READY,
-                "Phase 6 startup fitness checks failed.",
-                internal_detail=readiness.error_code,
+                f"Phase 6 startup fitness checks failed ({error_code.value}).",
+                internal_detail=error_code.value,
             )
         runtime = self._runtime_versions(load=True)
         checks = self._detailed_fitness_checks(
@@ -246,10 +254,11 @@ class Phase6ValidationService:
         if request.perform_basic_load:
             readiness = self.fitness.check()
             if not readiness.ready:
+                error_code = self._fitness_failure_code(readiness)
                 raise WorkerError(
-                    WorkerErrorCode.WORKER_NOT_READY,
-                    "Bootstrap runtime fitness checks failed.",
-                    internal_detail=readiness.error_code,
+                    error_code,
+                    f"Bootstrap runtime fitness checks failed ({error_code.value}).",
+                    internal_detail=error_code.value,
                 )
             readiness_checks = readiness.checks
             runtime_versions = self._runtime_versions(load=True)

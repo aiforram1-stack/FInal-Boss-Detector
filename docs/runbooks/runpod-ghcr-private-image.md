@@ -35,17 +35,22 @@ allowed: the planned bootstrap and validation jobs plus one explicitly recorded
 transient diagnostic retry. Premium GPUs, Pods, and network volumes require
 separate approval and are not part of this runbook.
 
+The refreshed post-repair budget deliberately set diagnostic retries to zero.
+Its cancelled bootstrap and unexpected second worker trigger mandatory stop;
+the theoretical three-job ceiling is not permission to submit another job.
+
 ## Immutable release verification
 
-The accepted Phase 6 bootstrap image is:
+The current Phase 6 bootstrap image is the protected publication of cache-layout
+repair PR #18:
 
 ```text
-ghcr.io/aiforram1-stack/forensic-image-community@sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437
+ghcr.io/aiforram1-stack/forensic-image-community@sha256:8d6eb3b7b57f8cecc778d859ca62b3cfbd2fc3492f15f547f6890c30948f87c5
 ```
 
-It is Linux AMD64, 6,629,471,788 bytes, and binds source commit
-`4062b946a29288330242d108dbbed9ded4d9d736`. Protected run
-[`32769244299`](https://github.com/aiforram1-stack/FInal-Boss-Detector/actions/runs/32769244299)
+It is Linux AMD64, 6,629,477,656 bytes, and binds source commit
+`847cad109e9d794e2060a3e116cb343a1de4daa3`. Protected run
+[`32823075408`](https://github.com/aiforram1-stack/FInal-Boss-Detector/actions/runs/32823075408)
 passed SBOM, provenance, GitHub attestation, vulnerability, source-link,
 pull-by-digest, content, mock-smoke, and final fail-closed gates. The checkpoint
 is absent and real GPU inference is marked not run.
@@ -59,12 +64,12 @@ marked not run.
 From a trusted authenticated workstation:
 
 ```bash
-export IMAGE_DIGEST_REFERENCE='ghcr.io/aiforram1-stack/forensic-image-community@sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437'
+export IMAGE_DIGEST_REFERENCE='ghcr.io/aiforram1-stack/forensic-image-community@sha256:8d6eb3b7b57f8cecc778d859ca62b3cfbd2fc3492f15f547f6890c30948f87c5'
 export GITHUB_REPOSITORY='aiforram1-stack/FInal-Boss-Detector'
 make image-community-attestation-verify
 scripts/verify_published_image.sh \
   "${IMAGE_DIGEST_REFERENCE}" \
-  '4062b946a29288330242d108dbbed9ded4d9d736' \
+  '847cad109e9d794e2060a3e116cb343a1de4daa3' \
   'https://github.com/aiforram1-stack/FInal-Boss-Detector'
 ```
 
@@ -72,14 +77,18 @@ Never substitute `latest`, `main`, `stable`, or a source-SHA tag for the digest.
 
 ## Current RunPod readiness audit
 
-The 2026-08-25 read-only audit found:
+The final 2026-08-25 safety audit found:
 
-- balance: USD 10.00;
-- recent Serverless, Pod, and network-volume spend: USD 0;
-- endpoints, workers, queued/running jobs, Pods, network volumes, templates,
-  and registry credentials: zero;
-- billable storage and competing resources: none observed;
-- local `runpodctl` version: 2.11.0, but not authenticated;
+- balance: USD 9.9915030333, for an observed USD 0.0084969667 Phase 6 balance
+  delta from the USD 10.00 starting balance;
+- itemized Serverless billing still lagged the balance and reported USD
+  0.003202941734343767 at the final read;
+- one retained queue endpoint, safety-locked at minimum zero/maximum zero;
+- zero endpoint workers and zero queued/running jobs;
+- zero Pods and zero network volumes;
+- one endpoint-bound template and one private-registry credential;
+- no billable network storage or competing resources observed;
+- local `runpodctl` version: 2.11.0 and authenticated;
 - account worker quota: not exposed by the connected v2/MCP or visible account
   settings and therefore unverified.
 
@@ -122,6 +131,24 @@ receipt must record the observed layout. Treat the controlled no-job startup as
 the one allowed diagnostic attempt: bind the replacement digest and remaining
 budget into a refreshed proposal and obtain the exact cost-approval phrase
 again before starting another worker.
+
+The refreshed proposal received that exact approval and deployed repair source
+`847cad109e9d794e2060a3e116cb343a1de4daa3` by immutable digest. During its one
+bootstrap submission, an A5000 worker entered a repeated container-start loop.
+RunPod retained that unhealthy worker while introducing a replacement, so the
+observable worker total became two despite configured maximum one. The job
+never left `IN_QUEUE`; the controller cancelled it and restored maximum zero.
+No bootstrap receipt, checkpoint observation, CUDA fitness, model load or
+inference result exists. Live logs showed repeated system start events without
+application output. Worker logs disappeared when the workers terminated;
+RunPod's retained endpoint log subsequently showed that the image entrypoint and
+repaired cache resolver succeeded, followed by a pre-queue GPU fitness failure.
+The generic exception omitted the underlying fitness error code. Bootstrap mode
+therefore defers full GPU fitness into the controlled bootstrap request, where a
+failure is returned as a structured worker error; verified validation keeps the
+pre-queue fitness gate. This is the runbook's
+repeated-worker/unexpected-second-worker stop condition. Do not unlock the
+endpoint under either prior approval.
 
 RunPod's supported cached-model control is `runpodctl` 2.4.0 or newer using
 `serverless create --model-reference`. The argument is the full Hugging Face URL
@@ -230,6 +257,12 @@ After review and merge, protected publication must create and verify a new
 immutable image digest whose manifest contains the observed checkpoint hash
 while the checkpoint bytes remain absent.
 
+Current status: both submitted bootstrap jobs were cancelled before handler
+execution, so this job remains incomplete and the manifest must not be promoted to
+`OBSERVED_BOOTSTRAP_HASH`. Resume only after the retained-log diagnosis, the
+reviewable repair is republished, and a fresh proposal receives the exact
+cost-approval phrase.
+
 ## Job 2: complete GPU validation
 
 First require an empty queue and zero active workers, set maximum workers to
@@ -266,6 +299,10 @@ At completion or failure:
 6. leave the endpoint present but unable to start a worker unless the user asks
    for deletion.
 
+The 2026-08-25 failure cleanup satisfies this lock: minimum and maximum workers
+are zero, the queue and in-progress count are zero, no workers are listed, and
+no Pod or network volume exists. The endpoint remains present for diagnosis.
+
 Only sanitized, small, versioned validation summaries may enter Git. Endpoint
 credentials, API keys, registry identifiers, signed URLs, full logs, model
 bytes, cache paths, full endpoint IDs, and private evidence stay out of Git.
@@ -273,4 +310,5 @@ bytes, cache paths, full endpoint IDs, and private evidence stay out of Git.
 The queue lifecycle and state names follow RunPod's current official
 [operation reference](https://docs.runpod.io/serverless/endpoints/operation-reference),
 [job-state reference](https://docs.runpod.io/serverless/endpoints/job-states),
-and [endpoint settings](https://docs.runpod.io/serverless/endpoints/endpoint-configurations).
+[endpoint settings](https://docs.runpod.io/serverless/endpoints/endpoint-configurations),
+and [log-retention guidance](https://docs.runpod.io/serverless/development/logs).

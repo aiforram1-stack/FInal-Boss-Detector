@@ -83,6 +83,18 @@ same contracts and job service, and contain no stored media fixture. Builds must
 use the repository root so `.dockerignore` protects the real context and only
 shared contracts plus worker source are copied.
 
+Phase 6 runtime status (2026-08-25): protected publication of the materialized
+cache-layout repair passed, but its approved bootstrap worker entered a repeated
+container-start loop and RunPod introduced an unexpected replacement worker.
+The queued job was cancelled before handler execution, no receipt or inference
+result exists, and the endpoint is locked at minimum zero/maximum zero. Do not
+resume a paid worker until the retained-log diagnosis, reviewable repair, new
+immutable publication and refreshed exact approval exist. The retained log
+confirmed that the entrypoint and cache resolution completed before the
+pre-queue GPU fitness probe failed. Bootstrap mode now performs that probe only
+inside the controlled bootstrap job so a failure is returned as a structured
+error; verified validation still probes before starting its request loop.
+
 The pull-request workflow builds and mock-smokes both targets without publishing.
 The protected main/manual workflow pushes only `sha-<full-commit>` to private
 GHCR and then treats the returned digest as authoritative. It adds an SBOM,

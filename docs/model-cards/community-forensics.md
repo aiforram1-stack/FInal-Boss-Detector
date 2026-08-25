@@ -43,6 +43,19 @@ exact snapshot containment, single-checkpoint, byte-length, SHA-256, and
 bounded safetensors verification. The next receipt must identify the observed
 layout rather than infer it from the original failure.
 
+Protected publication of that repair passed every release gate, but the
+renewed bootstrap attempt did not produce a receipt. One worker entered a
+repeated container-start loop and RunPod introduced an unexpected replacement
+worker; the job remained queued and was cancelled under the Phase 6 safety
+policy. No checkpoint bytes were observed by a completed job, CUDA fitness was
+not established, and no model load or inference result was returned. The
+retained endpoint log later confirmed that the image entrypoint and repaired
+cache resolver succeeded, but the pre-queue GPU fitness probe failed before the
+bootstrap request could be accepted. The endpoint remains locked at zero. The
+reviewable repair defers bootstrap-mode fitness into that one controlled request
+so any failure is structured, while verified validation still fails closed at
+startup. A new immutable publication and fresh exact cost approval are required.
+
 ## Inputs and preprocessing
 
 The worker accepts JPEG, PNG, and WebP after independent byte-signature and
