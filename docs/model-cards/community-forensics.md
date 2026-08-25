@@ -54,7 +54,9 @@ cache resolver succeeded, but the pre-queue GPU fitness probe failed before the
 bootstrap request could be accepted. The endpoint remains locked at zero. The
 reviewable repair defers bootstrap-mode fitness into that one controlled request
 so any failure is structured, while verified validation still fails closed at
-startup. A new immutable publication and fresh exact cost approval are required.
+startup. Repair PR #19 and its protected publication passed every release gate.
+The endpoint remains locked at zero pending the refreshed exact cost approval;
+the continuation permits one bootstrap and one final validation with no retry.
 
 ## Inputs and preprocessing
 

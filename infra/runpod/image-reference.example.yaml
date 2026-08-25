@@ -4,17 +4,22 @@ authorization:
   exact_phrase_required: APPROVE PHASE 6 SERVERLESS COST
   approved: false
   maximum_spend_usd: "2.00"
-  maximum_paid_jobs: 3
+  maximum_paid_jobs: 4
+paid_job_cap:
+  authorized: true
+  paid_jobs_already_submitted: 2
+  remaining_paid_jobs: 2
+  diagnostic_retries: 0
 readiness:
-  endpoint_proposal_hash_status: BLOCKED_MISSING_REGISTRY_CREDENTIAL_ID
-  registry_credential_present: false
-  runpodctl_authenticated: false
+  endpoint_proposal_hash_status: BLOCKED_PENDING_PROTECTED_PUBLICATION_AND_COST_APPROVAL
+  registry_credential_present: true
+  runpodctl_authenticated: true
   account_worker_quota_verified: false
 image:
-  digest_reference: "ghcr.io/aiforram1-stack/forensic-image-community@sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437"
-  source_commit: "4062b946a29288330242d108dbbed9ded4d9d736"
+  digest_reference: "ghcr.io/aiforram1-stack/forensic-image-community@sha256:816dbb030fdc32dc3f3dcd3855a7f617a2f49ce3145ea543e35777d3b514e833"
+  source_commit: "425271597fce2d69f59f9e34ea0d9e6b257113e5"
   platform: linux/amd64
-  size_bytes: 6629471788
+  size_bytes: 6629481513
   package_visibility: private
   checkpoint_included: false
 template:
@@ -35,9 +40,9 @@ template:
     IMAGE_COMMUNITY_PHASE6_ONLY_MODE: "true"
     IMAGE_COMMUNITY_VALIDATION_OUTPUT_MODE: inline_sanitized
     IMAGE_COMMUNITY_REQUIRE_CUDA: "true"
-    IMAGE_COMMUNITY_CONTAINER_DIGEST: "sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437"
-    IMAGE_COMMUNITY_PROJECT_SOURCE_COMMIT: "4062b946a29288330242d108dbbed9ded4d9d736"
-    IMAGE_COMMUNITY_ENDPOINT_RELEASE_IDENTITY: phase6-bootstrap-4062b946
+    IMAGE_COMMUNITY_CONTAINER_DIGEST: "sha256:816dbb030fdc32dc3f3dcd3855a7f617a2f49ce3145ea543e35777d3b514e833"
+    IMAGE_COMMUNITY_PROJECT_SOURCE_COMMIT: "425271597fce2d69f59f9e34ea0d9e6b257113e5"
+    IMAGE_COMMUNITY_ENDPOINT_RELEASE_IDENTITY: phase6-bootstrap-42527159
     HF_HUB_OFFLINE: "1"
     TRANSFORMERS_OFFLINE: "1"
 endpoint:
@@ -50,20 +55,14 @@ endpoint:
   gpu_pool_ids: [AMPERE_24]
   observed_gpu_type_ids:
     - NVIDIA GeForce RTX 3090
-    - NVIDIA L4
     - NVIDIA RTX A5000
-    - NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb
   approved_gpu_type_ids:
     - NVIDIA GeForce RTX 3090
-    - NVIDIA L4
     - NVIDIA RTX A5000
-  excluded_gpu_type_ids:
-    - NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb
+  excluded_gpu_type_ids: []
   observed_availability:
     NVIDIA GeForce RTX 3090: LOW
-    NVIDIA L4: LOW
     NVIDIA RTX A5000: HIGH
-    NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb: HIGH
   gpu_count: 1
   min_cuda_version: "12.4"
   workers_min: 0
@@ -77,8 +76,10 @@ endpoint:
   data_center_ids: []
   network_volume_ids: []
 cost_budget:
-  schema_version: "1.0"
-  starting_balance_usd: "10.00"
+  schema_version: "1.1"
+  starting_balance_usd: "9.9915030333"
+  incurred_phase6_spend_usd: "0.0084969667"
+  paid_jobs_already_submitted: 2
   gpu_pool_id: AMPERE_24
   gpu_rate_per_hour_usd: "0.69"
   gpu_rate_per_second_usd: "0.0001916667"
@@ -90,17 +91,20 @@ cost_budget:
   maximum_job_execution_seconds: 600
   model_cache_download_billed_to_worker: false
   planned_paid_jobs: 2
-  diagnostic_retries: 1
-  maximum_paid_jobs: 3
+  diagnostic_retries: 0
+  maximum_paid_jobs: 4
   estimated_container_disk_cost_usd: "0.01"
-  estimated_normal_cost_usd: "0.35"
-  estimated_worst_case_cost_usd: "1.20"
+  estimated_normal_cost_usd: "0.36"
+  estimated_worst_case_cost_usd: "0.72"
   hard_maximum_spend_usd: "2.00"
 cost_breakdown:
   estimated_bootstrap_compute_usd: "0.1505"
   estimated_validation_compute_usd: "0.1850"
-  estimated_normal_compute_usd: "0.3355"
-  estimated_worst_case_compute_usd: "1.04"
+  estimated_remaining_normal_compute_usd: "0.3355"
+  estimated_remaining_worst_case_compute_usd: "0.6919"
+  incurred_phase6_spend_usd: "0.008497"
+  estimated_total_normal_usd: "0.3540"
+  estimated_total_worst_case_usd: "0.7104"
 final_lock:
   workers_min: 0
   workers_max: 0

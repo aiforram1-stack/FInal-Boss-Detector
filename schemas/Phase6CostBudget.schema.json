@@ -2,11 +2,8 @@
   "additionalProperties": false,
   "properties": {
     "diagnostic_retries": {
-      "default": 1,
-      "enum": [
-        0,
-        1
-      ],
+      "const": 0,
+      "default": 0,
       "title": "Diagnostic Retries",
       "type": "integer"
     },
@@ -120,6 +117,19 @@
       "title": "Idle Seconds Per Job",
       "type": "integer"
     },
+    "incurred_phase6_spend_usd": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Incurred Phase6 Spend Usd"
+    },
     "maximum_job_execution_seconds": {
       "const": 600,
       "default": 600,
@@ -127,8 +137,8 @@
       "type": "integer"
     },
     "maximum_paid_jobs": {
-      "const": 3,
-      "default": 3,
+      "const": 4,
+      "default": 4,
       "title": "Maximum Paid Jobs",
       "type": "integer"
     },
@@ -138,6 +148,12 @@
       "title": "Model Cache Download Billed To Worker",
       "type": "boolean"
     },
+    "paid_jobs_already_submitted": {
+      "const": 2,
+      "default": 2,
+      "title": "Paid Jobs Already Submitted",
+      "type": "integer"
+    },
     "planned_paid_jobs": {
       "const": 2,
       "default": 2,
@@ -145,7 +161,7 @@
       "type": "integer"
     },
     "schema_version": {
-      "const": "1.0",
+      "const": "1.1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -173,6 +189,7 @@
   "required": [
     "schema_version",
     "starting_balance_usd",
+    "incurred_phase6_spend_usd",
     "gpu_rate_per_hour_usd",
     "gpu_rate_per_second_usd",
     "expected_cold_start_seconds_per_job",

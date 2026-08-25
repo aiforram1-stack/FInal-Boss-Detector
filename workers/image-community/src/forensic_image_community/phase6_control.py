@@ -221,7 +221,11 @@ class EndpointProposal(Phase6ControlRecord):
 
 
 class Phase6CostBudget(Phase6ControlRecord):
+    # This breaking continuation budget intentionally invalidates consumed 1.0 approvals.
+    schema_version: Literal["1.1"]  # type: ignore[assignment]
     starting_balance_usd: Decimal = Field(ge=0)
+    incurred_phase6_spend_usd: Decimal = Field(ge=0)
+    paid_jobs_already_submitted: Literal[2] = 2
     gpu_pool_id: Literal["AMPERE_24"] = "AMPERE_24"
     gpu_rate_per_hour_usd: Decimal = Field(gt=0)
     gpu_rate_per_second_usd: Decimal = Field(gt=0)
@@ -234,8 +238,8 @@ class Phase6CostBudget(Phase6ControlRecord):
     model_cache_download_billed_to_worker: Literal[False] = False
     estimated_container_disk_cost_usd: Decimal = Field(ge=0)
     planned_paid_jobs: Literal[2] = 2
-    diagnostic_retries: Literal[0, 1] = 1
-    maximum_paid_jobs: Literal[3] = 3
+    diagnostic_retries: Literal[0] = 0
+    maximum_paid_jobs: Literal[4] = 4
     estimated_normal_cost_usd: Decimal = Field(ge=0)
     estimated_worst_case_cost_usd: Decimal = Field(ge=0)
     hard_maximum_spend_usd: Decimal = Field(default=Decimal("2.00"), gt=0, le=Decimal("2.00"))
@@ -245,8 +249,13 @@ class Phase6CostBudget(Phase6ControlRecord):
         derived_rate = self.gpu_rate_per_hour_usd / Decimal(3600)
         if abs(derived_rate - self.gpu_rate_per_second_usd) > Decimal("0.000000001"):
             raise ValueError("hourly and per-second GPU rates are inconsistent")
-        if self.planned_paid_jobs + self.diagnostic_retries > self.maximum_paid_jobs:
-            raise ValueError("planned jobs exceed the Phase 6 paid-job cap")
+        if (
+            self.paid_jobs_already_submitted + self.planned_paid_jobs + self.diagnostic_retries
+            != self.maximum_paid_jobs
+        ):
+            raise ValueError(
+                "consumed and planned jobs must exactly fill the authorized Phase 6 cap"
+            )
         if self.worst_case_cold_start_seconds_per_job < self.expected_cold_start_seconds_per_job:
             raise ValueError("worst-case cold start cannot be shorter than expected")
         normal_billable_seconds = Decimal(
@@ -258,11 +267,13 @@ class Phase6CostBudget(Phase6ControlRecord):
         minimum_normal_cost = (
             normal_billable_seconds * self.gpu_rate_per_second_usd
             + self.estimated_container_disk_cost_usd
+            + self.incurred_phase6_spend_usd
         )
         if self.estimated_normal_cost_usd < minimum_normal_cost:
             raise ValueError("normal estimate understates the configured billable duration")
+        remaining_paid_job_slots = self.maximum_paid_jobs - self.paid_jobs_already_submitted
         worst_billable_seconds = Decimal(
-            self.maximum_paid_jobs
+            remaining_paid_job_slots
             * (
                 self.worst_case_cold_start_seconds_per_job
                 + self.maximum_job_execution_seconds
@@ -272,6 +283,7 @@ class Phase6CostBudget(Phase6ControlRecord):
         minimum_worst_case_cost = (
             worst_billable_seconds * self.gpu_rate_per_second_usd
             + self.estimated_container_disk_cost_usd
+            + self.incurred_phase6_spend_usd
         )
         if self.estimated_worst_case_cost_usd < minimum_worst_case_cost:
             raise ValueError("worst-case estimate understates the configured billable cap")
@@ -279,7 +291,8 @@ class Phase6CostBudget(Phase6ControlRecord):
             raise ValueError("normal estimate cannot exceed the worst-case estimate")
         if self.estimated_worst_case_cost_usd > self.hard_maximum_spend_usd:
             raise ValueError("estimated worst-case cost exceeds the Phase 6 cap")
-        if self.starting_balance_usd < self.estimated_worst_case_cost_usd:
+        future_worst_case_cost = self.estimated_worst_case_cost_usd - self.incurred_phase6_spend_usd
+        if self.starting_balance_usd < future_worst_case_cost:
             raise ValueError("RunPod balance does not cover the worst-case estimate")
         return self
 
@@ -473,9 +486,11 @@ class Phase6QueueController:
             raise PermissionError("cost approval does not match the exact endpoint proposal")
         if request.operation != proposal.operation:
             raise PermissionError("request operation does not match the approved proposal")
-        if paid_jobs_already_submitted < 0 or (
-            paid_jobs_already_submitted >= budget.maximum_paid_jobs
-        ):
+        if paid_jobs_already_submitted < budget.paid_jobs_already_submitted:
+            raise PermissionError(
+                "paid-job count is lower than the approved Phase 6 budget baseline"
+            )
+        if paid_jobs_already_submitted >= budget.maximum_paid_jobs:
             raise PermissionError("Phase 6 paid-job cap has been reached")
         receipt = QueueJobReceipt.model_validate(
             self.transport.submit(build_async_job_payload(request))
@@ -531,15 +546,8 @@ class Phase6QueueController:
             raise PermissionError("cost approval does not match the exact endpoint proposal")
         if previous.status not in {QueueJobState.FAILED, QueueJobState.TIMED_OUT}:
             raise ValueError("RunPod permits retry only for failed or timed-out jobs")
-        if diagnostic_retries_already_submitted != 0:
-            raise PermissionError("the single Phase 6 diagnostic retry has been used")
-        if budget.diagnostic_retries != 1:
-            raise PermissionError("the approved Phase 6 budget does not permit a retry")
-        if paid_jobs_already_submitted >= budget.maximum_paid_jobs:
-            raise PermissionError("Phase 6 paid-job cap has been reached")
-        receipt = QueueJobReceipt.model_validate(self.transport.retry(previous.id))
-        assert_sanitized_result(receipt.model_dump(mode="json"))
-        return receipt
+        del paid_jobs_already_submitted, diagnostic_retries_already_submitted
+        raise PermissionError("the approved Phase 6 continuation budget permits no retries")
 
     def purge_pending_queue(self) -> JsonValue:
         payload = self.transport.purge_queue()

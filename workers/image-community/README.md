@@ -94,6 +94,10 @@ confirmed that the entrypoint and cache resolution completed before the
 pre-queue GPU fitness probe failed. Bootstrap mode now performs that probe only
 inside the controlled bootstrap job so a failure is returned as a structured
 error; verified validation still probes before starting its request loop.
+Repair PR #19 and its protected publication passed every release gate. Two paid
+submissions have been consumed; the authorized continuation permits exactly one
+bootstrap and one final-validation submission, no retry, no fifth submission,
+and no increase to the USD 2.00 hard stop.
 
 The pull-request workflow builds and mock-smokes both targets without publishing.
 The protected main/manual workflow pushes only `sha-<full-commit>` to private
