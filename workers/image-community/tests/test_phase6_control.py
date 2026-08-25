@@ -25,13 +25,14 @@ from forensic_image_community.phase6_control import (
     build_async_job_payload,
     canonical_record_sha256,
     parse_endpoint_health,
+    validate_endpoint_worker_assignments,
 )
 from pydantic import ValidationError
 
 
 def proposal(**overrides: object) -> EndpointProposal:
     values: dict[str, object] = {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "name": "forensic-image-community-phase6",
         "image_digest_reference": f"ghcr.io/owner/worker@sha256:{'a' * 64}",
         "source_commit": "b" * 40,
@@ -156,6 +157,24 @@ def test_endpoint_proposal_is_queue_only_digest_pinned_and_lockable() -> None:
         )
     with pytest.raises(ValidationError, match="completely partitioned"):
         proposal(excluded_gpu_type_ids=())
+    with pytest.raises(ValidationError, match="scheduler-observed denied"):
+        proposal(
+            observed_gpu_type_ids=(
+                "NVIDIA GeForce RTX 3090",
+                "NVIDIA L4",
+                "NVIDIA RTX A5000",
+            ),
+            approved_gpu_type_ids=(
+                "NVIDIA GeForce RTX 3090",
+                "NVIDIA L4",
+                "NVIDIA RTX A5000",
+            ),
+            excluded_gpu_type_ids=(),
+        )
+    legacy_values = proposal().model_dump(mode="json")
+    legacy_values["schema_version"] = "1.0"
+    with pytest.raises(ValidationError):
+        EndpointProposal.model_validate(legacy_values)
     with pytest.raises(ValidationError):
         proposal(
             runpod_model_reference=(f"https://huggingface.co/OwensLab/commfor-model-384:{'c' * 40}")
@@ -212,8 +231,55 @@ def test_cost_budget_rejects_more_than_two_dollars_or_insufficient_balance() -> 
 
 def test_async_payload_uses_run_policy_not_runsync() -> None:
     payload = build_async_job_payload(bootstrap_request())
-    assert payload["input"]["operation"] == "checkpoint_bootstrap"  # type: ignore[index]
+    request_input = payload["input"]
+    assert isinstance(request_input, dict)
+    assert request_input["operation"] == "checkpoint_bootstrap"
     assert payload["policy"] == {"executionTimeout": 600_000, "ttl": 1_800_000}
+
+
+def test_worker_assignments_require_approved_gpu_digest_count_and_ceiling() -> None:
+    configured = proposal()
+    approved_worker: dict[str, object] = {
+        "id": "worker-1",
+        "status": "INITIALIZING",
+        "gpuTypeId": "NVIDIA RTX A5000",
+        "gpuCount": 1,
+        "image": configured.image_digest_reference,
+        "futureProviderField": "preserved-by-provider-ignored-by-contract",
+    }
+    approved = {"items": [approved_worker]}
+    assert validate_endpoint_worker_assignments(configured, approved)[0].gpuTypeId == (
+        "NVIDIA RTX A5000"
+    )
+    denied = {
+        "items": [
+            {
+                **approved_worker,
+                "gpuTypeId": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+            }
+        ]
+    }
+    with pytest.raises(ValueError, match="outside the approved allowlist"):
+        validate_endpoint_worker_assignments(configured, denied)
+    with pytest.raises(ValueError, match="GPU count differs"):
+        validate_endpoint_worker_assignments(
+            configured,
+            {"items": [{**approved_worker, "gpuCount": 2}]},
+        )
+    with pytest.raises(ValueError, match="immutable digest"):
+        validate_endpoint_worker_assignments(
+            configured,
+            {
+                "items": [
+                    {
+                        **approved_worker,
+                        "image": f"ghcr.io/owner/worker@sha256:{'f' * 64}",
+                    }
+                ]
+            },
+        )
+    with pytest.raises(ValueError, match="worker count exceeds"):
+        validate_endpoint_worker_assignments(configured.locked(), approved)
 
 
 class FakeTransport:

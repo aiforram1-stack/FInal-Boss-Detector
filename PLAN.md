@@ -23,18 +23,20 @@ Current status (2026-08-25):
   merge commit `4062b946a29288330242d108dbbed9ded4d9d736` passed every gate for
   immutable Linux AMD64 digest
   `sha256:190618d75aad8dd38bac264c5a1eb48e9b5ee248262f25c49c67e14ec5a44437`.
-- [ ] Phase 6 preparation PR #10, cache-layout repair PR #18, and
-  bootstrap-fitness repair PR #19 are merged and tracked by issue #9. Protected
-  publication for PR #19 passed every gate at source commit
-  `425271597fce2d69f59f9e34ea0d9e6b257113e5` and digest
-  `sha256:816dbb030fdc32dc3f3dcd3855a7f617a2f49ce3145ea543e35777d3b514e833`.
+- [ ] Phase 6 preparation PR #10 and repair PRs #18, #19, and #20 are merged
+  and tracked by issue #9. Protected publication for PR #20 passed every gate
+  at source commit `f827629b60ccd6de884edd0064095c756b9fc228` and digest
+  `sha256:eb2c9c9144ea46ed9c654fe2f0247b34e6fb0217d63b0e3b4deba09b6d79d722`.
   The queue endpoint and private-registry credential exist, but the endpoint is
   safety-locked at minimum zero/maximum zero with no workers or jobs. Two
   bootstrap attempts were cancelled before inference; no observational
-  bootstrap receipt or real GPU validation exists. The user approved raising
-  the total paid-submission ceiling from three to four: two are consumed, two
-  remain, and no diagnostic retry is allowed. Another paid worker still
-  requires a newly approved exact cost proposal.
+  bootstrap receipt or real GPU validation exists. A third approved bootstrap
+  was cancelled before handler execution when RunPod assigned a hidden
+  scheduler-known Blackwell MIG type omitted from the current catalog response.
+  Three of the four authorized submissions are consumed, one remains, and no
+  retry is allowed. Because bootstrap and final validation still require two
+  jobs, another paid worker requires the hidden-GPU deny repair, a new ceiling
+  decision, and a newly approved exact proposal.
 - [ ] Phase 7 and later are not authorized.
 
 ## Mission and first vertical slice
@@ -415,15 +417,32 @@ source commit `425271597fce2d69f59f9e34ea0d9e6b257113e5` and digest
 `sha256:816dbb030fdc32dc3f3dcd3855a7f617a2f49ce3145ea543e35777d3b514e833`.
 
 The GitHub repository is public while the source-linked GHCR package remains
-private. RunPod MCP and `runpodctl` are authenticated. Itemized billing records
-USD 0.0084969667 total Phase 6 spend, safely below the USD 2.00 cap. Issue #9
-contains the sanitized incident. The endpoint remains present and safety-locked
-at zero. The user explicitly approved raising the total paid-submission ceiling
-from three to four. Two submissions are consumed; exactly one bootstrap and one
-final-validation submission remain, with no diagnostic retry. Another paid
-execution is blocked on protected publication of this cap control, a refreshed
-proposal/budget and the exact cost-approval phrase. The account worker quota
-remains unexposed by current read-only surfaces.
+private. RunPod MCP and `runpodctl` are authenticated. Four-job-cap PR #20
+merged, and protected publication passed every source, architecture,
+pull-by-digest, SBOM, provenance, attestation, vulnerability, package-link,
+image-content, and mock-smoke gate for source commit
+`f827629b60ccd6de884edd0064095c756b9fc228` and digest
+`sha256:eb2c9c9144ea46ed9c654fe2f0247b34e6fb0217d63b0e3b4deba09b6d79d722`.
+
+The exact continuation proposal received cost approval. RunPod then assigned
+`NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb` even though the
+approval-time `AMPERE_24` catalog response contained only RTX A5000 and RTX
+3090. The controller detected the disallowed identity while the job was still
+`IN_QUEUE`, cancelled it before handler execution, and restored minimum and
+maximum workers to zero. Subsequent reads confirmed zero workers, zero
+queued/running jobs, zero Pods, and zero volumes. No platform retry, checkpoint
+observation, CUDA fitness, model load, or inference occurred. Itemized billing
+still reports USD 0.0084969667 total Phase 6 spend, safely below the USD 2.00
+cap, subject to provider reporting lag.
+
+Three of four authorized submissions are now consumed. The one remaining slot
+cannot complete both the bootstrap and final validation and cannot be treated
+as a retry allowance. A breaking proposal-schema repair therefore keeps every
+scheduler-observed denied type explicitly excluded even when the current
+catalog omits it. Another paid execution requires protected publication of that
+repair, an explicit paid-ceiling decision, a refreshed proposal/budget, and the
+exact cost-approval phrase. The account worker quota remains unexposed by
+current read-only surfaces.
 
 Deliverables:
 

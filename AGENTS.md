@@ -12,10 +12,11 @@ produce structured evidence records.
 - Phase 6, first real Community Forensics GPU validation on RunPod Serverless,
   is the only active implementation phase. GitHub PRs #2, #4, #6, #8, and #10
   are merged into `main`. Release-verifier repair PR #16 and cache-layout
-  repair PR #18 and bootstrap-fitness repair PR #19 are also merged. Protected
-  `main` publication passed every release gate for repair source commit
-  `425271597fce2d69f59f9e34ea0d9e6b257113e5` and immutable image digest
-  `sha256:816dbb030fdc32dc3f3dcd3855a7f617a2f49ce3145ea543e35777d3b514e833`.
+  repair PR #18, bootstrap-fitness repair PR #19, and four-job-cap repair PR #20
+  are also merged. Protected `main` publication passed every release gate for
+  source commit `f827629b60ccd6de884edd0064095c756b9fc228` and immutable image
+  digest
+  `sha256:eb2c9c9144ea46ed9c654fe2f0247b34e6fb0217d63b0e3b4deba09b6d79d722`.
   The GitHub repository is public; the source-linked GHCR package remains private.
 - The renewed bootstrap job against that repaired digest was cancelled on
   2026-08-25 when one worker became unhealthy and RunPod introduced an
@@ -27,11 +28,19 @@ produce structured evidence records.
   repair defers bootstrap fitness into the controlled bootstrap request while
   keeping verified validation fail-closed at startup. Do not start another paid
   worker until a refreshed proposal receives the exact approval phrase.
-- Two paid submissions have been consumed. The user explicitly approved a
-  four-submission total ceiling on 2026-08-25. Exactly two paid submissions
-  remain: one bootstrap and one final validation, with zero diagnostic retries.
-  The USD 2.00 total-spend cap and all repeated-worker safety stops remain
-  unchanged.
+- A third paid bootstrap submission was cancelled on 2026-08-25 before handler
+  execution because RunPod assigned the scheduler-known 24 GB Blackwell MIG
+  type even though the approval-time `AMPERE_24` catalog response listed only
+  RTX A5000 and RTX 3090. The endpoint was immediately restored to minimum
+  zero/maximum zero with no workers or jobs. No checkpoint hash, CUDA fitness,
+  model load, or inference result was produced.
+- Three paid submissions have been consumed under the user-approved
+  four-submission ceiling. One submission remains, but it cannot satisfy both
+  the still-required bootstrap and final validation and cannot be used as an
+  automatic retry. Do not start another paid worker until the hidden-GPU deny
+  repair is merged and republished, a refreshed proposal and budget exist, and
+  the user explicitly decides the paid-submission ceiling. The USD 2.00 total
+  spend cap and all worker, identity, and retry safety stops remain unchanged.
 - Phase 6 repository work may keep status/runbook documentation current, repair
   fail-closed proposal controls, and prepare a reviewable pull request.
   Do not weaken or bypass any failed SBOM, provenance, package-link, GitHub

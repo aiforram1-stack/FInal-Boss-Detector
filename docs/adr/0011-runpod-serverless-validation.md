@@ -14,12 +14,11 @@ queue-based RunPod Serverless endpoint, but no billable operation is allowed
 until an exact configuration and cost proposal receives the exact approval
 phrase.
 
-Pull requests for Phases 2 through 6 preparation, release-verifier repair PR
-#16, cache-layout repair PR #18, and bootstrap-fitness repair PR #19 are merged.
-Protected publication accepted repair source commit
-`425271597fce2d69f59f9e34ea0d9e6b257113e5` as private
+Pull requests for Phases 2 through 6 preparation and repair PRs #16, #18, #19,
+and #20 are merged. Protected publication accepted source commit
+`f827629b60ccd6de884edd0064095c756b9fc228` as private
 Linux AMD64 image
-`ghcr.io/aiforram1-stack/forensic-image-community@sha256:816dbb030fdc32dc3f3dcd3855a7f617a2f49ce3145ea543e35777d3b514e833`.
+`ghcr.io/aiforram1-stack/forensic-image-community@sha256:eb2c9c9144ea46ed9c654fe2f0247b34e6fb0217d63b0e3b4deba09b6d79d722`.
 The GitHub repository is public, the GHCR package remains private and
 source-linked, and every release gate passed. The checkpoint remains absent
 from the image and CUDA validation has not completed.
@@ -42,6 +41,15 @@ therefore returned as a structured error without creating a platform restart
 loop. Verified validation still requires the full fitness gate before starting
 its request loop.
 
+The exact four-job continuation proposal was later approved and used that
+protected digest. The approval-time `AMPERE_24` catalog listed only RTX A5000
+and RTX 3090, but the scheduler assigned
+`NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb`. The controller
+observed the disallowed identity while the job remained `IN_QUEUE`, cancelled
+it, and restored maximum workers to zero before handler execution. No
+checkpoint, CUDA, model-load, inference, or platform-retry result exists from
+that submission.
+
 Current official RunPod documentation describes asynchronous queue operations
 (`/run`, `/status`, `/cancel`, `/retry`, `/purge-queue`, `/health`), scale-to-zero
 worker limits, five-second idle timeout, queue-delay scaling, ordinary
@@ -49,12 +57,14 @@ FlashBoot, and host-cached Hugging Face models. RunPod's supported model cache
 root is `/runpod-volume/huggingface-cache/hub`.
 
 The current REST v2 endpoint-create surface selects GPU pools, not exact GPU
-type IDs. On the latest audit, `AMPERE_24` costs USD 0.69/hour and its currently
-reported Serverless members are RTX A5000 and RTX 3090. Both are approved by
-this phase. Pool membership and availability must be refreshed before approval;
-any additional member must be explicitly approved or excluded. The current
-`set-endpoint-gpus` operation supports pool selection plus explicit type
-exclusions and a minimum CUDA version. REST v2 endpoint creation does not expose
+type IDs. On the latest audit, `AMPERE_24` costs USD 0.69/hour and its catalog
+response reported RTX A5000 and RTX 3090. Both are approved by this phase, but
+the scheduler proved that the response is not a complete placement allowlist.
+Proposal membership is therefore the union of the current catalog response and
+all scheduler-observed types. The known 24 GB Blackwell MIG type must remain
+explicitly excluded even when absent from the latest catalog response. The
+current `set-endpoint-gpus` operation supports pool selection plus explicit
+type exclusions and a minimum CUDA version. REST v2 endpoint creation does not expose
 the cached-model field. The supported
 `runpodctl` Serverless path exposes `--model-reference` and accepts a full
 Hugging Face URL plus `:ref`; Phase 6 requires `runpodctl` 2.4.0 or newer and
@@ -73,31 +83,36 @@ timeout, scaling, and cost estimate are canonically hashed. Only the exact phras
 
 The budget record separately binds prior spend, the number of already submitted
 jobs, expected and worst-case cold-start seconds, and the remaining submission
-count. Two paid submissions incurred USD 0.0084969667. On 2026-08-25 the user
-explicitly authorized raising the total ceiling from three to four so Phase 6
-can still perform its required bootstrap and final validation. The continuation
-allows exactly those two remaining submissions and zero diagnostic retries.
+count. On 2026-08-25 the user explicitly raised the total ceiling from three to
+four. The hidden-GPU cancellation consumed submission three without handler
+execution. One slot remains, zero diagnostic retries are authorized, and that
+single slot cannot complete both the still-required bootstrap and final
+validation. A new ceiling decision is required before another cost proposal.
 
-The continuation proposal uses a 600-second expected cold start and a
+The consumed continuation proposal used a 600-second expected cold start and a
 conservative 1,200-second worst case, 180 seconds for bootstrap, and 360 seconds
 for validation. At the audited `AMPERE_24` rate of USD 0.69/hour, remaining
 normal compute is approximately USD 0.3355. Two worst-case starts plus both
 600-second execution ceilings and idle charges are approximately USD 0.6919.
 Including incurred spend and USD 0.01 reserved for ephemeral container disk,
-the total Phase 6 estimates are approximately USD 0.3540 normally and USD
-0.7104 worst case. The hard USD 2.00 stop remains unchanged.
+the total Phase 6 estimates were approximately USD 0.3540 normally and USD
+0.7104 worst case. A replacement budget must be recalculated after an explicit
+ceiling decision. The hard USD 2.00 stop remains unchanged.
 
-The endpoint is queue based and selects `AMPERE_24`. Its observed pool members
-must be completely partitioned into the approved L4/A5000/RTX 3090 set and an
-explicit exclusion set before a job is submitted. The minimum host CUDA version
+The endpoint is queue based and selects `AMPERE_24`. Its current catalog and
+historical scheduler observations must be completely partitioned into the
+approved L4/A5000/RTX 3090 set and an explicit exclusion set before a job is
+submitted. The scheduler-observed Blackwell MIG type is a mandatory exclusion.
+The minimum host CUDA version
 is 12.4 without an upper restriction. Minimum workers is zero, maximum workers
 is one during approved
 execution, one GPU is used per worker, the idle timeout is five seconds, and no
 network volume or data-centre restriction is used by default. Maximum workers
-becomes zero after validation. Total spend is capped at USD 2.00 and total paid
-submissions at four: two consumed and two remaining, with no retries. A fifth
-submission is prohibited. No Pod fallback is permitted without separate
-approval.
+becomes zero after validation. Total spend is capped at USD 2.00 and the current
+paid ceiling is four: three consumed and one remaining, with no retries. That
+remaining slot is insufficient for both required jobs; a fifth submission is
+prohibited unless the user explicitly changes the ceiling. No Pod fallback is
+permitted without separate approval.
 
 ### One cached model, resolved fail closed
 
@@ -170,11 +185,16 @@ enter repository code or shell history.
   system start events without application output. Retained endpoint logs later
   isolated the failure to the pre-queue GPU fitness stage, motivating the
   bootstrap-only deferred-fitness repair without weakening verified validation.
-- Both previous approvals are consumed for execution purposes. The retained
+- All three paid bootstrap submissions and their approvals are consumed for
+  execution purposes. The third was cancelled before handler execution when
+  the scheduler assigned the known-denied Blackwell MIG type even though it was
+  absent from the current catalog response. The proposal schema now requires
+  that scheduler-observed type to remain explicitly excluded.
+- The retained
   endpoint must remain maximum zero until a refreshed proposal and budget receive
   the exact approval phrase. The user authorized a four-submission total ceiling:
-  two are consumed, one bootstrap and one final validation remain, no retry is
-  allowed, and a fifth submission is prohibited. This cap is not permission to
+  three are consumed, only one remains, no retry is allowed, and a fifth
+  submission is prohibited without a new explicit ceiling decision. This cap is not permission to
   bypass repeated-worker or unexpected-second-worker stop conditions.
 - Bootstrap requires a manifest update and second protected image publication
   before final validation, adding review latency but binding validation to the

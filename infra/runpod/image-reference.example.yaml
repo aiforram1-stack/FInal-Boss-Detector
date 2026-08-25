@@ -1,4 +1,4 @@
-schema_version: "1.0"
+schema_version: "1.1"
 phase: phase-6-serverless-proposal-only
 authorization:
   exact_phrase_required: APPROVE PHASE 6 SERVERLESS COST
@@ -7,19 +7,21 @@ authorization:
   maximum_paid_jobs: 4
 paid_job_cap:
   authorized: true
-  paid_jobs_already_submitted: 2
-  remaining_paid_jobs: 2
+  paid_jobs_already_submitted: 3
+  remaining_paid_jobs: 1
+  required_jobs_remaining: 2
+  continuation_sufficient: false
   diagnostic_retries: 0
 readiness:
-  endpoint_proposal_hash_status: BLOCKED_PENDING_PROTECTED_PUBLICATION_AND_COST_APPROVAL
+  endpoint_proposal_hash_status: BLOCKED_PENDING_HIDDEN_GPU_REPAIR_AND_CEILING_DECISION
   registry_credential_present: true
   runpodctl_authenticated: true
   account_worker_quota_verified: false
 image:
-  digest_reference: "ghcr.io/aiforram1-stack/forensic-image-community@sha256:816dbb030fdc32dc3f3dcd3855a7f617a2f49ce3145ea543e35777d3b514e833"
-  source_commit: "425271597fce2d69f59f9e34ea0d9e6b257113e5"
+  digest_reference: "ghcr.io/aiforram1-stack/forensic-image-community@sha256:eb2c9c9144ea46ed9c654fe2f0247b34e6fb0217d63b0e3b4deba09b6d79d722"
+  source_commit: "f827629b60ccd6de884edd0064095c756b9fc228"
   platform: linux/amd64
-  size_bytes: 6629481513
+  size_bytes: 6629482996
   package_visibility: private
   checkpoint_included: false
 template:
@@ -40,29 +42,32 @@ template:
     IMAGE_COMMUNITY_PHASE6_ONLY_MODE: "true"
     IMAGE_COMMUNITY_VALIDATION_OUTPUT_MODE: inline_sanitized
     IMAGE_COMMUNITY_REQUIRE_CUDA: "true"
-    IMAGE_COMMUNITY_CONTAINER_DIGEST: "sha256:816dbb030fdc32dc3f3dcd3855a7f617a2f49ce3145ea543e35777d3b514e833"
-    IMAGE_COMMUNITY_PROJECT_SOURCE_COMMIT: "425271597fce2d69f59f9e34ea0d9e6b257113e5"
-    IMAGE_COMMUNITY_ENDPOINT_RELEASE_IDENTITY: phase6-bootstrap-42527159
+    IMAGE_COMMUNITY_CONTAINER_DIGEST: "sha256:eb2c9c9144ea46ed9c654fe2f0247b34e6fb0217d63b0e3b4deba09b6d79d722"
+    IMAGE_COMMUNITY_PROJECT_SOURCE_COMMIT: "f827629b60ccd6de884edd0064095c756b9fc228"
+    IMAGE_COMMUNITY_ENDPOINT_RELEASE_IDENTITY: phase6-bootstrap-f827629b
     HF_HUB_OFFLINE: "1"
     TRANSFORMERS_OFFLINE: "1"
 endpoint:
   name: forensic-image-community-phase6
   type: QUEUE
   compute_type: GPU
-  # REST v2 creates the endpoint from a pool. The complete observed pool is
-  # partitioned into approved and excluded types, then exclusions are applied
-  # with the current set-endpoint-gpus operation before any job submission.
+  # REST v2 creates the endpoint from a pool. Observations are the union of the
+  # current catalog and actual scheduler worker records. The known hidden MIG
+  # type remains denied even when the catalog omits it.
   gpu_pool_ids: [AMPERE_24]
   observed_gpu_type_ids:
     - NVIDIA GeForce RTX 3090
     - NVIDIA RTX A5000
+    - NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb
   approved_gpu_type_ids:
     - NVIDIA GeForce RTX 3090
     - NVIDIA RTX A5000
-  excluded_gpu_type_ids: []
+  excluded_gpu_type_ids:
+    - NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb
   observed_availability:
     NVIDIA GeForce RTX 3090: LOW
     NVIDIA RTX A5000: HIGH
+    NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb: SCHEDULER_OBSERVED_CATALOG_OMITTED
   gpu_count: 1
   min_cuda_version: "12.4"
   workers_min: 0
@@ -76,35 +81,16 @@ endpoint:
   data_center_ids: []
   network_volume_ids: []
 cost_budget:
-  schema_version: "1.1"
-  starting_balance_usd: "9.9915030333"
-  incurred_phase6_spend_usd: "0.0084969667"
-  paid_jobs_already_submitted: 2
-  gpu_pool_id: AMPERE_24
-  gpu_rate_per_hour_usd: "0.69"
-  gpu_rate_per_second_usd: "0.0001916667"
-  expected_cold_start_seconds_per_job: 600
-  worst_case_cold_start_seconds_per_job: 1200
-  expected_bootstrap_execution_seconds: 180
-  expected_validation_execution_seconds: 360
-  idle_seconds_per_job: 5
-  maximum_job_execution_seconds: 600
-  model_cache_download_billed_to_worker: false
-  planned_paid_jobs: 2
+  status: INVALIDATED_PENDING_EXPLICIT_CEILING_DECISION
+  prior_approval_schema_version: "1.1"
+  latest_reported_balance_usd: "9.9915030333"
+  latest_reported_phase6_spend_usd: "0.0084969667"
+  current_maximum_paid_jobs: 4
+  paid_jobs_already_submitted: 3
+  remaining_paid_jobs: 1
+  required_jobs_remaining: 2
   diagnostic_retries: 0
-  maximum_paid_jobs: 4
-  estimated_container_disk_cost_usd: "0.01"
-  estimated_normal_cost_usd: "0.36"
-  estimated_worst_case_cost_usd: "0.72"
   hard_maximum_spend_usd: "2.00"
-cost_breakdown:
-  estimated_bootstrap_compute_usd: "0.1505"
-  estimated_validation_compute_usd: "0.1850"
-  estimated_remaining_normal_compute_usd: "0.3355"
-  estimated_remaining_worst_case_compute_usd: "0.6919"
-  incurred_phase6_spend_usd: "0.008497"
-  estimated_total_normal_usd: "0.3540"
-  estimated_total_worst_case_usd: "0.7104"
 final_lock:
   workers_min: 0
   workers_max: 0
