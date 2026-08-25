@@ -50,6 +50,9 @@ SECRET_KEY_FRAGMENTS = (
     "token",
 )
 SECRET_VALUE_FRAGMENTS = ("bearer ", "ghp_", "github_pat_", "rpa_", "x-amz-signature=")
+SCHEDULER_OBSERVED_DENIED_GPU_TYPE_IDS = frozenset(
+    {"NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb"}
+)
 
 
 class Phase6ControlRecord(BaseModel):
@@ -118,6 +121,8 @@ class EndpointRuntimeEnvironment(BaseModel):
 
 
 class EndpointProposal(Phase6ControlRecord):
+    # This breaking scheduler-deny policy invalidates consumed 1.0 approvals.
+    schema_version: Literal["1.1"]  # type: ignore[assignment]
     name: Literal["forensic-image-community-phase6"]
     endpoint_type: Literal["QUEUE"] = "QUEUE"
     image_digest_reference: str = Field(pattern=IMAGE_DIGEST_PATTERN)
@@ -182,6 +187,10 @@ class EndpointProposal(Phase6ControlRecord):
             raise ValueError(
                 "observed pool members must be completely partitioned into "
                 "approved and excluded IDs"
+            )
+        if not SCHEDULER_OBSERVED_DENIED_GPU_TYPE_IDS <= excluded:
+            raise ValueError(
+                "scheduler-observed denied GPU type IDs must remain explicitly excluded"
             )
         return self
 
@@ -349,6 +358,21 @@ class EndpointHealth(Phase6ControlRecord):
         )
 
 
+class EndpointWorkerAssignment(BaseModel):
+    model_config = ConfigDict(
+        extra="ignore",
+        frozen=True,
+        str_strip_whitespace=True,
+        allow_inf_nan=False,
+    )
+
+    id: str = Field(min_length=1, max_length=255, pattern=r"^[A-Za-z0-9._-]+$")
+    status: Literal["IDLE", "INITIALIZING", "RUNNING", "THROTTLED", "UNHEALTHY"]
+    gpuTypeId: str = Field(min_length=1, max_length=255)
+    gpuCount: int = Field(gt=0, le=8)
+    image: str = Field(pattern=IMAGE_DIGEST_PATTERN)
+
+
 class Phase6QueueTransport(Protocol):
     def submit(self, payload: dict[str, JsonValue]) -> object: ...
 
@@ -415,6 +439,24 @@ def assert_final_endpoint_lock(proposal: EndpointProposal, health: EndpointHealt
         raise ValueError("Phase 6 final endpoint worker limits are not locked at zero")
     if not health.quiescent:
         raise ValueError("Phase 6 endpoint is not quiescent")
+
+
+def validate_endpoint_worker_assignments(
+    proposal: EndpointProposal, payload: object
+) -> tuple[EndpointWorkerAssignment, ...]:
+    if not isinstance(payload, dict) or not isinstance(payload.get("items"), list):
+        raise ValueError("RunPod worker-list response must contain an items array")
+    assignments = tuple(EndpointWorkerAssignment.model_validate(item) for item in payload["items"])
+    if len(assignments) > proposal.workers_max:
+        raise ValueError("RunPod worker count exceeds the approved endpoint ceiling")
+    for assignment in assignments:
+        if assignment.gpuTypeId not in proposal.approved_gpu_type_ids:
+            raise ValueError("RunPod assigned a GPU type outside the approved allowlist")
+        if assignment.gpuCount != proposal.gpu_count:
+            raise ValueError("RunPod worker GPU count differs from the approved proposal")
+        if assignment.image != proposal.image_digest_reference:
+            raise ValueError("RunPod worker image differs from the approved immutable digest")
+    return assignments
 
 
 def assert_sanitized_result(value: JsonValue) -> None:

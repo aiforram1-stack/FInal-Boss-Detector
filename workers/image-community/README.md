@@ -83,21 +83,20 @@ same contracts and job service, and contain no stored media fixture. Builds must
 use the repository root so `.dockerignore` protects the real context and only
 shared contracts plus worker source are copied.
 
-Phase 6 runtime status (2026-08-25): protected publication of the materialized
-cache-layout repair passed, but its approved bootstrap worker entered a repeated
-container-start loop and RunPod introduced an unexpected replacement worker.
-The queued job was cancelled before handler execution, no receipt or inference
-result exists, and the endpoint is locked at minimum zero/maximum zero. Do not
-resume a paid worker until the retained-log diagnosis, reviewable repair, new
-immutable publication and refreshed exact approval exist. The retained log
-confirmed that the entrypoint and cache resolution completed before the
-pre-queue GPU fitness probe failed. Bootstrap mode now performs that probe only
-inside the controlled bootstrap job so a failure is returned as a structured
-error; verified validation still probes before starting its request loop.
-Repair PR #19 and its protected publication passed every release gate. Two paid
-submissions have been consumed; the authorized continuation permits exactly one
-bootstrap and one final-validation submission, no retry, no fifth submission,
-and no increase to the USD 2.00 hard stop.
+Phase 6 runtime status (2026-08-25): the cache-layout, bootstrap-fitness, and
+four-job-cap repairs and their protected publications passed every release gate.
+The third approved bootstrap was nevertheless cancelled before handler
+execution because RunPod assigned the scheduler-known 24 GB Blackwell MIG type
+even though the approval-time `AMPERE_24` catalog response listed only RTX A5000
+and RTX 3090. No receipt, checkpoint hash, CUDA fitness, model load, or inference
+result exists, and the endpoint is locked at minimum zero/maximum zero. Proposal
+schema 1.1 requires that scheduler-observed denied type to remain explicitly
+excluded even when the current catalog omits it. Three paid submissions have
+been consumed; only one of the authorized four remains, no retry is permitted,
+and that single slot is insufficient for both bootstrap and final validation.
+Do not resume a paid worker until the repair is republished, the user explicitly
+decides the paid ceiling, and a refreshed exact proposal is approved. The USD
+2.00 hard stop is unchanged.
 
 The pull-request workflow builds and mock-smokes both targets without publishing.
 The protected main/manual workflow pushes only `sha-<full-commit>` to private

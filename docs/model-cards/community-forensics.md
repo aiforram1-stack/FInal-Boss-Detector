@@ -93,7 +93,10 @@ calibrator identity are null.
   worker selects Python 3.11.
 - The upstream repository does not declare a minimum CUDA version; the future
   image selects a digest-pinned CUDA 12.6.3/PyTorch 2.7.1 runtime.
-- No checkpoint loading or GPU inference has yet been performed by this project.
+- No checkpoint loading or GPU inference has yet been performed by this project;
+  three controlled bootstrap submissions were safety-stopped before handler
+  execution, most recently because RunPod assigned a scheduler-known denied GPU
+  type omitted from the approval-time pool catalog response.
 - The detector is not connected to reports or API orchestration in Phase 6.
 - One generated-fixture parity run will not establish calibration, general
   detector accuracy, production throughput, or cross-GPU determinism.
